@@ -73,14 +73,7 @@ export function InactivityGuard() {
     }, WARNING_AFTER_MS);
   }, [openWarning]);
 
-  const markActivity = useCallback(() => {
-    if (isWarningOpenRef.current) {
-      isWarningOpenRef.current = false;
-      setIsWarningOpen(false);
-      setSecondsLeft(LOGOUT_DELAY_MS / 1000);
-      expiresAtRef.current = null;
-    }
-
+  const resetInactivityTimer = useCallback(() => {
     if (logoutTimeoutRef.current) {
       clearTimeout(logoutTimeoutRef.current);
       logoutTimeoutRef.current = null;
@@ -94,8 +87,16 @@ export function InactivityGuard() {
     scheduleWarning();
   }, [scheduleWarning]);
 
+  const acknowledgeWarning = useCallback(() => {
+    isWarningOpenRef.current = false;
+    setIsWarningOpen(false);
+    setSecondsLeft(LOGOUT_DELAY_MS / 1000);
+    expiresAtRef.current = null;
+    resetInactivityTimer();
+  }, [resetInactivityTimer]);
+
   useEffect(() => {
-    scheduleWarning();
+    resetInactivityTimer();
 
     const events: Array<keyof WindowEventMap> = [
       'mousemove',
@@ -107,7 +108,11 @@ export function InactivityGuard() {
     ];
 
     const handleActivity = () => {
-      markActivity();
+      if (isWarningOpenRef.current) {
+        return;
+      }
+
+      resetInactivityTimer();
     };
 
     for (const eventName of events) {
@@ -120,7 +125,7 @@ export function InactivityGuard() {
         window.removeEventListener(eventName, handleActivity);
       }
     };
-  }, [clearTimers, markActivity, scheduleWarning]);
+  }, [clearTimers, resetInactivityTimer]);
 
   if (!isWarningOpen) {
     return null;
@@ -136,9 +141,10 @@ export function InactivityGuard() {
           You will be logged out soon
         </div>
         <div className="mt-3 text-sm leading-6 text-slate-400">
-          You have been inactive for 10 minutes. Please move your cursor within{' '}
-          <span className="font-semibold text-sky-300">{secondsLeft}</span> seconds to stay logged
-          in.
+          You have been inactive for 10 minutes. Please click{' '}
+          <span className="font-semibold text-sky-300">Stay Logged In</span> within{' '}
+          <span className="font-semibold text-sky-300">{secondsLeft}</span> seconds to keep your
+          session active.
         </div>
         <div className="mt-5 overflow-hidden rounded-full bg-slate-900/90 ring-1 ring-inset ring-slate-800">
           <div
@@ -152,7 +158,7 @@ export function InactivityGuard() {
           <Button variant="secondary" onClick={() => void forceLogout()}>
             Logout Now
           </Button>
-          <Button onClick={markActivity}>Stay Logged In</Button>
+          <Button onClick={acknowledgeWarning}>Stay Logged In</Button>
         </div>
       </div>
     </div>

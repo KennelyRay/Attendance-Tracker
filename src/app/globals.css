@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #07111f;
+  --foreground: #e6f3ff;
 }
 
 @theme inline {
@@ -12,15 +12,108 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+body {
+  font-family: var(--font-geist-sans);
+  background:
+    radial-gradient(circle at top left, rgba(34, 211, 238, 0.12), transparent 24%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.14), transparent 28%),
+    linear-gradient(180deg, #07111f 0%, #081525 48%, #091829 100%);
+  color: var(--foreground);
+}
+
+::selection {
+  background: rgba(56, 189, 248, 0.28);
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -18px, 0) scale(1.04);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes float-medium {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(12px, 16px, 0) scale(0.98);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@keyframes lightning-scan {
+  0% {
+    transform: translate3d(-24vw, -8vh, 0) rotate(-16deg) scaleX(0.92);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0;
+  }
+  24% {
+    opacity: 0.85;
+  }
+  58% {
+    opacity: 0.75;
+  }
+  82% {
+    opacity: 0.1;
+  }
+  100% {
+    transform: translate3d(24vw, 10vh, 0) rotate(-16deg) scaleX(1.06);
+    opacity: 0;
+  }
+}
+
+@keyframes lightning-flicker {
+  0% {
+    transform: translate3d(-10vw, 0, 0) scaleX(0.96);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0;
+  }
+  32% {
+    opacity: 0.55;
+  }
+  64% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: translate3d(10vw, 0, 0) scaleX(1.04);
+    opacity: 0;
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 13s ease-in-out infinite;
+}
+
+.animate-float-medium {
+  animation: float-medium 16s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 6s ease-in-out infinite;
+}
+
+.animate-lightning-scan {
+  animation: lightning-scan 8.5s linear infinite;
+}
+
+.animate-lightning-flicker {
+  animation: lightning-flicker 6.5s linear infinite;
 }

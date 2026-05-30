@@ -1,0 +1,253 @@
+import bcrypt from 'bcrypt';
+import { NextRequest, NextResponse } from 'next/server';
+import { getPool } from '@/lib/db';
+import { getSessionData } from '@/lib/session';
+import { ensureUserAccessColumns } from '@/lib/user-access';
+
+async function requireAdmin() {
+  const session = await getSessionData();
+
+  if (!session.user || !session.user.isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  return null;
+}
+
+async function listEmployeeUsers() {
+  const pool = getPool();
+  await ensureUserAccessColumns(pool);
+  const result = await pool.query(
+    `
+      SELECT id, name, email, position, is_banned, restricted_until, created_at
+      FROM users
+      WHERE is_admin = false
+      ORDER BY name
+    `
+  );
+  return result.rows;
+}
+
+export async function GET() {
+  try {
+    const unauthorized = await requireAdmin();
+    if (unauthorized) return unauthorized;
+
+    const users = await listEmployeeUsers();
+    return NextResponse.json({ users });
+  } catch (error) {
+    console.error('Get users error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const unauthorized = await requireAdmin();
+    if (unauthorized) return unauthorized;
+
+    const { name, email, password, position } = await request.json();
+    const cleanName = typeof name === 'string' ? name.trim() : '';
+    const cleanEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    const cleanPassword = typeof password === 'string' ? password : '';
+    const cleanPosition = typeof position === 'string' ? position.trim() : '';
+
+    if (!cleanName || !cleanEmail || !cleanPassword || !cleanPosition) {
+      return NextResponse.json(
+        { error: 'Name, email, position, and password are required' },
+        { status: 400 }
+      );
+    }
+
+    if (cleanPassword.length < 6) {
+      return NextResponse.json(
+        { error: 'Password must be at least 6 characters' },
+        { status: 400 }
+      );
+    }
+
+    const pool = getPool();
+    await ensureUserAccessColumns(pool);
+    const hashedPassword = await bcrypt.hash(cleanPassword, 10);
+
+    const result = await pool.query(
+      `
+        INSERT INTO users (name, email, password, position, is_admin, is_banned, restricted_until)
+        VALUES ($1, $2, $3, $4, false, false, null)
+        RETURNING id, name, email, position, is_banned, restricted_until, created_at
+      `,
+      [cleanName, cleanEmail, hashedPassword, cleanPosition]
+    );
+
+    return NextResponse.json({ user: result.rows[0] }, { status: 201 });
+  } catch (error) {
+    if (error instanceof Error && /duplicate key/i.test(error.message)) {
+      return NextResponse.json({ error: 'Email already exists' }, { status: 409 });
+    }
+
+    console.error('Create user error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const unauthorized = await requireAdmin();
+    if (unauthorized) return unauthorized;
+
+    const { userId, name, email, position } = await request.json();
+    const employeeId = Number(userId);
+    const cleanName = typeof name === 'string' ? name.trim() : '';
+    const cleanEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    const cleanPosition = typeof position === 'string' ? position.trim() : '';
+
+    if (!Number.isInteger(employeeId)) {
+      return NextResponse.json({ error: 'Invalid user id' }, { status: 400 });
+    }
+
+    if (!cleanName || !cleanEmail || !cleanPosition) {
+      return NextResponse.json(
+        { error: 'Name, email, and position are required' },
+        { status: 400 }
+      );
+    }
+
+    const pool = getPool();
+    await ensureUserAccessColumns(pool);
+    const result = await pool.query(
+      `
+        UPDATE users
+        SET name = $2, email = $3, position = $4
+        WHERE id = $1 AND is_admin = false
+        RETURNING id, name, email, position, is_banned, restricted_until, created_at
+      `,
+      [employeeId, cleanName, cleanEmail, cleanPosition]
+    );
+
+    if (result.rows.length === 0) {
+      return NextResponse.json({ error: 'Employee account not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ user: result.rows[0] });
+  } catch (error) {
+    if (error instanceof Error && /duplicate key/i.test(error.message)) {
+      return NextResponse.json({ error: 'Email already exists' }, { status: 409 });
+    }
+
+    console.error('Update user profile error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const unauthorized = await requireAdmin();
+    if (unauthorized) return unauthorized;
+
+    const { userId, action, durationHours } = await request.json();
+    const employeeId = Number(userId);
+
+    if (!Number.isInteger(employeeId)) {
+      return NextResponse.json({ error: 'Invalid user id' }, { status: 400 });
+    }
+
+    const pool = getPool();
+    await ensureUserAccessColumns(pool);
+
+    let result;
+
+    if (action === 'ban') {
+      result = await pool.query(
+        `
+          UPDATE users
+          SET is_banned = true, restricted_until = null
+          WHERE id = $1 AND is_admin = false
+          RETURNING id, name, email, position, is_banned, restricted_until, created_at
+        `,
+        [employeeId]
+      );
+    } else if (action === 'restrict') {
+      const hours = Number(durationHours);
+      if (!Number.isFinite(hours) || hours <= 0) {
+        return NextResponse.json({ error: 'Invalid restriction duration' }, { status: 400 });
+      }
+
+      result = await pool.query(
+        `
+          UPDATE users
+          SET is_banned = false,
+              restricted_until = CURRENT_TIMESTAMP + ($2 || ' hours')::interval
+          WHERE id = $1 AND is_admin = false
+          RETURNING id, name, email, position, is_banned, restricted_until, created_at
+        `,
+        [employeeId, String(hours)]
+      );
+    } else if (action === 'restore') {
+      result = await pool.query(
+        `
+          UPDATE users
+          SET is_banned = false, restricted_until = null
+          WHERE id = $1 AND is_admin = false
+          RETURNING id, name, email, position, is_banned, restricted_until, created_at
+        `,
+        [employeeId]
+      );
+    } else {
+      return NextResponse.json({ error: 'Unsupported account action' }, { status: 400 });
+    }
+
+    if (!result || result.rows.length === 0) {
+      return NextResponse.json({ error: 'Employee account not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ user: result.rows[0] });
+  } catch (error) {
+    console.error('Update user access error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const unauthorized = await requireAdmin();
+    if (unauthorized) return unauthorized;
+
+    const { userId } = await request.json();
+    const employeeId = Number(userId);
+
+    if (!Number.isInteger(employeeId)) {
+      return NextResponse.json({ error: 'Invalid user id' }, { status: 400 });
+    }
+
+    const pool = getPool();
+    await ensureUserAccessColumns(pool);
+    const result = await pool.query(
+      'DELETE FROM users WHERE id = $1 AND is_admin = false RETURNING id',
+      [employeeId]
+    );
+
+    if (result.rows.length === 0) {
+      return NextResponse.json({ error: 'Employee account not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

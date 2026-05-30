@@ -1,0 +1,699 @@
+'use client';
+
+import { ReactNode, useMemo, useState } from 'react';
+import { Button } from '@/components/ui/Button';
+import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Table, TBody, TD, TH, THead } from '@/components/ui/Table';
+import type {
+  CreateEmployeeInput,
+  Employee,
+  UpdateEmployeeAccountInput,
+  UpdateEmployeeAccessInput,
+} from '@/modules/admin/types';
+import { employeeAccountStatus } from '@/modules/admin/types';
+
+const restrictionOptions = [
+  { label: '1 day', hours: 24 },
+  { label: '3 days', hours: 72 },
+  { label: '7 days', hours: 168 },
+  { label: '30 days', hours: 720 },
+] as const;
+
+function accountStatusClass(employee: Employee) {
+  const status = employeeAccountStatus(employee);
+
+  switch (status) {
+    case 'banned':
+      return 'bg-rose-500/12 text-rose-300 ring-1 ring-inset ring-rose-400/20';
+    case 'restricted':
+      return 'bg-amber-500/12 text-amber-300 ring-1 ring-inset ring-amber-400/20';
+    default:
+      return 'bg-emerald-500/12 text-emerald-300 ring-1 ring-inset ring-emerald-400/20';
+  }
+}
+
+function accountStatusLabel(employee: Employee) {
+  return employeeAccountStatus(employee).replace('-', ' ');
+}
+
+function StatusIcon({ status, className = '' }: { status: 'active' | 'restricted' | 'banned'; className?: string }) {
+  if (status === 'active') {
+    return (
+      <svg
+        viewBox="0 0 20 20"
+        fill="none"
+        aria-hidden="true"
+        className={['h-4 w-4', className].join(' ')}
+      >
+        <path
+          d="M5 10.5L8.2 13.5L15 6.5"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+
+  if (status === 'restricted') {
+    return (
+      <svg
+        viewBox="0 0 20 20"
+        fill="none"
+        aria-hidden="true"
+        className={['h-4 w-4', className].join(' ')}
+      >
+        <path
+          d="M10 5.5V10L12.8 11.7"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle cx="10" cy="10" r="6.25" stroke="currentColor" strokeWidth="1.5" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+      className={['h-4 w-4', className].join(' ')}
+    >
+      <path
+        d="M6.5 8.5V6.8C6.5 4.9 8 3.5 10 3.5C12 3.5 13.5 4.9 13.5 6.8V8.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <rect x="5" y="8.5" width="10" height="8" rx="2" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M10 11.5V13.5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function ConfirmationModal({
+  isOpen,
+  title,
+  description,
+  confirmLabel,
+  confirmVariant = 'primary',
+  isSubmitting,
+  onCancel,
+  onConfirm,
+  children,
+}: {
+  isOpen: boolean;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  confirmVariant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  isSubmitting: boolean;
+  onCancel: () => void;
+  onConfirm: () => Promise<void> | void;
+  children?: ReactNode;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
+        <div className="text-lg font-semibold text-slate-100">{title}</div>
+        <div className="mt-2 text-sm leading-6 text-slate-400">{description}</div>
+        {children ? <div className="mt-4">{children}</div> : null}
+        <div className="mt-6 flex justify-end gap-3">
+          <Button variant="secondary" onClick={onCancel} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button variant={confirmVariant} onClick={onConfirm} disabled={isSubmitting}>
+            {isSubmitting ? 'Please wait...' : confirmLabel}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeedbackModal({
+  isOpen,
+  title,
+  description,
+  onClose,
+}: {
+  isOpen: boolean;
+  title: string;
+  description: string;
+  onClose: () => void;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
+        <div className="text-lg font-semibold text-slate-100">{title}</div>
+        <div className="mt-2 text-sm leading-6 text-slate-400">{description}</div>
+        <div className="mt-6 flex justify-end">
+          <Button onClick={onClose}>OK</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function AccountManagementPanel({
+  accounts,
+  onCreate,
+  onUpdateAccount,
+  onUpdateAccess,
+  onDelete,
+}: {
+  accounts: Employee[];
+  onCreate: (input: CreateEmployeeInput) => Promise<void>;
+  onUpdateAccount: (input: UpdateEmployeeAccountInput) => Promise<void>;
+  onUpdateAccess: (input: UpdateEmployeeAccessInput) => Promise<void>;
+  onDelete: (userId: number) => Promise<void>;
+}) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [position, setPosition] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [busyAccountId, setBusyAccountId] = useState<number | null>(null);
+  const [restrictionHoursByUser, setRestrictionHoursByUser] = useState<Record<number, string>>({});
+  const [pendingCreate, setPendingCreate] = useState<CreateEmployeeInput | null>(null);
+  const [pendingEdit, setPendingEdit] = useState<Employee | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Employee | null>(null);
+  const [feedbackModal, setFeedbackModal] = useState<{ title: string; description: string } | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPosition, setEditPosition] = useState('');
+
+  const sortedAccounts = useMemo(() => {
+    return [...accounts].sort((a, b) => a.name.localeCompare(b.name));
+  }, [accounts]);
+
+  const createAccount = async (input: CreateEmployeeInput) => {
+    setError(null);
+    setFeedbackModal(null);
+    setIsCreating(true);
+
+    try {
+      await onCreate(input);
+      setName('');
+      setEmail('');
+      setPosition('');
+      setPassword('');
+      setPendingCreate(null);
+      setFeedbackModal({
+        title: 'Account Created',
+        description: `The account for ${input.name} is now available in the employee list.`,
+      });
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : 'Failed to create account');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const submitCreate = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
+    setFeedbackModal(null);
+    setPendingCreate({
+      name: name.trim(),
+      email: email.trim(),
+      position: position.trim(),
+      password,
+    });
+  };
+
+  const openEditModal = (account: Employee) => {
+    setError(null);
+    setFeedbackModal(null);
+    setPendingEdit(account);
+    setEditName(account.name);
+    setEditEmail(account.email);
+    setEditPosition(account.position ?? '');
+  };
+
+  const saveEditedAccount = async () => {
+    if (!pendingEdit) return;
+
+    setError(null);
+    setFeedbackModal(null);
+    setBusyAccountId(pendingEdit.id);
+
+    try {
+      await onUpdateAccount({
+        userId: pendingEdit.id,
+        name: editName.trim(),
+        email: editEmail.trim(),
+        position: editPosition.trim(),
+      });
+      setPendingEdit(null);
+      setFeedbackModal({
+        title: 'Account Updated',
+        description: `${editName.trim()} has been updated successfully.`,
+      });
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : 'Failed to update account');
+    } finally {
+      setBusyAccountId(null);
+    }
+  };
+
+  const runAccountAction = async (
+    userId: number,
+    action: () => Promise<void>,
+    successTitle: string,
+    successDescription: string
+  ) => {
+    setError(null);
+    setFeedbackModal(null);
+    setBusyAccountId(userId);
+
+    try {
+      await action();
+      setFeedbackModal({
+        title: successTitle,
+        description: successDescription,
+      });
+    } catch (actionError) {
+      setError(actionError instanceof Error ? actionError.message : 'Failed to update account');
+    } finally {
+      setBusyAccountId(null);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.5fr_0.9fr]">
+        <Card>
+          <CardHeader
+            title="Create Employee Account"
+            subtitle="Add a new employee account and make it available immediately in the dashboard."
+          />
+          <CardBody>
+            <form onSubmit={submitCreate} className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <div className="text-sm font-medium text-slate-300">Name</div>
+                  <div className="mt-1">
+                    <Input
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      placeholder="Employee name"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-slate-300">Email</div>
+                  <div className="mt-1">
+                    <Input
+                      type="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      placeholder="employee@company.com"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-slate-300">Position</div>
+                <div className="mt-1">
+                  <Input
+                    value={position}
+                    onChange={(event) => setPosition(event.target.value)}
+                    placeholder="e.g. Team Lead"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-slate-300">Password</div>
+                <div className="mt-1">
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="At least 6 characters"
+                    required
+                    minLength={6}
+                  />
+                </div>
+              </div>
+              {error ? (
+                <div className="rounded-xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300 ring-1 ring-inset ring-rose-400/20">
+                  {error}
+                </div>
+              ) : null}
+              <div className="flex items-center justify-end">
+                <Button type="submit" disabled={isCreating}>
+                  {isCreating ? 'Creating...' : 'Add Employee'}
+                </Button>
+              </div>
+            </form>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Access Rules"
+            subtitle="Quick reference for how account controls work."
+          />
+          <CardBody>
+            <div className="space-y-4">
+              <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+                <div className="text-sm font-semibold text-slate-100">Restrict</div>
+                <div className="mt-1 text-sm leading-6 text-slate-400">
+                  Temporarily blocks login for the selected duration. Access automatically returns
+                  when the restriction expires.
+                </div>
+              </div>
+              <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+                <div className="text-sm font-semibold text-slate-100">Ban</div>
+                <div className="mt-1 text-sm leading-6 text-slate-400">
+                  Permanently blocks login until an admin restores the account.
+                </div>
+              </div>
+              <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+                <div className="text-sm font-semibold text-slate-100">Remove</div>
+                <div className="mt-1 text-sm leading-6 text-slate-400">
+                  Permanently deletes the employee account and any linked attendance records.
+                </div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+
+      {sortedAccounts.length === 0 ? (
+        <EmptyState
+          title="No employee accounts"
+          description="Create an employee account to manage access and attendance."
+        />
+      ) : (
+        <Card>
+          <CardHeader
+            title="Employee Accounts"
+            subtitle={`${sortedAccounts.length} employee account(s) with live access controls`}
+          />
+          <CardBody>
+            <Table>
+              <THead>
+                <tr>
+                  <TH>Employee</TH>
+                  <TH>Position</TH>
+                  <TH>Status</TH>
+                  <TH>Access Until</TH>
+                  <TH>Restrict For</TH>
+                  <TH>Actions</TH>
+                </tr>
+              </THead>
+              <TBody>
+                {sortedAccounts.map((account) => {
+                  const status = employeeAccountStatus(account);
+                  const restrictionHours = restrictionHoursByUser[account.id] ?? String(restrictionOptions[0].hours);
+                  const isBusy = busyAccountId === account.id;
+
+                  return (
+                    <tr key={account.id} className="transition-colors hover:bg-slate-900/90">
+                      <TD>
+                        <div className="font-medium text-slate-100">{account.name}</div>
+                        <div className="mt-1 text-xs text-slate-400">{account.email}</div>
+                      </TD>
+                      <TD className="whitespace-nowrap text-slate-300">
+                        {account.position || 'Not set'}
+                      </TD>
+                      <TD className="whitespace-nowrap">
+                        <span
+                          className={[
+                            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize',
+                            accountStatusClass(account),
+                          ].join(' ')}
+                        >
+                          <StatusIcon status={status} />
+                          {accountStatusLabel(account)}
+                        </span>
+                      </TD>
+                      <TD className="whitespace-nowrap text-slate-400">
+                        {status === 'restricted' && account.restricted_until
+                          ? new Date(account.restricted_until).toLocaleString()
+                          : status === 'banned'
+                            ? 'Permanent'
+                            : 'Active'}
+                      </TD>
+                      <TD className="min-w-36">
+                        <Select
+                          value={restrictionHours}
+                          onChange={(event) =>
+                            setRestrictionHoursByUser((current) => ({
+                              ...current,
+                              [account.id]: event.target.value,
+                            }))
+                          }
+                          disabled={isBusy}
+                        >
+                          {restrictionOptions.map((option) => (
+                            <option key={option.hours} value={option.hours}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </Select>
+                      </TD>
+                      <TD>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            disabled={isBusy}
+                            onClick={() => openEditModal(account)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            disabled={isBusy}
+                            onClick={() =>
+                              runAccountAction(
+                                account.id,
+                                () =>
+                                  onUpdateAccess({
+                                    userId: account.id,
+                                    action: 'restrict',
+                                    durationHours: Number(restrictionHours),
+                                  }),
+                                'Account Restricted',
+                                `${account.name} is now temporarily restricted from logging in.`
+                              )
+                            }
+                          >
+                            Restrict
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            disabled={isBusy || status === 'active'}
+                            onClick={() =>
+                              runAccountAction(
+                                account.id,
+                                () =>
+                                  onUpdateAccess({
+                                    userId: account.id,
+                                    action: 'restore',
+                                  }),
+                                'Access Restored',
+                                `${account.name} can now log in again.`
+                              )
+                            }
+                          >
+                            Restore
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            disabled={isBusy || status === 'banned'}
+                            onClick={() =>
+                              runAccountAction(
+                                account.id,
+                                () =>
+                                  onUpdateAccess({
+                                    userId: account.id,
+                                    action: 'ban',
+                                  }),
+                                'Account Banned',
+                                `${account.name} has been permanently blocked from logging in.`
+                              )
+                            }
+                          >
+                            Ban
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={isBusy}
+                            onClick={() => setPendingDelete(account)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </TD>
+                    </tr>
+                  );
+                })}
+              </TBody>
+            </Table>
+          </CardBody>
+        </Card>
+      )}
+
+      <ConfirmationModal
+        isOpen={Boolean(pendingCreate)}
+        title="Create Employee Account"
+        description="Please confirm that you want to create this employee account."
+        confirmLabel="Create Account"
+        isSubmitting={isCreating}
+        onCancel={() => {
+          if (!isCreating) {
+            setPendingCreate(null);
+          }
+        }}
+        onConfirm={async () => {
+          if (!pendingCreate) return;
+          await createAccount(pendingCreate);
+        }}
+      >
+        {pendingCreate ? (
+          <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+            <div className="text-sm text-slate-300">
+              <span className="font-medium text-slate-100">Name:</span> {pendingCreate.name}
+            </div>
+            <div className="mt-2 text-sm text-slate-300">
+              <span className="font-medium text-slate-100">Email:</span> {pendingCreate.email}
+            </div>
+            <div className="mt-2 text-sm text-slate-300">
+              <span className="font-medium text-slate-100">Position:</span> {pendingCreate.position}
+            </div>
+          </div>
+        ) : null}
+      </ConfirmationModal>
+
+      <ConfirmationModal
+        isOpen={Boolean(pendingEdit)}
+        title="Edit Employee Account"
+        description="Update the employee details below."
+        confirmLabel="Save Changes"
+        isSubmitting={busyAccountId === pendingEdit?.id}
+        onCancel={() => {
+          if (busyAccountId !== pendingEdit?.id) {
+            setPendingEdit(null);
+          }
+        }}
+        onConfirm={saveEditedAccount}
+      >
+        {pendingEdit ? (
+          <div className="space-y-4">
+            <div>
+              <div className="text-sm font-medium text-slate-300">Name</div>
+              <div className="mt-1">
+                <Input
+                  value={editName}
+                  onChange={(event) => setEditName(event.target.value)}
+                  placeholder="Employee name"
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <div className="text-sm font-medium text-slate-300">Email</div>
+              <div className="mt-1">
+                <Input
+                  type="email"
+                  value={editEmail}
+                  onChange={(event) => setEditEmail(event.target.value)}
+                  placeholder="employee@company.com"
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <div className="text-sm font-medium text-slate-300">Position</div>
+              <div className="mt-1">
+                <Input
+                  value={editPosition}
+                  onChange={(event) => setEditPosition(event.target.value)}
+                  placeholder="e.g. Team Lead"
+                  required
+                />
+              </div>
+            </div>
+            {error ? (
+              <div className="rounded-xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300 ring-1 ring-inset ring-rose-400/20">
+                {error}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </ConfirmationModal>
+
+      <ConfirmationModal
+        isOpen={Boolean(pendingDelete)}
+        title="Remove Employee Account"
+        description="This will permanently remove the employee account and its related attendance records. This action cannot be undone."
+        confirmLabel="Remove Account"
+        confirmVariant="danger"
+        isSubmitting={busyAccountId === pendingDelete?.id}
+        onCancel={() => {
+          if (busyAccountId !== pendingDelete?.id) {
+            setPendingDelete(null);
+          }
+        }}
+        onConfirm={async () => {
+          if (!pendingDelete) return;
+          await runAccountAction(
+            pendingDelete.id,
+            async () => {
+              await onDelete(pendingDelete.id);
+              setPendingDelete(null);
+            },
+            'Account Removed',
+            `${pendingDelete.name}'s account has been deleted from the system.`
+          );
+        }}
+      >
+        {pendingDelete ? (
+          <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+            <div className="text-sm text-slate-300">
+              <span className="font-medium text-slate-100">Employee:</span> {pendingDelete.name}
+            </div>
+            <div className="mt-2 text-sm text-slate-300">
+              <span className="font-medium text-slate-100">Email:</span> {pendingDelete.email}
+            </div>
+          </div>
+        ) : null}
+      </ConfirmationModal>
+
+      <FeedbackModal
+        isOpen={Boolean(feedbackModal)}
+        title={feedbackModal?.title ?? ''}
+        description={feedbackModal?.description ?? ''}
+        onClose={() => setFeedbackModal(null)}
+      />
+    </div>
+  );
+}

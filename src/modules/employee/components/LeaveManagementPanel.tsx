@@ -17,7 +17,8 @@ import type {
   LeaveType,
 } from '@/modules/leave/types';
 
-const TEST_LEAVE_COOLDOWN_MS = 20 * 1000;
+const LEAVE_COOLDOWN_MS = 13 * 7 * 24 * 60 * 60 * 1000;
+const MAX_TIMEOUT_MS = 2_147_483_647;
 
 function statusClass(status: LeaveRequestStatus) {
   switch (status) {
@@ -36,6 +37,18 @@ function addMilliseconds(dateString: string, milliseconds: number) {
 
 function formatCountdown(milliseconds: number) {
   const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  const weeks = Math.floor(totalSeconds / (7 * 24 * 60 * 60));
+  const days = Math.floor((totalSeconds % (7 * 24 * 60 * 60)) / (24 * 60 * 60));
+  const hours = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60));
+
+  if (weeks > 0) {
+    return `${weeks}w ${days}d`;
+  }
+
+  if (days > 0) {
+    return `${days}d ${hours}h`;
+  }
+
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
 
@@ -87,7 +100,7 @@ export function LeaveManagementPanel({
   const cooldownEndsAt = latestApprovedForSelectedType
     ? addMilliseconds(
         latestApprovedForSelectedType.reviewed_at ?? latestApprovedForSelectedType.created_at,
-        TEST_LEAVE_COOLDOWN_MS
+        LEAVE_COOLDOWN_MS
       )
     : null;
   const cooldownRemainingMs = cooldownEndsAt ? cooldownEndsAt.getTime() - now : 0;
@@ -137,6 +150,10 @@ export function LeaveManagementPanel({
     }
 
     const timeoutMs = Math.max(0, cooldownEndsAt.getTime() - Date.now()) + 150;
+    if (timeoutMs > MAX_TIMEOUT_MS) {
+      return;
+    }
+
     const timeoutId = window.setTimeout(() => {
       void loadLeaveData();
     }, timeoutMs);
@@ -217,7 +234,7 @@ export function LeaveManagementPanel({
 
               {isOnCooldown && cooldownEndsAt ? (
                 <div className="rounded-2xl border border-amber-400/15 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 ring-1 ring-inset ring-amber-400/20">
-                  {selectedPolicy.label} is on a test cooldown and refreshes in{' '}
+                  {selectedPolicy.label} is on a 13-week cooldown and refreshes in{' '}
                   {formatCountdown(cooldownRemainingMs)}.
                 </div>
               ) : (

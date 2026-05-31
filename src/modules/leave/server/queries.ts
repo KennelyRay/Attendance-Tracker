@@ -17,13 +17,13 @@ import {
   isValidDateOnly,
 } from '@/modules/leave/utils';
 
-const TEST_LEAVE_COOLDOWN_MS = 20 * 1000;
+const LEAVE_COOLDOWN_MS = 13 * 7 * 24 * 60 * 60 * 1000;
 
 async function releaseExpiredPaidLeaveDeductions(userId?: number) {
   const pool = getPool();
   await ensureLeaveSystemSchema(pool);
 
-  const params: Array<number> = [TEST_LEAVE_COOLDOWN_MS];
+  const params: Array<number> = [LEAVE_COOLDOWN_MS];
   const userFilter = typeof userId === 'number' ? 'AND user_id = $2' : '';
 
   if (typeof userId === 'number') {
@@ -71,7 +71,7 @@ export async function getPaidLeaveUsedDaysForYear(userId: number, year: number) 
 
   return (result.rows as Array<{ total_days: number | string; approved_at: string }>).reduce(
     (total, row) => {
-      const cooldownEndsAt = new Date(row.approved_at).getTime() + TEST_LEAVE_COOLDOWN_MS;
+      const cooldownEndsAt = new Date(row.approved_at).getTime() + LEAVE_COOLDOWN_MS;
       if (cooldownEndsAt > now) {
         return total + Number(row.total_days);
       }
@@ -292,11 +292,11 @@ export async function createLeaveRequestForUser(userId: number, input: CreateLea
 
   const latestApprovedAt = await getLatestApprovedLeaveForType(userId, input.leaveType);
   if (latestApprovedAt) {
-    const cooldownEndDate = new Date(new Date(latestApprovedAt).getTime() + TEST_LEAVE_COOLDOWN_MS);
+    const cooldownEndDate = new Date(new Date(latestApprovedAt).getTime() + LEAVE_COOLDOWN_MS);
 
     if (Date.now() < cooldownEndDate.getTime()) {
       throw new Error(
-        `${policy.label} is still on cooldown for testing until ${cooldownEndDate.toLocaleTimeString()}`
+        `${policy.label} is still on a 13-week cooldown until ${cooldownEndDate.toLocaleDateString()}`
       );
     }
   }

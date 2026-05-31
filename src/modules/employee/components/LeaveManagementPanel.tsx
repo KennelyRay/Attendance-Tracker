@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -69,6 +69,15 @@ export function LeaveManagementPanel({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const selectedPolicy = useMemo(() => getLeavePolicy(leaveType), [leaveType]);
+  const loadLeaveData = useCallback(async () => {
+    try {
+      const data = await fetchMyLeaveData();
+      setBalance(data.balance);
+      setRequests(data.requests);
+    } catch {
+      // Keep the last successful state if background refresh fails.
+    }
+  }, []);
   const latestApprovedForSelectedType = useMemo(() => {
     return requests
       .filter((request) => request.leave_type === leaveType && request.status === 'approved')
@@ -90,24 +99,18 @@ export function LeaveManagementPanel({
   useEffect(() => {
     let cancelled = false;
 
-    const loadLeaveData = async () => {
-      try {
-        const data = await fetchMyLeaveData();
-        if (cancelled) return;
-        setBalance(data.balance);
-        setRequests(data.requests);
-      } catch {
-        // Keep the last successful state if background refresh fails.
-      }
+    const safeLoadLeaveData = async () => {
+      await loadLeaveData();
+      if (cancelled) return;
     };
 
-    void loadLeaveData();
+    void safeLoadLeaveData();
     const intervalId = window.setInterval(() => {
-      void loadLeaveData();
+      void safeLoadLeaveData();
     }, 10000);
 
     const handleFocus = () => {
-      void loadLeaveData();
+      void safeLoadLeaveData();
     };
 
     window.addEventListener('focus', handleFocus);
@@ -119,7 +122,7 @@ export function LeaveManagementPanel({
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleFocus);
     };
-  }, []);
+  }, [loadLeaveData]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -130,6 +133,21 @@ export function LeaveManagementPanel({
       window.clearInterval(intervalId);
     };
   }, []);
+
+  useEffect(() => {
+    if (!cooldownEndsAt || !isOnCooldown) {
+      return;
+    }
+
+    const timeoutMs = Math.max(0, cooldownEndsAt.getTime() - Date.now()) + 150;
+    const timeoutId = window.setTimeout(() => {
+      void loadLeaveData();
+    }, timeoutMs);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [cooldownEndsAt, isOnCooldown, loadLeaveData]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -168,8 +186,8 @@ export function LeaveManagementPanel({
   };
 
   return (
-    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_1.35fr]">
-      <div className="space-y-6">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Card>
           <CardHeader
             title="Apply For Leave"

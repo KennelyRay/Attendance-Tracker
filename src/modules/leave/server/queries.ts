@@ -30,7 +30,7 @@ export async function getPaidLeaveUsedDaysForYear(userId: number, year: number) 
   await ensureLeaveSystemSchema(pool);
   const result = await pool.query(
     `
-      SELECT COALESCE(SUM(total_days), 0) AS used
+      SELECT total_days, COALESCE(reviewed_at, created_at) AS approved_at
       FROM leave_requests
       WHERE user_id = $1
         AND status = 'approved'
@@ -40,7 +40,19 @@ export async function getPaidLeaveUsedDaysForYear(userId: number, year: number) 
     [userId, year]
   );
 
-  return Number(result.rows[0]?.used ?? 0);
+  const now = Date.now();
+
+  return (result.rows as Array<{ total_days: number | string; approved_at: string }>).reduce(
+    (total, row) => {
+      const cooldownEndsAt = new Date(row.approved_at).getTime() + TEST_LEAVE_COOLDOWN_MS;
+      if (cooldownEndsAt > now) {
+        return total + Number(row.total_days);
+      }
+
+      return total;
+    },
+    0
+  );
 }
 
 async function getLatestApprovedLeaveForType(userId: number, leaveType: string) {

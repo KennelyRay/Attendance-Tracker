@@ -82,24 +82,6 @@ export async function getPaidLeaveUsedDaysForYear(userId: number, year: number) 
   );
 }
 
-async function getLatestApprovedLeaveForType(userId: number, leaveType: string) {
-  const pool = getPool();
-  const result = await pool.query(
-    `
-      SELECT COALESCE(reviewed_at, created_at) AS approved_at
-      FROM leave_requests
-      WHERE user_id = $1
-        AND leave_type = $2
-        AND status = 'approved'
-      ORDER BY COALESCE(reviewed_at, created_at) DESC
-      LIMIT 1
-    `,
-    [userId, leaveType]
-  );
-
-  return result.rows[0]?.approved_at as string | undefined;
-}
-
 export async function getLeaveBalanceForUser(userId: number): Promise<LeaveBalance> {
   await releaseExpiredPaidLeaveDeductions(userId);
   const startDate = await getUserStartDate(userId);
@@ -288,17 +270,6 @@ export async function createLeaveRequestForUser(userId: number, input: CreateLea
 
   if (policy.minServiceMonths && getServiceMonths(startDateResult) < policy.minServiceMonths) {
     throw new Error(`${policy.label} requires at least ${policy.minServiceMonths} months of service`);
-  }
-
-  const latestApprovedAt = await getLatestApprovedLeaveForType(userId, input.leaveType);
-  if (latestApprovedAt) {
-    const cooldownEndDate = new Date(new Date(latestApprovedAt).getTime() + LEAVE_COOLDOWN_MS);
-
-    if (Date.now() < cooldownEndDate.getTime()) {
-      throw new Error(
-        `${policy.label} is still on a 13-week cooldown until ${cooldownEndDate.toLocaleDateString()}`
-      );
-    }
   }
 
   const overlapCount = await getApprovedOrPendingOverlapCount(userId, input.startDate, input.endDate);

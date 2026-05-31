@@ -35,30 +35,6 @@ function addMilliseconds(dateString: string, milliseconds: number) {
   return new Date(new Date(dateString).getTime() + milliseconds);
 }
 
-function formatCountdown(milliseconds: number) {
-  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
-  const weeks = Math.floor(totalSeconds / (7 * 24 * 60 * 60));
-  const days = Math.floor((totalSeconds % (7 * 24 * 60 * 60)) / (24 * 60 * 60));
-  const hours = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60));
-
-  if (weeks > 0) {
-    return `${weeks}w ${days}d`;
-  }
-
-  if (days > 0) {
-    return `${days}d ${hours}h`;
-  }
-
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-
-  if (minutes > 0) {
-    return `${minutes}m ${String(seconds).padStart(2, '0')}s`;
-  }
-
-  return `${totalSeconds}s`;
-}
-
 export function LeaveManagementPanel({
   initialBalance,
   initialRequests,
@@ -88,23 +64,17 @@ export function LeaveManagementPanel({
       // Keep the last successful state if background refresh fails.
     }
   }, []);
-  const latestApprovedForSelectedType = useMemo(() => {
-    return requests
-      .filter((request) => request.leave_type === leaveType && request.status === 'approved')
-      .sort(
-        (left, right) =>
-          new Date(right.reviewed_at ?? right.created_at).getTime() -
-          new Date(left.reviewed_at ?? left.created_at).getTime()
-      )[0];
-  }, [leaveType, requests]);
-  const cooldownEndsAt = latestApprovedForSelectedType
-    ? addMilliseconds(
-        latestApprovedForSelectedType.reviewed_at ?? latestApprovedForSelectedType.created_at,
-        LEAVE_COOLDOWN_MS
+  const nextBalanceRefreshAt = useMemo(() => {
+    const futureCooldownEndTimes = requests
+      .filter((request) => request.status === 'approved' && request.deduct_from_paid_balance)
+      .map((request) =>
+        addMilliseconds(request.reviewed_at ?? request.created_at, LEAVE_COOLDOWN_MS).getTime()
       )
-    : null;
-  const cooldownRemainingMs = cooldownEndsAt ? cooldownEndsAt.getTime() - now : 0;
-  const isOnCooldown = cooldownRemainingMs > 0;
+      .filter((endTime) => endTime > now)
+      .sort((left, right) => left - right);
+
+    return futureCooldownEndTimes.length > 0 ? new Date(futureCooldownEndTimes[0]) : null;
+  }, [now, requests]);
 
   useEffect(() => {
     let cancelled = false;
@@ -145,11 +115,11 @@ export function LeaveManagementPanel({
   }, []);
 
   useEffect(() => {
-    if (!cooldownEndsAt || !isOnCooldown) {
+    if (!nextBalanceRefreshAt) {
       return;
     }
 
-    const timeoutMs = Math.max(0, cooldownEndsAt.getTime() - Date.now()) + 150;
+    const timeoutMs = Math.max(0, nextBalanceRefreshAt.getTime() - Date.now()) + 150;
     if (timeoutMs > MAX_TIMEOUT_MS) {
       return;
     }
@@ -161,7 +131,7 @@ export function LeaveManagementPanel({
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [cooldownEndsAt, isOnCooldown, loadLeaveData]);
+  }, [loadLeaveData, nextBalanceRefreshAt]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -232,16 +202,10 @@ export function LeaveManagementPanel({
                 <div className="mt-2 text-xs leading-5 text-slate-500">{selectedPolicy.filing}</div>
               </div>
 
-              {isOnCooldown && cooldownEndsAt ? (
-                <div className="rounded-2xl border border-amber-400/15 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 ring-1 ring-inset ring-amber-400/20">
-                  {selectedPolicy.label} is on a 13-week cooldown and refreshes in{' '}
-                  {formatCountdown(cooldownRemainingMs)}.
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-emerald-400/15 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100 ring-1 ring-inset ring-emerald-400/20">
-                  {selectedPolicy.label} is currently available to request.
-                </div>
-              )}
+              <div className="rounded-2xl border border-emerald-400/15 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100 ring-1 ring-inset ring-emerald-400/20">
+                You can request leave while you still meet the policy rules and have remaining
+                balance. Any approved paid leave deduction refreshes after 13 weeks.
+              </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>

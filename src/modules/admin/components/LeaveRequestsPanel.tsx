@@ -32,8 +32,9 @@ export function LeaveRequestsPanel({
   onRefresh: () => Promise<void>;
 }) {
   const [busyRequestId, setBusyRequestId] = useState<number | null>(null);
-  const [notesByRequest, setNotesByRequest] = useState<Record<number, string>>({});
   const [actionError, setActionError] = useState<string | null>(null);
+  const [pendingRejectRequest, setPendingRejectRequest] = useState<AdminLeaveRequest | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   const grouped = useMemo(() => {
     return {
@@ -50,8 +51,34 @@ export function LeaveRequestsPanel({
       await onReview({
         requestId,
         action,
-        adminNotes: notesByRequest[requestId]?.trim() || undefined,
       });
+    } catch (reviewError) {
+      setActionError(reviewError instanceof Error ? reviewError.message : 'Failed to review leave request');
+    } finally {
+      setBusyRequestId(null);
+    }
+  };
+
+  const reject = async () => {
+    if (!pendingRejectRequest) return;
+
+    const trimmedReason = rejectReason.trim();
+    if (!trimmedReason) {
+      setActionError('Please provide a rejection reason before rejecting the leave request');
+      return;
+    }
+
+    setActionError(null);
+    setBusyRequestId(pendingRejectRequest.id);
+
+    try {
+      await onReview({
+        requestId: pendingRejectRequest.id,
+        action: 'reject',
+        adminNotes: trimmedReason,
+      });
+      setPendingRejectRequest(null);
+      setRejectReason('');
     } catch (reviewError) {
       setActionError(reviewError instanceof Error ? reviewError.message : 'Failed to review leave request');
     } finally {
@@ -195,27 +222,19 @@ export function LeaveRequestsPanel({
                     </div>
 
                     {request.status === 'pending' ? (
-                      <div className="mt-4 space-y-3">
-                        <textarea
-                          value={notesByRequest[request.id] ?? ''}
-                          onChange={(event) =>
-                            setNotesByRequest((current) => ({
-                              ...current,
-                              [request.id]: event.target.value,
-                            }))
-                          }
-                          rows={3}
-                          className="w-full rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-2.5 text-sm text-slate-100 shadow-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/70"
-                          placeholder="Optional admin note for approval or rejection."
-                        />
+                      <div className="mt-4">
                         <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                           <Button
                             className="w-full sm:w-auto"
                             variant="danger"
                             disabled={isBusy}
-                            onClick={() => review(request.id, 'reject')}
+                            onClick={() => {
+                              setActionError(null);
+                              setPendingRejectRequest(request);
+                              setRejectReason('');
+                            }}
                           >
-                            {isBusy ? 'Please wait...' : 'Reject'}
+                            Reject
                           </Button>
                           <Button
                             className="w-full sm:w-auto"
@@ -239,6 +258,63 @@ export function LeaveRequestsPanel({
           )}
         </CardBody>
       </Card>
+
+      {pendingRejectRequest ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
+            <div className="text-lg font-semibold text-slate-100">Reject Leave Request</div>
+            <div className="mt-2 text-sm leading-6 text-slate-400">
+              Add the reason for rejecting {pendingRejectRequest.user_name}&apos;s leave request.
+            </div>
+            <div className="mt-4 rounded-xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300 ring-1 ring-inset ring-slate-800">
+              <div>
+                <span className="font-medium text-slate-100">Leave Type:</span>{' '}
+                {getLeavePolicy(pendingRejectRequest.leave_type).label}
+              </div>
+              <div className="mt-2">
+                <span className="font-medium text-slate-100">Date Range:</span>{' '}
+                {new Date(pendingRejectRequest.start_date).toLocaleDateString()} to{' '}
+                {new Date(pendingRejectRequest.end_date).toLocaleDateString()}
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="text-sm font-medium text-slate-300">Rejection Reason</div>
+              <div className="mt-1">
+                <textarea
+                  value={rejectReason}
+                  onChange={(event) => setRejectReason(event.target.value)}
+                  rows={4}
+                  className="w-full rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-2.5 text-sm text-slate-100 shadow-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/70"
+                  placeholder="Explain why this leave request is being rejected."
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end sm:gap-3">
+              <Button
+                className="w-full sm:w-auto"
+                variant="secondary"
+                onClick={() => {
+                  if (busyRequestId !== pendingRejectRequest.id) {
+                    setPendingRejectRequest(null);
+                    setRejectReason('');
+                  }
+                }}
+                disabled={busyRequestId === pendingRejectRequest.id}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="w-full sm:w-auto"
+                variant="danger"
+                onClick={reject}
+                disabled={busyRequestId === pendingRejectRequest.id}
+              >
+                {busyRequestId === pendingRejectRequest.id ? 'Please wait...' : 'Reject Request'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

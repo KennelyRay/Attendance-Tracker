@@ -1,12 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import { createLeaveRequest } from '@/modules/employee/api';
+import { createLeaveRequest, fetchMyLeaveData } from '@/modules/employee/api';
 import { leavePolicies, getLeavePolicy } from '@/modules/leave/policy';
 import type {
   CreateLeaveRequestInput,
@@ -15,6 +15,8 @@ import type {
   LeaveRequestStatus,
   LeaveType,
 } from '@/modules/leave/types';
+
+const TEST_LEAVE_COOLDOWN_MS = 20 * 1000;
 
 function statusClass(status: LeaveRequestStatus) {
   switch (status) {
@@ -25,6 +27,26 @@ function statusClass(status: LeaveRequestStatus) {
     default:
       return 'bg-amber-500/12 text-amber-300 ring-1 ring-inset ring-amber-400/20';
   }
+}
+
+function addMilliseconds(dateString: string, milliseconds: number) {
+  return new Date(new Date(dateString).getTime() + milliseconds);
+}
+
+function formatDate(value: string | Date) {
+  return new Date(value).toLocaleDateString();
+}
+
+function formatCountdown(milliseconds: number) {
+  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  if (minutes > 0) {
+    return `${minutes}m ${String(seconds).padStart(2, '0')}s`;
+  }
+
+  return `${totalSeconds}s`;
 }
 
 export function LeaveManagementPanel({
@@ -43,23 +65,92 @@ export function LeaveManagementPanel({
   const [deductFromPaidBalance, setDeductFromPaidBalance] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingSubmission, setPendingSubmission] = useState<CreateLeaveRequestInput | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const selectedPolicy = useMemo(() => getLeavePolicy(leaveType), [leaveType]);
+  const latestApprovedForSelectedType = useMemo(() => {
+    return requests
+      .filter((request) => request.leave_type === leaveType && request.status === 'approved')
+      .sort(
+        (left, right) =>
+          new Date(right.reviewed_at ?? right.created_at).getTime() -
+          new Date(left.reviewed_at ?? left.created_at).getTime()
+      )[0];
+  }, [leaveType, requests]);
+  const cooldownEndsAt = latestApprovedForSelectedType
+    ? addMilliseconds(
+        latestApprovedForSelectedType.reviewed_at ?? latestApprovedForSelectedType.created_at,
+        TEST_LEAVE_COOLDOWN_MS
+      )
+    : null;
+  const cooldownRemainingMs = cooldownEndsAt ? cooldownEndsAt.getTime() - now : 0;
+  const isOnCooldown = cooldownRemainingMs > 0;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadLeaveData = async () => {
+      try {
+        const data = await fetchMyLeaveData();
+        if (cancelled) return;
+        setBalance(data.balance);
+        setRequests(data.requests);
+      } catch {
+        // Keep the last successful state if background refresh fails.
+      }
+    };
+
+    void loadLeaveData();
+    const intervalId = window.setInterval(() => {
+      void loadLeaveData();
+    }, 10000);
+
+    const handleFocus = () => {
+      void loadLeaveData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
+  }, []);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
+
+    setPendingSubmission({
+      leaveType,
+      startDate,
+      endDate,
+      reason,
+      deductFromPaidBalance,
+    });
+  };
+
+  const confirmSubmit = async () => {
+    if (!pendingSubmission) return;
+
     setIsSubmitting(true);
 
     try {
-      const payload: CreateLeaveRequestInput = {
-        leaveType,
-        startDate,
-        endDate,
-        reason,
-        deductFromPaidBalance,
-      };
-
-      const response = await createLeaveRequest(payload);
+      const response = await createLeaveRequest(pendingSubmission);
       setRequests((current) => [response.request, ...current]);
       setBalance(response.balance);
       setStartDate('');
@@ -67,6 +158,8 @@ export function LeaveManagementPanel({
       setReason('');
       setDeductFromPaidBalance(false);
       setLeaveType('paid-leave');
+      setPendingSubmission(null);
+      setSuccessMessage('Your leave request has been submitted and is now pending admin review.');
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Failed to submit leave request');
     } finally {
@@ -77,47 +170,6 @@ export function LeaveManagementPanel({
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_1.35fr]">
       <div className="space-y-6">
-        <Card>
-          <CardHeader
-            title="Leave Balance"
-            subtitle="Your paid leave entitlement updates automatically from your years of service."
-          />
-          <CardBody>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-sky-500/10 px-4 py-4 ring-1 ring-inset ring-sky-400/20">
-                <div className="text-xs font-semibold uppercase tracking-wide text-sky-300">
-                  Remaining
-                </div>
-                <div className="mt-2 text-2xl font-semibold text-slate-50">{balance.remaining}</div>
-              </div>
-              <div className="rounded-2xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Used
-                </div>
-                <div className="mt-2 text-2xl font-semibold text-slate-50">{balance.used}</div>
-              </div>
-              <div className="rounded-2xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Annual Entitlement
-                </div>
-                <div className="mt-2 text-2xl font-semibold text-slate-50">
-                  {balance.annualEntitlement}
-                </div>
-              </div>
-              <div className="rounded-2xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Years Of Service
-                </div>
-                <div className="mt-2 text-2xl font-semibold text-slate-50">{balance.serviceYears}</div>
-              </div>
-            </div>
-            <div className="mt-4 text-sm leading-6 text-slate-400">
-              Start date: {new Date(balance.startDate).toLocaleDateString()}. Paid leave starts at 5
-              days and grows by 1 day for every completed year of service.
-            </div>
-          </CardBody>
-        </Card>
-
         <Card>
           <CardHeader
             title="Apply For Leave"
@@ -147,6 +199,17 @@ export function LeaveManagementPanel({
                 <div className="mt-3 text-sm text-sky-300">{selectedPolicy.daysLabel}</div>
                 <div className="mt-2 text-xs leading-5 text-slate-500">{selectedPolicy.filing}</div>
               </div>
+
+              {isOnCooldown && cooldownEndsAt ? (
+                <div className="rounded-2xl border border-amber-400/15 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 ring-1 ring-inset ring-amber-400/20">
+                  {selectedPolicy.label} is on a test cooldown and refreshes in{' '}
+                  {formatCountdown(cooldownRemainingMs)}.
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-emerald-400/15 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100 ring-1 ring-inset ring-emerald-400/20">
+                  {selectedPolicy.label} is currently available to request.
+                </div>
+              )}
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
@@ -215,10 +278,51 @@ export function LeaveManagementPanel({
 
               <div className="flex justify-end">
                 <Button className="w-full sm:w-auto" type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Submitting...' : 'Submit Leave Request'}
+                  Review Leave Request
                 </Button>
               </div>
             </form>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Leave Balance"
+            subtitle="Your paid leave entitlement updates automatically from your years of service."
+          />
+          <CardBody>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl bg-sky-500/10 px-4 py-4 ring-1 ring-inset ring-sky-400/20">
+                <div className="text-xs font-semibold uppercase tracking-wide text-sky-300">
+                  Remaining
+                </div>
+                <div className="mt-2 text-2xl font-semibold text-slate-50">{balance.remaining}</div>
+              </div>
+              <div className="rounded-2xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Used
+                </div>
+                <div className="mt-2 text-2xl font-semibold text-slate-50">{balance.used}</div>
+              </div>
+              <div className="rounded-2xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Annual Entitlement
+                </div>
+                <div className="mt-2 text-2xl font-semibold text-slate-50">
+                  {balance.annualEntitlement}
+                </div>
+              </div>
+              <div className="rounded-2xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Years Of Service
+                </div>
+                <div className="mt-2 text-2xl font-semibold text-slate-50">{balance.serviceYears}</div>
+              </div>
+            </div>
+            <div className="mt-4 text-sm leading-6 text-slate-400">
+              Start date: {formatDate(balance.startDate)}. Paid leave starts at 5 days and grows by
+              1 day for every completed year of service.
+            </div>
           </CardBody>
         </Card>
       </div>
@@ -299,6 +403,72 @@ export function LeaveManagementPanel({
           )}
         </CardBody>
       </Card>
+
+      {pendingSubmission ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
+            <div className="text-lg font-semibold text-slate-100">Confirm Leave Request</div>
+            <div className="mt-2 text-sm leading-6 text-slate-400">
+              Please confirm the details before sending your leave request for approval.
+            </div>
+            <div className="mt-4 rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+              <div className="text-sm text-slate-300">
+                <span className="font-medium text-slate-100">Leave Type:</span>{' '}
+                {getLeavePolicy(pendingSubmission.leaveType).label}
+              </div>
+              <div className="mt-2 text-sm text-slate-300">
+                <span className="font-medium text-slate-100">Date Range:</span>{' '}
+                {formatDate(pendingSubmission.startDate)} to {formatDate(pendingSubmission.endDate)}
+              </div>
+              <div className="mt-2 text-sm text-slate-300">
+                <span className="font-medium text-slate-100">Paid Balance:</span>{' '}
+                {pendingSubmission.deductFromPaidBalance ||
+                getLeavePolicy(pendingSubmission.leaveType).requiresPaidBalance
+                  ? 'This request deducts from your paid leave balance'
+                  : 'This request does not deduct from your paid leave balance'}
+              </div>
+              <div className="mt-2 text-sm text-slate-300">
+                <span className="font-medium text-slate-100">Reason:</span> {pendingSubmission.reason}
+              </div>
+            </div>
+            <div className="mt-6 flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end sm:gap-3">
+              <Button
+                className="w-full sm:w-auto"
+                variant="secondary"
+                onClick={() => {
+                  if (!isSubmitting) {
+                    setPendingSubmission(null);
+                  }
+                }}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="w-full sm:w-auto"
+                onClick={confirmSubmit}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit Leave Request'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {successMessage ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
+            <div className="text-lg font-semibold text-slate-100">Leave Request Sent</div>
+            <div className="mt-2 text-sm leading-6 text-slate-400">{successMessage}</div>
+            <div className="mt-6 flex justify-end">
+              <Button className="w-full sm:w-auto" onClick={() => setSuccessMessage(null)}>
+                OK
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

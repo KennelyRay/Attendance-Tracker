@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -254,6 +254,38 @@ export function AdminDashboardClient({
     }
   };
 
+  useEffect(() => {
+    if (activeTab !== 'leave') {
+      return;
+    }
+
+    let cancelled = false;
+
+    const refresh = async () => {
+      if (cancelled) return;
+      await loadLeaveRequests();
+    };
+
+    void refresh();
+    const intervalId = window.setInterval(() => {
+      void refresh();
+    }, 10000);
+
+    const handleFocus = () => {
+      void refresh();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
+  }, [activeTab]);
+
   if (error) {
     return (
       <EmptyState
@@ -322,10 +354,7 @@ export function AdminDashboardClient({
         <Button
           className="w-full sm:w-auto"
           variant={activeTab === 'leave' ? 'primary' : 'secondary'}
-          onClick={async () => {
-            setActiveTab('leave');
-            await loadLeaveRequests();
-          }}
+          onClick={() => setActiveTab('leave')}
         >
           Leave Requests
         </Button>

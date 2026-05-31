@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
 import { getSessionData } from '@/lib/session';
 import { ensureUserAccessColumns } from '@/lib/user-access';
+import { normalizeDateOnly } from '@/modules/leave/utils';
 
 export async function GET() {
   try {
@@ -35,7 +36,7 @@ export async function GET() {
         name: user.name,
         email: user.email,
         position: user.position,
-        startDate: user.start_date,
+        startDate: normalizeDateOnly(user.start_date),
       },
     });
   } catch (error) {

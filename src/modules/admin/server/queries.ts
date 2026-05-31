@@ -1,6 +1,7 @@
 import { getPool } from '@/lib/db';
 import { ensureUserAccessColumns } from '@/lib/user-access';
 import type { AdminAttendanceRecord, Employee } from '@/modules/admin/types';
+import { normalizeDateOnly } from '@/modules/leave/utils';
 
 export async function listEmployees(): Promise<Employee[]> {
   const pool = getPool();
@@ -13,7 +14,10 @@ export async function listEmployees(): Promise<Employee[]> {
       ORDER BY name
     `
   );
-  return result.rows as Employee[];
+  return result.rows.map((row) => ({
+    ...row,
+    start_date: normalizeDateOnly(row.start_date),
+  })) as Employee[];
 }
 
 export async function getAttendanceHistoryForEmployee(

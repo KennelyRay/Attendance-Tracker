@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { createLeaveRequest, fetchMyLeaveData } from '@/modules/employee/api';
 import { leavePolicies, getLeavePolicy } from '@/modules/leave/policy';
+import { formatDateOnly } from '@/modules/leave/utils';
 import type {
   CreateLeaveRequestInput,
   LeaveBalance,
@@ -31,10 +32,6 @@ function statusClass(status: LeaveRequestStatus) {
 
 function addMilliseconds(dateString: string, milliseconds: number) {
   return new Date(new Date(dateString).getTime() + milliseconds);
-}
-
-function formatDate(value: string | Date) {
-  return new Date(value).toLocaleDateString();
 }
 
 function formatCountdown(milliseconds: number) {
@@ -338,8 +335,8 @@ export function LeaveManagementPanel({
               </div>
             </div>
             <div className="mt-4 text-sm leading-6 text-slate-400">
-              Start date: {formatDate(balance.startDate)}. Paid leave starts at 5 days and grows by
-              1 day for every completed year of service.
+              Start date: {formatDateOnly(balance.startDate)}. Paid leave starts at 5 days and grows
+              by 1 day for every completed year of service.
             </div>
           </CardBody>
         </Card>
@@ -370,8 +367,7 @@ export function LeaveManagementPanel({
                       <div>
                         <div className="text-base font-semibold text-slate-100">{policy.label}</div>
                         <div className="mt-1 text-sm text-slate-400">
-                          {new Date(request.start_date).toLocaleDateString()} to{' '}
-                          {new Date(request.end_date).toLocaleDateString()}
+                          {formatDateOnly(request.start_date)} to {formatDateOnly(request.end_date)}
                         </div>
                       </div>
                       <span
@@ -436,7 +432,8 @@ export function LeaveManagementPanel({
               </div>
               <div className="mt-2 text-sm text-slate-300">
                 <span className="font-medium text-slate-100">Date Range:</span>{' '}
-                {formatDate(pendingSubmission.startDate)} to {formatDate(pendingSubmission.endDate)}
+                {formatDateOnly(pendingSubmission.startDate)} to{' '}
+                {formatDateOnly(pendingSubmission.endDate)}
               </div>
               <div className="mt-2 text-sm text-slate-300">
                 <span className="font-medium text-slate-100">Paid Balance:</span>{' '}

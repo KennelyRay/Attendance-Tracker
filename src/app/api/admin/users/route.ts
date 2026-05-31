@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
 import { getSessionData } from '@/lib/session';
 import { ensureUserAccessColumns } from '@/lib/user-access';
+import { normalizeDateOnly } from '@/modules/leave/utils';
 
 function parseStartDate(value: unknown) {
   const cleanValue = typeof value === 'string' ? value.trim() : '';
@@ -40,7 +41,10 @@ async function listEmployeeUsers() {
       ORDER BY name
     `
   );
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    start_date: normalizeDateOnly(row.start_date),
+  }));
 }
 
 export async function GET() {
@@ -98,7 +102,15 @@ export async function POST(request: NextRequest) {
       [cleanName, cleanEmail, hashedPassword, cleanPosition, cleanStartDate]
     );
 
-    return NextResponse.json({ user: result.rows[0] }, { status: 201 });
+    return NextResponse.json(
+      {
+        user: {
+          ...result.rows[0],
+          start_date: normalizeDateOnly(result.rows[0]?.start_date),
+        },
+      },
+      { status: 201 }
+    );
   } catch (error) {
     if (error instanceof Error && /duplicate key/i.test(error.message)) {
       return NextResponse.json({ error: 'Email already exists' }, { status: 409 });
@@ -151,7 +163,12 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Employee account not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ user: result.rows[0] });
+    return NextResponse.json({
+      user: {
+        ...result.rows[0],
+        start_date: normalizeDateOnly(result.rows[0]?.start_date),
+      },
+    });
   } catch (error) {
     if (error instanceof Error && /duplicate key/i.test(error.message)) {
       return NextResponse.json({ error: 'Email already exists' }, { status: 409 });
@@ -226,7 +243,12 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Employee account not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ user: result.rows[0] });
+    return NextResponse.json({
+      user: {
+        ...result.rows[0],
+        start_date: normalizeDateOnly(result.rows[0]?.start_date),
+      },
+    });
   } catch (error) {
     console.error('Update user access error:', error);
     return NextResponse.json(

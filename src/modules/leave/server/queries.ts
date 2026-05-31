@@ -10,6 +10,7 @@ import type {
 } from '@/modules/leave/types';
 import {
   countBusinessDays,
+  normalizeDateOnly,
   getAnnualPaidLeaveEntitlement,
   getServiceMonths,
   getServiceYears,
@@ -47,7 +48,8 @@ async function getUserStartDate(userId: number) {
   const pool = getPool();
   await ensureLeaveSystemSchema(pool);
   const result = await pool.query('SELECT start_date FROM users WHERE id = $1', [userId]);
-  return result.rows[0]?.start_date as string | undefined;
+  const normalizedStartDate = normalizeDateOnly(result.rows[0]?.start_date);
+  return normalizedStartDate ?? undefined;
 }
 
 export async function getPaidLeaveUsedDaysForYear(userId: number, year: number) {

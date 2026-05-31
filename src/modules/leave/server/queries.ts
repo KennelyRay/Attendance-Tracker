@@ -18,6 +18,31 @@ import {
 
 const TEST_LEAVE_COOLDOWN_MS = 20 * 1000;
 
+async function releaseExpiredPaidLeaveDeductions(userId?: number) {
+  const pool = getPool();
+  await ensureLeaveSystemSchema(pool);
+
+  const params: Array<number> = [TEST_LEAVE_COOLDOWN_MS];
+  const userFilter = typeof userId === 'number' ? 'AND user_id = $2' : '';
+
+  if (typeof userId === 'number') {
+    params.push(userId);
+  }
+
+  await pool.query(
+    `
+      UPDATE leave_requests
+      SET deduct_from_paid_balance = FALSE
+      WHERE status = 'approved'
+        AND deduct_from_paid_balance = TRUE
+        ${userFilter}
+        AND COALESCE(reviewed_at, created_at)
+          <= CURRENT_TIMESTAMP - (($1 || ' milliseconds')::interval)
+    `,
+    params
+  );
+}
+
 async function getUserStartDate(userId: number) {
   const pool = getPool();
   await ensureLeaveSystemSchema(pool);
@@ -74,6 +99,7 @@ async function getLatestApprovedLeaveForType(userId: number, leaveType: string) 
 }
 
 export async function getLeaveBalanceForUser(userId: number): Promise<LeaveBalance> {
+  await releaseExpiredPaidLeaveDeductions(userId);
   const startDate = await getUserStartDate(userId);
 
   if (!startDate) {
@@ -94,6 +120,7 @@ export async function getLeaveBalanceForUser(userId: number): Promise<LeaveBalan
 }
 
 export async function listLeaveRequestsForUser(userId: number): Promise<LeaveRequest[]> {
+  await releaseExpiredPaidLeaveDeductions(userId);
   const pool = getPool();
   await ensureLeaveSystemSchema(pool);
   const result = await pool.query(
@@ -123,6 +150,7 @@ export async function listLeaveRequestsForUser(userId: number): Promise<LeaveReq
 }
 
 export async function listLeaveRequestsForAdmin(): Promise<AdminLeaveRequest[]> {
+  await releaseExpiredPaidLeaveDeductions();
   const pool = getPool();
   await ensureLeaveSystemSchema(pool);
   const result = await pool.query(
@@ -234,6 +262,7 @@ function validateLeaveInput(input: CreateLeaveRequestInput) {
 
 export async function createLeaveRequestForUser(userId: number, input: CreateLeaveRequestInput) {
   validateLeaveInput(input);
+  await releaseExpiredPaidLeaveDeductions(userId);
 
   const pool = getPool();
   await ensureLeaveSystemSchema(pool);
@@ -399,6 +428,7 @@ async function markApprovedLeaveInAttendance(
 }
 
 export async function reviewLeaveRequest(adminId: number, input: ReviewLeaveRequestInput) {
+  await releaseExpiredPaidLeaveDeductions();
   const requestId = Number(input.requestId);
 
   if (!Number.isInteger(requestId)) {

@@ -117,3 +117,64 @@ body {
 .animate-lightning-flicker {
   animation: lightning-flicker 6.5s linear infinite;
 }
+
+@keyframes ambient-loader-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: translate3d(0, 0, 0) scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1.08);
+  }
+}
+
+@keyframes ambient-loader-orb {
+  0%,
+  100% {
+    opacity: 0.32;
+    transform: translate3d(0, 0, 0) scale(0.96);
+  }
+  50% {
+    opacity: 0.72;
+    transform: translate3d(0, -8px, 0) scale(1.08);
+  }
+}
+
+@keyframes ambient-loader-sweep {
+  0% {
+    transform: translate3d(-130%, 0, 0);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 0.25;
+  }
+  100% {
+    transform: translate3d(420%, 0, 0);
+    opacity: 0;
+  }
+}
+
+.animate-ambient-loader-pulse {
+  animation: ambient-loader-pulse 1.4s ease-in-out infinite;
+}
+
+.animate-ambient-loader-orb {
+  animation: ambient-loader-orb 4.6s ease-in-out infinite;
+}
+
+.animate-ambient-loader-orb-delayed {
+  animation: ambient-loader-orb 5.2s ease-in-out infinite;
+  animation-delay: 0.7s;
+}
+
+.animate-ambient-loader-sweep {
+  animation: ambient-loader-sweep 2.35s ease-in-out infinite;
+}

@@ -20,8 +20,8 @@ export function MonthYearPicker({
   const years = Array.from({ length: 5 }, (_, i) => String(currentYear - 2 + i));
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="w-44">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="w-full sm:w-44">
         <Select value={month} onChange={(e) => onChangeMonth(e.target.value)}>
           {months.map((m) => (
             <option key={m} value={m}>
@@ -32,7 +32,7 @@ export function MonthYearPicker({
           ))}
         </Select>
       </div>
-      <div className="w-28">
+      <div className="w-full sm:w-28">
         <Select value={year} onChange={(e) => onChangeYear(e.target.value)}>
           {years.map((y) => (
             <option key={y} value={y}>
@@ -44,4 +44,3 @@ export function MonthYearPicker({
     </div>
   );
 }
-

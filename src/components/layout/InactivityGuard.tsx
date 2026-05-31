@@ -133,11 +133,11 @@ export function InactivityGuard() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl border border-sky-400/15 bg-slate-950/95 p-6 shadow-[0_28px_80px_rgba(2,8,23,0.65)] ring-1 ring-inset ring-white/5">
+      <div className="w-full max-w-md rounded-3xl border border-sky-400/15 bg-slate-950/95 p-4 shadow-[0_28px_80px_rgba(2,8,23,0.65)] ring-1 ring-inset ring-white/5 sm:p-6">
         <div className="inline-flex items-center rounded-full bg-amber-500/12 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-300 ring-1 ring-inset ring-amber-400/20">
           Inactivity Warning
         </div>
-        <div className="mt-4 text-xl font-semibold text-slate-50">
+        <div className="mt-4 text-lg font-semibold text-slate-50 sm:text-xl">
           You will be logged out soon
         </div>
         <div className="mt-3 text-sm leading-6 text-slate-400">
@@ -154,11 +154,11 @@ export function InactivityGuard() {
             }}
           />
         </div>
-        <div className="mt-6 flex justify-end gap-3">
-          <Button variant="secondary" onClick={() => void forceLogout()}>
+        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <Button className="w-full sm:w-auto" variant="secondary" onClick={() => void forceLogout()}>
             Logout Now
           </Button>
-          <Button onClick={acknowledgeWarning}>Stay Logged In</Button>
+          <Button className="w-full sm:w-auto" onClick={acknowledgeWarning}>Stay Logged In</Button>
         </div>
       </div>
     </div>

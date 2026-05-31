@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import type { SessionUser } from '@/lib/session';
 
@@ -13,10 +13,17 @@ export function TopNav({
   title: string;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isEmployee = !user.isAdmin;
+  const isLeavePolicyPage = pathname === '/employee/leave-policy';
 
   const onLogout = async () => {
     await fetch('/api/logout', { method: 'POST' });
     router.push('/login');
+  };
+
+  const onPolicyNavigate = () => {
+    router.push(isLeavePolicyPage ? '/employee/dashboard' : '/employee/leave-policy');
   };
 
   const initials = user.name
@@ -28,34 +35,44 @@ export function TopNav({
 
   return (
     <header className="sticky top-0 z-10 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/80 ring-1 ring-inset ring-sky-400/15 shadow-[0_10px_24px_rgba(34,211,238,0.18)]">
+      <div className="mx-auto flex max-w-7xl flex-col gap-2 px-3 py-2.5 sm:h-16 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-0 lg:px-8">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900/80 ring-1 ring-inset ring-sky-400/15 shadow-[0_10px_24px_rgba(34,211,238,0.18)] sm:h-9 sm:w-9">
             <Image
               src="/ATIconFInal.png"
               alt="Attendance Tracker logo"
               width={32}
               height={32}
-              className="h-8 w-8 object-contain"
+              className="h-7 w-7 object-contain sm:h-8 sm:w-8"
             />
           </div>
-          <div>
-            <div className="text-sm font-semibold text-slate-100">{title}</div>
-            <div className="text-xs text-slate-400">
+          <div className="min-w-0">
+            <div className="truncate text-[13px] font-semibold text-slate-100 sm:text-sm">{title}</div>
+            <div className="truncate text-[11px] text-slate-400 sm:text-xs">
               {user.name} · {user.isAdmin ? 'Admin' : 'Employee'}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="hidden items-center gap-2 rounded-full bg-slate-900/90 px-2 py-1 ring-1 ring-inset ring-slate-700/80 sm:flex">
+        <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end sm:gap-3">
+          <div className="flex min-w-0 items-center gap-2 rounded-full bg-slate-900/90 px-2 py-1 ring-1 ring-inset ring-slate-700/80 sm:flex">
             <div className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-sky-400 to-cyan-300 text-xs font-semibold text-slate-950">
               {initials || 'U'}
             </div>
-            <div className="pr-1 text-xs font-medium text-slate-300">
+            <div className="hidden max-w-[7.5rem] truncate pr-1 text-[11px] font-medium text-slate-300 min-[380px]:block sm:max-w-[12rem] sm:text-xs">
               {user.email}
             </div>
           </div>
-          <Button variant="danger" size="sm" onClick={onLogout}>
+          {isEmployee ? (
+            <Button
+              className="shrink-0 px-2.5 sm:px-3"
+              variant="secondary"
+              size="sm"
+              onClick={onPolicyNavigate}
+            >
+              {isLeavePolicyPage ? 'Dashboard' : 'Leave Policy'}
+            </Button>
+          ) : null}
+          <Button className="shrink-0 px-2.5 sm:px-3" variant="danger" size="sm" onClick={onLogout}>
             Logout
           </Button>
         </div>

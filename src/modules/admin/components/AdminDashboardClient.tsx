@@ -241,31 +241,32 @@ export function AdminDashboardClient({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-sky-400/12 bg-sky-500/8 px-5 py-4 ring-1 ring-inset ring-sky-400/10">
-          <div className="text-xs font-semibold uppercase tracking-wide text-sky-300">Total Employees</div>
-          <div className="mt-2 text-2xl font-semibold text-slate-50">{adminStats.total}</div>
-          <div className="mt-1 text-sm text-slate-400">Accounts currently tracked by admin</div>
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+        <div className="rounded-2xl border border-sky-400/12 bg-sky-500/8 px-3 py-3 ring-1 ring-inset ring-sky-400/10 sm:px-5 sm:py-4">
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-sky-300 sm:text-xs">Total Employees</div>
+          <div className="mt-1.5 text-xl font-semibold text-slate-50 sm:mt-2 sm:text-2xl">{adminStats.total}</div>
+          <div className="mt-1 text-[11px] leading-4 text-slate-400 sm:text-sm sm:leading-5">Accounts currently tracked by admin</div>
         </div>
-        <div className="rounded-2xl border border-emerald-400/12 bg-emerald-500/8 px-5 py-4 ring-1 ring-inset ring-emerald-400/10">
-          <div className="text-xs font-semibold uppercase tracking-wide text-emerald-300">Active</div>
-          <div className="mt-2 text-2xl font-semibold text-slate-50">{adminStats.active}</div>
-          <div className="mt-1 text-sm text-slate-400">Employees with normal access</div>
+        <div className="rounded-2xl border border-emerald-400/12 bg-emerald-500/8 px-3 py-3 ring-1 ring-inset ring-emerald-400/10 sm:px-5 sm:py-4">
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300 sm:text-xs">Active</div>
+          <div className="mt-1.5 text-xl font-semibold text-slate-50 sm:mt-2 sm:text-2xl">{adminStats.active}</div>
+          <div className="mt-1 text-[11px] leading-4 text-slate-400 sm:text-sm sm:leading-5">Employees with normal access</div>
         </div>
-        <div className="rounded-2xl border border-amber-400/12 bg-amber-500/8 px-5 py-4 ring-1 ring-inset ring-amber-400/10">
-          <div className="text-xs font-semibold uppercase tracking-wide text-amber-300">Restricted</div>
-          <div className="mt-2 text-2xl font-semibold text-slate-50">{adminStats.restricted}</div>
-          <div className="mt-1 text-sm text-slate-400">Employees with temporary login blocks</div>
+        <div className="rounded-2xl border border-amber-400/12 bg-amber-500/8 px-3 py-3 ring-1 ring-inset ring-amber-400/10 sm:px-5 sm:py-4">
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-300 sm:text-xs">Restricted</div>
+          <div className="mt-1.5 text-xl font-semibold text-slate-50 sm:mt-2 sm:text-2xl">{adminStats.restricted}</div>
+          <div className="mt-1 text-[11px] leading-4 text-slate-400 sm:text-sm sm:leading-5">Employees with temporary login blocks</div>
         </div>
-        <div className="rounded-2xl border border-rose-400/12 bg-rose-500/8 px-5 py-4 ring-1 ring-inset ring-rose-400/10">
-          <div className="text-xs font-semibold uppercase tracking-wide text-rose-300">Banned</div>
-          <div className="mt-2 text-2xl font-semibold text-slate-50">{adminStats.banned}</div>
-          <div className="mt-1 text-sm text-slate-400">Employees permanently blocked</div>
+        <div className="rounded-2xl border border-rose-400/12 bg-rose-500/8 px-3 py-3 ring-1 ring-inset ring-rose-400/10 sm:px-5 sm:py-4">
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-rose-300 sm:text-xs">Banned</div>
+          <div className="mt-1.5 text-xl font-semibold text-slate-50 sm:mt-2 sm:text-2xl">{adminStats.banned}</div>
+          <div className="mt-1 text-[11px] leading-4 text-slate-400 sm:text-sm sm:leading-5">Employees permanently blocked</div>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <Button
+          className="w-full sm:w-auto"
           variant={activeTab === 'attendance' ? 'primary' : 'secondary'}
           onClick={async () => {
             setActiveTab('attendance');
@@ -277,6 +278,7 @@ export function AdminDashboardClient({
           Attendance
         </Button>
         <Button
+          className="w-full sm:w-auto"
           variant={activeTab === 'accounts' ? 'primary' : 'secondary'}
           onClick={() => setActiveTab('accounts')}
         >
@@ -317,7 +319,7 @@ export function AdminDashboardClient({
               <>
                 <Card>
                   <CardBody>
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-col gap-4">
                       <div>
                         <div className="text-lg font-semibold text-slate-100">
                           {selectedEmployee.name}
@@ -329,7 +331,7 @@ export function AdminDashboardClient({
                           {selectedEmployee.position || 'No position set'}
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      <div className="grid grid-cols-2 gap-2 min-[420px]:grid-cols-2 sm:grid-cols-4">
                         <div className="rounded-xl bg-slate-900/85 px-3 py-2 ring-1 ring-inset ring-slate-800">
                           <div className="text-xs font-medium text-slate-400">Present</div>
                           <div className="mt-1 flex items-center justify-between gap-3">

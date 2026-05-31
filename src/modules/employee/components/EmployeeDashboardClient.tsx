@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
@@ -76,11 +77,19 @@ export function EmployeeDashboardClient({
 
   return (
     <div className="space-y-6">
-      <div>
-        <div className="text-sm font-semibold text-slate-100">Overview</div>
-        <div className="mt-1 text-sm text-slate-400">
-          View your monthly summary and attendance history.
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <div className="text-sm font-semibold text-slate-100">Overview</div>
+          <div className="mt-1 text-sm text-slate-400">
+            View your monthly summary and attendance history.
+          </div>
         </div>
+        <Link
+          href="/employee/leave-policy"
+          className="inline-flex items-center justify-center rounded-xl bg-slate-900/85 px-4 py-2.5 text-sm font-medium text-slate-100 ring-1 ring-inset ring-slate-700/80 transition-colors hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+        >
+          View Leave Policy
+        </Link>
       </div>
       <StatsGrid
         month={month}

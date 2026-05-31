@@ -132,11 +132,11 @@ function ConfirmationModal({
         <div className="text-lg font-semibold text-slate-100">{title}</div>
         <div className="mt-2 text-sm leading-6 text-slate-400">{description}</div>
         {children ? <div className="mt-4">{children}</div> : null}
-        <div className="mt-6 flex justify-end gap-3">
-          <Button variant="secondary" onClick={onCancel} disabled={isSubmitting}>
+        <div className="mt-6 flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end sm:gap-3">
+          <Button className="w-full sm:w-auto" variant="secondary" onClick={onCancel} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button variant={confirmVariant} onClick={onConfirm} disabled={isSubmitting}>
+          <Button className="w-full sm:w-auto" variant={confirmVariant} onClick={onConfirm} disabled={isSubmitting}>
             {isSubmitting ? 'Please wait...' : confirmLabel}
           </Button>
         </div>
@@ -164,7 +164,7 @@ function FeedbackModal({
         <div className="text-lg font-semibold text-slate-100">{title}</div>
         <div className="mt-2 text-sm leading-6 text-slate-400">{description}</div>
         <div className="mt-6 flex justify-end">
-          <Button onClick={onClose}>OK</Button>
+          <Button className="w-full sm:w-auto" onClick={onClose}>OK</Button>
         </div>
       </div>
     </div>
@@ -306,7 +306,7 @@ export function AccountManagementPanel({
             subtitle="Add a new employee account and make it available immediately in the dashboard."
           />
           <CardBody>
-            <form onSubmit={submitCreate} className="space-y-4">
+            <form onSubmit={submitCreate} className="space-y-3.5 sm:space-y-4">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <div className="text-sm font-medium text-slate-300">Name</div>
@@ -362,7 +362,7 @@ export function AccountManagementPanel({
                 </div>
               ) : null}
               <div className="flex items-center justify-end">
-                <Button type="submit" disabled={isCreating}>
+                <Button className="w-full sm:w-auto" type="submit" disabled={isCreating}>
                   {isCreating ? 'Creating...' : 'Add Employee'}
                 </Button>
               </div>
@@ -376,21 +376,21 @@ export function AccountManagementPanel({
             subtitle="Quick reference for how account controls work."
           />
           <CardBody>
-            <div className="space-y-4">
-              <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="rounded-xl bg-slate-900/80 px-4 py-3.5 ring-1 ring-inset ring-slate-800 sm:py-4">
                 <div className="text-sm font-semibold text-slate-100">Restrict</div>
                 <div className="mt-1 text-sm leading-6 text-slate-400">
                   Temporarily blocks login for the selected duration. Access automatically returns
                   when the restriction expires.
                 </div>
               </div>
-              <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+              <div className="rounded-xl bg-slate-900/80 px-4 py-3.5 ring-1 ring-inset ring-slate-800 sm:py-4">
                 <div className="text-sm font-semibold text-slate-100">Ban</div>
                 <div className="mt-1 text-sm leading-6 text-slate-400">
                   Permanently blocks login until an admin restores the account.
                 </div>
               </div>
-              <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+              <div className="rounded-xl bg-slate-900/80 px-4 py-3.5 ring-1 ring-inset ring-slate-800 sm:py-4">
                 <div className="text-sm font-semibold text-slate-100">Remove</div>
                 <div className="mt-1 text-sm leading-6 text-slate-400">
                   Permanently deletes the employee account and any linked attendance records.
@@ -413,151 +413,298 @@ export function AccountManagementPanel({
             subtitle={`${sortedAccounts.length} employee account(s) with live access controls`}
           />
           <CardBody>
-            <Table>
-              <THead>
-                <tr>
-                  <TH>Employee</TH>
-                  <TH>Position</TH>
-                  <TH>Status</TH>
-                  <TH>Access Until</TH>
-                  <TH>Restrict For</TH>
-                  <TH>Actions</TH>
-                </tr>
-              </THead>
-              <TBody>
-                {sortedAccounts.map((account) => {
-                  const status = employeeAccountStatus(account);
-                  const restrictionHours = restrictionHoursByUser[account.id] ?? String(restrictionOptions[0].hours);
-                  const isBusy = busyAccountId === account.id;
+            <div className="space-y-4 md:hidden">
+              {sortedAccounts.map((account) => {
+                const status = employeeAccountStatus(account);
+                const restrictionHours = restrictionHoursByUser[account.id] ?? String(restrictionOptions[0].hours);
+                const isBusy = busyAccountId === account.id;
 
-                  return (
-                    <tr key={account.id} className="transition-colors hover:bg-slate-900/90">
-                      <TD>
-                        <div className="font-medium text-slate-100">{account.name}</div>
-                        <div className="mt-1 text-xs text-slate-400">{account.email}</div>
-                      </TD>
-                      <TD className="whitespace-nowrap text-slate-300">
-                        {account.position || 'Not set'}
-                      </TD>
-                      <TD className="whitespace-nowrap">
-                        <span
-                          className={[
-                            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize',
-                            accountStatusClass(account),
-                          ].join(' ')}
-                        >
-                          <StatusIcon status={status} />
-                          {accountStatusLabel(account)}
-                        </span>
-                      </TD>
-                      <TD className="whitespace-nowrap text-slate-400">
-                        {status === 'restricted' && account.restricted_until
-                          ? new Date(account.restricted_until).toLocaleString()
-                          : status === 'banned'
-                            ? 'Permanent'
-                            : 'Active'}
-                      </TD>
-                      <TD className="min-w-36">
-                        <Select
-                          value={restrictionHours}
-                          onChange={(event) =>
-                            setRestrictionHoursByUser((current) => ({
-                              ...current,
-                              [account.id]: event.target.value,
-                            }))
-                          }
-                          disabled={isBusy}
-                        >
-                          {restrictionOptions.map((option) => (
-                            <option key={option.hours} value={option.hours}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </Select>
-                      </TD>
-                      <TD>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            disabled={isBusy}
-                            onClick={() => openEditModal(account)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            disabled={isBusy}
-                            onClick={() =>
-                              runAccountAction(
-                                account.id,
-                                () =>
-                                  onUpdateAccess({
-                                    userId: account.id,
-                                    action: 'restrict',
-                                    durationHours: Number(restrictionHours),
-                                  }),
-                                'Account Restricted',
-                                `${account.name} is now temporarily restricted from logging in.`
-                              )
-                            }
-                          >
-                            Restrict
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            disabled={isBusy || status === 'active'}
-                            onClick={() =>
-                              runAccountAction(
-                                account.id,
-                                () =>
-                                  onUpdateAccess({
-                                    userId: account.id,
-                                    action: 'restore',
-                                  }),
-                                'Access Restored',
-                                `${account.name} can now log in again.`
-                              )
-                            }
-                          >
-                            Restore
-                          </Button>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            disabled={isBusy || status === 'banned'}
-                            onClick={() =>
-                              runAccountAction(
-                                account.id,
-                                () =>
-                                  onUpdateAccess({
-                                    userId: account.id,
-                                    action: 'ban',
-                                  }),
-                                'Account Banned',
-                                `${account.name} has been permanently blocked from logging in.`
-                              )
-                            }
-                          >
-                            Ban
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={isBusy}
-                            onClick={() => setPendingDelete(account)}
-                          >
-                            Remove
-                          </Button>
+                return (
+                  <div
+                    key={account.id}
+                    className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-3.5 ring-1 ring-inset ring-white/5 sm:p-4"
+                  >
+                    <div className="flex flex-col gap-3">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-100">{account.name}</div>
+                        <div className="mt-1 break-all text-xs text-slate-400">{account.email}</div>
+                      </div>
+                      <div className="grid grid-cols-1 gap-3">
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Position</div>
+                          <div className="mt-1 text-sm text-slate-300">{account.position || 'Not set'}</div>
                         </div>
-                      </TD>
-                    </tr>
-                  );
-                })}
-              </TBody>
-            </Table>
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Status</div>
+                          <div className="mt-2">
+                            <span
+                              className={[
+                                'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize',
+                                accountStatusClass(account),
+                              ].join(' ')}
+                            >
+                              <StatusIcon status={status} />
+                              {accountStatusLabel(account)}
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Access Until</div>
+                          <div className="mt-1 text-sm text-slate-300">
+                            {status === 'restricted' && account.restricted_until
+                              ? new Date(account.restricted_until).toLocaleString()
+                              : status === 'banned'
+                                ? 'Permanent'
+                                : 'Active'}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Restrict For</div>
+                          <div className="mt-2">
+                            <Select
+                              value={restrictionHours}
+                              onChange={(event) =>
+                                setRestrictionHoursByUser((current) => ({
+                                  ...current,
+                                  [account.id]: event.target.value,
+                                }))
+                              }
+                              disabled={isBusy}
+                            >
+                              {restrictionOptions.map((option) => (
+                                <option key={option.hours} value={option.hours}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
+                        <Button variant="secondary" size="sm" disabled={isBusy} onClick={() => openEditModal(account)}>
+                          Edit
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={isBusy}
+                          onClick={() =>
+                            runAccountAction(
+                              account.id,
+                              () =>
+                                onUpdateAccess({
+                                  userId: account.id,
+                                  action: 'restrict',
+                                  durationHours: Number(restrictionHours),
+                                }),
+                              'Account Restricted',
+                              `${account.name} is now temporarily restricted from logging in.`
+                            )
+                          }
+                        >
+                          Restrict
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={isBusy || status === 'active'}
+                          onClick={() =>
+                            runAccountAction(
+                              account.id,
+                              () =>
+                                onUpdateAccess({
+                                  userId: account.id,
+                                  action: 'restore',
+                                }),
+                              'Access Restored',
+                              `${account.name} can now log in again.`
+                            )
+                          }
+                        >
+                          Restore
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          disabled={isBusy || status === 'banned'}
+                          onClick={() =>
+                            runAccountAction(
+                              account.id,
+                              () =>
+                                onUpdateAccess({
+                                  userId: account.id,
+                                  action: 'ban',
+                                }),
+                              'Account Banned',
+                              `${account.name} has been permanently blocked from logging in.`
+                            )
+                          }
+                        >
+                          Ban
+                        </Button>
+                        <Button
+                          className="min-[380px]:col-span-2"
+                          variant="ghost"
+                          size="sm"
+                          disabled={isBusy}
+                          onClick={() => setPendingDelete(account)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="hidden md:block">
+              <Table>
+                <THead>
+                  <tr>
+                    <TH>Employee</TH>
+                    <TH>Position</TH>
+                    <TH>Status</TH>
+                    <TH>Access Until</TH>
+                    <TH>Restrict For</TH>
+                    <TH>Actions</TH>
+                  </tr>
+                </THead>
+                <TBody>
+                  {sortedAccounts.map((account) => {
+                    const status = employeeAccountStatus(account);
+                    const restrictionHours = restrictionHoursByUser[account.id] ?? String(restrictionOptions[0].hours);
+                    const isBusy = busyAccountId === account.id;
+
+                    return (
+                      <tr key={account.id} className="transition-colors hover:bg-slate-900/90">
+                        <TD>
+                          <div className="font-medium text-slate-100">{account.name}</div>
+                          <div className="mt-1 text-xs text-slate-400">{account.email}</div>
+                        </TD>
+                        <TD className="whitespace-nowrap text-slate-300">
+                          {account.position || 'Not set'}
+                        </TD>
+                        <TD className="whitespace-nowrap">
+                          <span
+                            className={[
+                              'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize',
+                              accountStatusClass(account),
+                            ].join(' ')}
+                          >
+                            <StatusIcon status={status} />
+                            {accountStatusLabel(account)}
+                          </span>
+                        </TD>
+                        <TD className="whitespace-nowrap text-slate-400">
+                          {status === 'restricted' && account.restricted_until
+                            ? new Date(account.restricted_until).toLocaleString()
+                            : status === 'banned'
+                              ? 'Permanent'
+                              : 'Active'}
+                        </TD>
+                        <TD className="min-w-36">
+                          <Select
+                            value={restrictionHours}
+                            onChange={(event) =>
+                              setRestrictionHoursByUser((current) => ({
+                                ...current,
+                                [account.id]: event.target.value,
+                              }))
+                            }
+                            disabled={isBusy}
+                          >
+                            {restrictionOptions.map((option) => (
+                              <option key={option.hours} value={option.hours}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </Select>
+                        </TD>
+                        <TD>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              disabled={isBusy}
+                              onClick={() => openEditModal(account)}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              disabled={isBusy}
+                              onClick={() =>
+                                runAccountAction(
+                                  account.id,
+                                  () =>
+                                    onUpdateAccess({
+                                      userId: account.id,
+                                      action: 'restrict',
+                                      durationHours: Number(restrictionHours),
+                                    }),
+                                  'Account Restricted',
+                                  `${account.name} is now temporarily restricted from logging in.`
+                                )
+                              }
+                            >
+                              Restrict
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              disabled={isBusy || status === 'active'}
+                              onClick={() =>
+                                runAccountAction(
+                                  account.id,
+                                  () =>
+                                    onUpdateAccess({
+                                      userId: account.id,
+                                      action: 'restore',
+                                    }),
+                                  'Access Restored',
+                                  `${account.name} can now log in again.`
+                                )
+                              }
+                            >
+                              Restore
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              disabled={isBusy || status === 'banned'}
+                              onClick={() =>
+                                runAccountAction(
+                                  account.id,
+                                  () =>
+                                    onUpdateAccess({
+                                      userId: account.id,
+                                      action: 'ban',
+                                    }),
+                                  'Account Banned',
+                                  `${account.name} has been permanently blocked from logging in.`
+                                )
+                              }
+                            >
+                              Ban
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={isBusy}
+                              onClick={() => setPendingDelete(account)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </TD>
+                      </tr>
+                    );
+                  })}
+                </TBody>
+              </Table>
+            </div>
           </CardBody>
         </Card>
       )}

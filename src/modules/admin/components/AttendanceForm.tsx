@@ -109,7 +109,7 @@ export function AttendanceForm({
         <form onSubmit={submit} className="space-y-5">
           <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 ring-1 ring-inset ring-white/5">
             <div className="text-sm font-medium text-slate-200">Choose status</div>
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {attendanceStatusOptions.map((option) => {
                 const isSelected = status === option.value;
 
@@ -169,7 +169,7 @@ export function AttendanceForm({
             </div>
           </div>
           <div className="flex items-center justify-end">
-            <Button type="submit" disabled={isSaving}>
+            <Button type="submit" disabled={isSaving} className="w-full sm:w-auto">
               {isSaving ? 'Saving…' : 'Save'}
             </Button>
           </div>

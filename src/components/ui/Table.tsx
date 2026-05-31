@@ -16,7 +16,7 @@ export function THead({ children }: { children: ReactNode }) {
 
 export function TH({ children }: { children: ReactNode }) {
   return (
-    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">
+    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400 sm:px-5">
       {children}
     </th>
   );
@@ -28,7 +28,7 @@ export function TBody({ children }: { children: ReactNode }) {
 
 export function TD({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <td className={['px-5 py-3 text-sm text-slate-300', className].join(' ')}>
+    <td className={['px-3 py-3 text-sm text-slate-300 sm:px-5', className].join(' ')}>
       {children}
     </td>
   );

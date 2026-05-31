@@ -48,7 +48,7 @@ export function EmployeeList({
         title="Employees"
         subtitle={`${employees.length} total`}
         right={
-          <div className="w-44">
+          <div className="w-full sm:w-44">
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -82,14 +82,14 @@ export function EmployeeList({
                       : 'bg-slate-900/80 ring-slate-800 hover:bg-slate-900',
                   ].join(' ')}
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <div className="text-sm font-semibold text-slate-100">
                         {employee.name}
                       </div>
-                      <div className="text-xs text-slate-400">{employee.email}</div>
+                      <div className="break-all text-xs text-slate-400">{employee.email}</div>
                     </div>
-                    <div className="rounded-full bg-slate-800/90 px-2.5 py-1 text-[11px] font-medium text-sky-300 ring-1 ring-inset ring-slate-700">
+                    <div className="self-start rounded-full bg-slate-800/90 px-2.5 py-1 text-[10px] font-medium text-sky-300 ring-1 ring-inset ring-slate-700 sm:text-[11px]">
                       {employee.position || 'No position'}
                     </div>
                   </div>
@@ -102,13 +102,13 @@ export function EmployeeList({
               </div>
             ) : null}
             {filtered.length > 0 ? (
-              <div className="flex items-center justify-between gap-3 border-t border-slate-800/80 pt-3">
-                <div className="text-xs text-slate-500">
+              <div className="flex flex-col gap-3 border-t border-slate-800/80 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-[11px] text-slate-500 sm:text-xs">
                   Showing {(currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, filtered.length)} of{' '}
                   {filtered.length}
                 </div>
                 {totalPages > 1 ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button
                       variant="secondary"
                       size="sm"

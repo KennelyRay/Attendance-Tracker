@@ -32,30 +32,30 @@ export function StatsGrid({
         }
       />
       <CardBody>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <div className="rounded-xl bg-emerald-500/12 px-4 py-4 ring-1 ring-inset ring-emerald-400/20">
-            <div className="text-2xl font-semibold text-emerald-300">
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-4">
+          <div className="rounded-xl bg-emerald-500/12 px-3 py-3 ring-1 ring-inset ring-emerald-400/20 sm:px-4 sm:py-4">
+            <div className="text-xl font-semibold text-emerald-300 sm:text-2xl">
               {stats.present ?? 0}
             </div>
-            <div className="text-sm font-medium text-emerald-200">Present</div>
+            <div className="text-xs font-medium text-emerald-200 sm:text-sm">Present</div>
           </div>
-          <div className="rounded-xl bg-rose-500/12 px-4 py-4 ring-1 ring-inset ring-rose-400/20">
-            <div className="text-2xl font-semibold text-rose-300">
+          <div className="rounded-xl bg-rose-500/12 px-3 py-3 ring-1 ring-inset ring-rose-400/20 sm:px-4 sm:py-4">
+            <div className="text-xl font-semibold text-rose-300 sm:text-2xl">
               {stats.absent ?? 0}
             </div>
-            <div className="text-sm font-medium text-rose-200">Absent</div>
+            <div className="text-xs font-medium text-rose-200 sm:text-sm">Absent</div>
           </div>
-          <div className="rounded-xl bg-amber-500/12 px-4 py-4 ring-1 ring-inset ring-amber-400/20">
-            <div className="text-2xl font-semibold text-amber-300">
+          <div className="rounded-xl bg-amber-500/12 px-3 py-3 ring-1 ring-inset ring-amber-400/20 sm:px-4 sm:py-4">
+            <div className="text-xl font-semibold text-amber-300 sm:text-2xl">
               {stats['half-day'] ?? 0}
             </div>
-            <div className="text-sm font-medium text-amber-200">Half Day</div>
+            <div className="text-xs font-medium text-amber-200 sm:text-sm">Half Day</div>
           </div>
-          <div className="rounded-xl bg-sky-500/12 px-4 py-4 ring-1 ring-inset ring-sky-400/20">
-            <div className="text-2xl font-semibold text-sky-300">
+          <div className="rounded-xl bg-sky-500/12 px-3 py-3 ring-1 ring-inset ring-sky-400/20 sm:px-4 sm:py-4">
+            <div className="text-xl font-semibold text-sky-300 sm:text-2xl">
               {stats.leave ?? 0}
             </div>
-            <div className="text-sm font-medium text-sky-200">Leave</div>
+            <div className="text-xs font-medium text-sky-200 sm:text-sm">Leave</div>
           </div>
         </div>
       </CardBody>

@@ -15,9 +15,9 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const lineClass =
-    'animate-lightning-scan absolute h-px w-[30rem] bg-[linear-gradient(90deg,transparent,rgba(224,242,254,0.06)_12%,rgba(224,242,254,0.78)_42%,rgba(56,189,248,0.9)_50%,rgba(224,242,254,0.78)_58%,transparent_88%)] shadow-[0_0_14px_rgba(186,230,253,0.72),0_0_34px_rgba(56,189,248,0.56)]';
+    'animate-lightning-scan absolute h-px w-[18rem] sm:w-[24rem] lg:w-[30rem] bg-[linear-gradient(90deg,transparent,rgba(224,242,254,0.06)_12%,rgba(224,242,254,0.78)_42%,rgba(56,189,248,0.9)_50%,rgba(224,242,254,0.78)_58%,transparent_88%)] shadow-[0_0_14px_rgba(186,230,253,0.72),0_0_34px_rgba(56,189,248,0.56)]';
   const wideLineClass =
-    'animate-lightning-scan absolute h-px w-[118vw] bg-[linear-gradient(90deg,transparent,rgba(224,242,254,0.04)_12%,rgba(224,242,254,0.68)_40%,rgba(56,189,248,0.92)_50%,rgba(224,242,254,0.68)_60%,transparent_88%)] shadow-[0_0_16px_rgba(186,230,253,0.78),0_0_40px_rgba(56,189,248,0.6)]';
+    'animate-lightning-scan absolute h-px w-[140vw] sm:w-[118vw] bg-[linear-gradient(90deg,transparent,rgba(224,242,254,0.04)_12%,rgba(224,242,254,0.68)_40%,rgba(56,189,248,0.92)_50%,rgba(224,242,254,0.68)_60%,transparent_88%)] shadow-[0_0_16px_rgba(186,230,253,0.78),0_0_40px_rgba(56,189,248,0.6)]';
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,16 +39,16 @@ export function LoginForm() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[linear-gradient(135deg,_#050c18_0%,_#081524_36%,_#0a1d33_100%)] px-4 py-8 sm:px-6 lg:px-8">
+    <div className="relative min-h-screen overflow-hidden bg-[linear-gradient(135deg,_#050c18_0%,_#081524_36%,_#0a1d33_100%)] px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
       <div className="pointer-events-none absolute inset-0">
-        <div className="animate-float-slow absolute -left-28 top-8 h-[28rem] w-[28rem] rounded-full bg-sky-400/20 blur-[120px]" />
-        <div className="animate-float-medium absolute left-1/4 top-1/3 h-72 w-72 rounded-full bg-cyan-300/16 blur-[110px]" />
-        <div className="animate-float-medium absolute right-8 top-16 h-[26rem] w-[26rem] rounded-full bg-cyan-300/16 blur-[120px]" />
-        <div className="animate-pulse-glow absolute bottom-6 right-1/3 h-72 w-72 rounded-full bg-blue-400/14 blur-[110px]" />
-        <div className="animate-pulse-glow absolute -right-16 top-1/3 h-80 w-80 rounded-full bg-sky-500/14 blur-[130px]" />
-        <div className="absolute left-[8%] top-[14%] h-56 w-[32rem] -rotate-12 bg-[linear-gradient(90deg,transparent,rgba(125,211,252,0.22),transparent)] blur-3xl" />
-        <div className="absolute left-[38%] top-[34%] h-56 w-[26rem] rotate-[10deg] bg-[linear-gradient(90deg,transparent,rgba(56,189,248,0.16),transparent)] blur-3xl" />
-        <div className="absolute right-[6%] top-[18%] h-52 w-[24rem] rotate-[20deg] bg-[linear-gradient(90deg,transparent,rgba(186,230,253,0.18),transparent)] blur-3xl" />
+        <div className="animate-float-slow absolute -left-28 top-8 h-[20rem] w-[20rem] rounded-full bg-sky-400/20 blur-[100px] sm:h-[28rem] sm:w-[28rem] sm:blur-[120px]" />
+        <div className="animate-float-medium absolute left-1/4 top-1/3 h-56 w-56 rounded-full bg-cyan-300/16 blur-[90px] sm:h-72 sm:w-72 sm:blur-[110px]" />
+        <div className="animate-float-medium absolute right-8 top-16 h-[18rem] w-[18rem] rounded-full bg-cyan-300/16 blur-[95px] sm:h-[26rem] sm:w-[26rem] sm:blur-[120px]" />
+        <div className="animate-pulse-glow absolute bottom-6 right-1/3 h-56 w-56 rounded-full bg-blue-400/14 blur-[90px] sm:h-72 sm:w-72 sm:blur-[110px]" />
+        <div className="animate-pulse-glow absolute -right-16 top-1/3 h-64 w-64 rounded-full bg-sky-500/14 blur-[100px] sm:h-80 sm:w-80 sm:blur-[130px]" />
+        <div className="absolute left-[8%] top-[14%] h-40 w-[18rem] -rotate-12 bg-[linear-gradient(90deg,transparent,rgba(125,211,252,0.22),transparent)] blur-3xl sm:h-56 sm:w-[32rem]" />
+        <div className="absolute left-[38%] top-[34%] h-40 w-[16rem] rotate-[10deg] bg-[linear-gradient(90deg,transparent,rgba(56,189,248,0.16),transparent)] blur-3xl sm:h-56 sm:w-[26rem]" />
+        <div className="absolute right-[6%] top-[18%] h-36 w-[14rem] rotate-[20deg] bg-[linear-gradient(90deg,transparent,rgba(186,230,253,0.18),transparent)] blur-3xl sm:h-52 sm:w-[24rem]" />
 
         <div className={[wideLineClass, 'left-[-10%] top-[13%] -rotate-[15deg]'].join(' ')} />
         <div className={[lineClass, 'left-[2%] top-[14%] -rotate-[15deg]'].join(' ')} />
@@ -74,10 +74,10 @@ export function LoginForm() {
         />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-200/30 to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,_rgba(125,211,252,0.2),_transparent_22%),radial-gradient(circle_at_78%_24%,_rgba(34,211,238,0.16),_transparent_20%),radial-gradient(circle_at_50%_78%,_rgba(59,130,246,0.12),_transparent_28%)]" />
-        <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(to_right,#7dd3fc_1px,transparent_1px),linear-gradient(to_bottom,#7dd3fc_1px,transparent_1px)] [background-size:72px_72px]" />
+        <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(to_right,#7dd3fc_1px,transparent_1px),linear-gradient(to_bottom,#7dd3fc_1px,transparent_1px)] [background-size:44px_44px] sm:[background-size:72px_72px]" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl items-center justify-between gap-10">
+      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-1rem)] max-w-7xl items-center justify-between gap-4 sm:min-h-[calc(100vh-4rem)] sm:gap-10">
         <div className="hidden max-w-xl lg:block">
           <div className="max-w-lg">
             <div className="text-sm font-semibold uppercase tracking-[0.3em] text-sky-300/75">
@@ -112,18 +112,18 @@ export function LoginForm() {
                   </div>
                 </div>
               ) : null}
-            <div className="flex items-center justify-center border-b border-slate-800/80 px-5 py-6">
+            <div className="flex items-center justify-center border-b border-slate-800/80 px-4 py-4 sm:px-5 sm:py-6">
               <Image
                 src="/ATIconFInal.png"
                 alt="Attendance Tracker logo"
                 width={84}
                 height={84}
                 priority
-                className="h-21 w-21 object-contain drop-shadow-[0_0_28px_rgba(56,189,248,0.38)]"
+                className="h-16 w-16 object-contain drop-shadow-[0_0_28px_rgba(56,189,248,0.38)] sm:h-20 sm:w-20"
               />
             </div>
             <CardBody>
-              <form onSubmit={submit} className="space-y-3.5">
+              <form onSubmit={submit} className="space-y-3">
                 {error ? (
                   <div className="rounded-xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300 ring-1 ring-inset ring-rose-400/20">
                     {error}
@@ -147,7 +147,7 @@ export function LoginForm() {
                   <div>
                     <div className="flex items-center justify-between">
                       <div className="text-sm font-medium text-slate-300">Password</div>
-                      <div className="text-xs font-medium text-slate-500">
+                      <div className="hidden text-xs font-medium text-slate-500 min-[380px]:block">
                         Protected access
                       </div>
                     </div>
@@ -168,11 +168,11 @@ export function LoginForm() {
                   {isLoading ? 'Signing in…' : 'Sign in'}
                 </Button>
 
-                <div className="text-center text-xs font-medium text-slate-400">
+                <div className="px-1 text-center text-[11px] font-medium text-slate-400 sm:text-xs">
                   Need an account? Contact your Manager
                 </div>
 
-                <div className="pt-2 text-center text-xs leading-5 text-slate-500">
+                <div className="pt-1 text-center text-[11px] leading-5 text-slate-500 sm:pt-2 sm:text-xs">
                   Only authorized personnel can access this system.
                 </div>
               </form>

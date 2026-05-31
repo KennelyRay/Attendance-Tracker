@@ -1,9 +1,12 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import type { SessionUser } from '@/lib/session';
+import { fetchMyProfile } from '@/modules/employee/api';
+import type { EmployeePortalProfile } from '@/modules/employee/types';
 
 export function TopNav({
   user,
@@ -16,6 +19,55 @@ export function TopNav({
   const pathname = usePathname();
   const isEmployee = !user.isAdmin;
   const isLeavePolicyPage = pathname === '/employee/leave-policy';
+  const [employeeProfile, setEmployeeProfile] = useState<EmployeePortalProfile | null>(null);
+
+  useEffect(() => {
+    if (!isEmployee) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadEmployeeProfile = async () => {
+      try {
+        const profile = await fetchMyProfile();
+        if (!cancelled) {
+          setEmployeeProfile(profile);
+        }
+      } catch {
+        // Keep the most recent visible profile if the background refresh fails.
+      }
+    };
+
+    void loadEmployeeProfile();
+    const intervalId = window.setInterval(() => {
+      void loadEmployeeProfile();
+    }, 10000);
+
+    const handleFocus = () => {
+      void loadEmployeeProfile();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
+  }, [isEmployee]);
+
+  const displayUser = useMemo(
+    () => ({
+      ...user,
+      name: employeeProfile?.name ?? user.name,
+      email: employeeProfile?.email ?? user.email,
+      position: employeeProfile?.position ?? null,
+    }),
+    [employeeProfile, user]
+  );
 
   const onLogout = async () => {
     await fetch('/api/logout', { method: 'POST' });
@@ -26,7 +78,7 @@ export function TopNav({
     router.push(isLeavePolicyPage ? '/employee/dashboard' : '/employee/leave-policy');
   };
 
-  const initials = user.name
+  const initials = displayUser.name
     .split(' ')
     .filter(Boolean)
     .slice(0, 2)
@@ -49,7 +101,8 @@ export function TopNav({
           <div className="min-w-0">
             <div className="truncate text-[13px] font-semibold text-slate-100 sm:text-sm">{title}</div>
             <div className="truncate text-[11px] text-slate-400 sm:text-xs">
-              {user.name} · {user.isAdmin ? 'Admin' : 'Employee'}
+              {displayUser.name} · {user.isAdmin ? 'Admin' : 'Employee'}
+              {isEmployee && displayUser.position ? ` · ${displayUser.position}` : ''}
             </div>
           </div>
         </div>
@@ -59,7 +112,7 @@ export function TopNav({
               {initials || 'U'}
             </div>
             <div className="hidden max-w-[7.5rem] truncate pr-1 text-[11px] font-medium text-slate-300 min-[380px]:block sm:max-w-[12rem] sm:text-xs">
-              {user.email}
+              {displayUser.email}
             </div>
           </div>
           {isEmployee ? (

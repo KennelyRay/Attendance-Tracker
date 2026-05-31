@@ -1,6 +1,7 @@
 import type {
   EmployeeAttendanceRecord,
   EmployeeAttendanceStats,
+  EmployeePortalProfile,
 } from '@/modules/employee/types';
 import type {
   CreateLeaveRequestInput,
@@ -37,6 +38,16 @@ export async function fetchMyLeaveData(): Promise<{
     balance: data.balance as LeaveBalance,
     requests: data.requests as LeaveRequest[],
   };
+}
+
+export async function fetchMyProfile(): Promise<EmployeePortalProfile> {
+  const response = await fetch('/api/employee/profile', { cache: 'no-store' });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || 'Failed to fetch employee profile');
+  }
+
+  return data.user as EmployeePortalProfile;
 }
 
 export async function createLeaveRequest(input: CreateLeaveRequestInput): Promise<{

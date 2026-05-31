@@ -11,3 +11,10 @@ export type EmployeeAttendanceRecord = {
 
 export type EmployeeAttendanceStats = Record<AttendanceStatus, number>;
 
+export type EmployeePortalProfile = {
+  id: number;
+  name: string;
+  email: string;
+  position: string | null;
+  startDate: string;
+};

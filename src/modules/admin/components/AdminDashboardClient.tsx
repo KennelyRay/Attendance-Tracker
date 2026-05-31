@@ -9,11 +9,14 @@ import {
   deleteEmployeeAccount,
   fetchAttendanceHistory,
   fetchEmployees,
+  fetchLeaveRequests,
+  reviewEmployeeLeaveRequest,
   updateEmployeeAccount,
   updateEmployeeAccess,
   upsertAttendance,
 } from '@/modules/admin/api';
 import { AccountManagementPanel } from '@/modules/admin/components/AccountManagementPanel';
+import { LeaveRequestsPanel } from '@/modules/admin/components/LeaveRequestsPanel';
 import { employeeAccountStatus } from '@/modules/admin/types';
 import type { Employee } from '@/modules/admin/types';
 import { EmployeeList } from '@/modules/admin/components/EmployeeList';
@@ -27,6 +30,7 @@ import type {
 } from '@/modules/admin/types';
 import { AttendanceStatusBadge } from '@/modules/attendance/components/AttendanceStatusBadge';
 import type { AttendanceStatus } from '@/modules/attendance/types';
+import type { AdminLeaveRequest } from '@/modules/leave/types';
 
 export function AdminDashboardClient({
   initialEmployees,
@@ -45,7 +49,10 @@ export function AdminDashboardClient({
   const [isEmployeesLoading, setIsEmployeesLoading] = useState(false);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'attendance' | 'accounts'>('attendance');
+  const [isLeaveRequestsLoading, setIsLeaveRequestsLoading] = useState(false);
+  const [leaveRequests, setLeaveRequests] = useState<AdminLeaveRequest[]>([]);
+  const [leaveError, setLeaveError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'attendance' | 'accounts' | 'leave'>('attendance');
   const [error, setError] = useState<string | null>(null);
 
   const selectedEmployee = useMemo(() => {
@@ -145,6 +152,21 @@ export function AdminDashboardClient({
     }
   };
 
+  const loadLeaveRequests = async () => {
+    setLeaveError(null);
+    setIsLeaveRequestsLoading(true);
+    try {
+      const items = await fetchLeaveRequests();
+      setLeaveRequests(items);
+    } catch (leaveLoadError) {
+      setLeaveError(
+        leaveLoadError instanceof Error ? leaveLoadError.message : 'Failed to load leave requests'
+      );
+    } finally {
+      setIsLeaveRequestsLoading(false);
+    }
+  };
+
   const onSelect = async (employee: Employee) => {
     setSelectedEmployeeId(employee.id);
     await reloadHistory(employee.id);
@@ -219,6 +241,19 @@ export function AdminDashboardClient({
     await refreshEmployees();
   };
 
+  const onReviewLeaveRequest = async (input: {
+    requestId: number;
+    action: 'approve' | 'reject';
+    adminNotes?: string;
+  }) => {
+    await reviewEmployeeLeaveRequest(input);
+    await loadLeaveRequests();
+
+    if (selectedEmployeeId && activeTab === 'leave') {
+      await reloadHistory(selectedEmployeeId);
+    }
+  };
+
   if (error) {
     return (
       <EmptyState
@@ -284,6 +319,16 @@ export function AdminDashboardClient({
         >
           Accounts
         </Button>
+        <Button
+          className="w-full sm:w-auto"
+          variant={activeTab === 'leave' ? 'primary' : 'secondary'}
+          onClick={async () => {
+            setActiveTab('leave');
+            await loadLeaveRequests();
+          }}
+        >
+          Leave Requests
+        </Button>
       </div>
 
       {activeTab === 'accounts' ? (
@@ -293,6 +338,14 @@ export function AdminDashboardClient({
           onUpdateAccount={onUpdateAccount}
           onUpdateAccess={onUpdateAccountAccess}
           onDelete={onDeleteAccount}
+        />
+      ) : activeTab === 'leave' ? (
+        <LeaveRequestsPanel
+          requests={leaveRequests}
+          isLoading={isLeaveRequestsLoading}
+          error={leaveError}
+          onReview={onReviewLeaveRequest}
+          onRefresh={loadLeaveRequests}
         />
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

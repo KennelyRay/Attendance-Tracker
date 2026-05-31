@@ -1,9 +1,18 @@
 import { EmployeeDashboardClient } from '@/modules/employee/components/EmployeeDashboardClient';
 import { getSessionData } from '@/lib/session';
 import { getMyAttendanceForMonth } from '@/modules/employee/server/queries';
+import {
+  getLeaveBalanceForUser,
+  listLeaveRequestsForUser,
+} from '@/modules/leave/server/queries';
 
 export default async function EmployeeDashboardPage() {
   const session = await getSessionData();
+
+  if (!session.user) {
+    return null;
+  }
+
   const now = new Date();
   const monthNumber = now.getMonth() + 1;
   const yearNumber = now.getFullYear();
@@ -11,9 +20,11 @@ export default async function EmployeeDashboardPage() {
   const month = String(monthNumber).padStart(2, '0');
   const year = String(yearNumber);
 
-  const data = session.user
-    ? await getMyAttendanceForMonth(session.user.id, monthNumber, yearNumber)
-    : { records: [], stats: { present: 0, absent: 0, 'half-day': 0, leave: 0 } };
+  const [data, leaveBalance, leaveRequests] = await Promise.all([
+    getMyAttendanceForMonth(session.user.id, monthNumber, yearNumber),
+    getLeaveBalanceForUser(session.user.id),
+    listLeaveRequestsForUser(session.user.id),
+  ]);
 
   return (
     <EmployeeDashboardClient
@@ -21,6 +32,8 @@ export default async function EmployeeDashboardPage() {
       initialYear={year}
       initialRecords={data.records}
       initialStats={data.stats}
+      initialLeaveBalance={leaveBalance}
+      initialLeaveRequests={leaveRequests}
     />
   );
 }

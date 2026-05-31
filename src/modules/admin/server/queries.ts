@@ -7,7 +7,7 @@ export async function listEmployees(): Promise<Employee[]> {
   await ensureUserAccessColumns(pool);
   const result = await pool.query(
     `
-      SELECT id, name, email, position, is_banned, restricted_until, created_at
+      SELECT id, name, email, position, start_date, is_banned, restricted_until, created_at
       FROM users
       WHERE is_admin = false
       ORDER BY name

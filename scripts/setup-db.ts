@@ -14,6 +14,7 @@ async function setupDatabase() {
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         position VARCHAR(255),
+        start_date DATE NOT NULL DEFAULT CURRENT_DATE,
         is_admin BOOLEAN NOT NULL DEFAULT FALSE,
         is_banned BOOLEAN NOT NULL DEFAULT FALSE,
         restricted_until TIMESTAMP NULL,
@@ -58,6 +59,25 @@ async function setupDatabase() {
         created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(user_id, date)
+      );
+
+      CREATE TABLE IF NOT EXISTS leave_requests (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        leave_type VARCHAR(64) NOT NULL,
+        start_date DATE NOT NULL,
+        end_date DATE NOT NULL,
+        total_days INTEGER NOT NULL,
+        reason TEXT NOT NULL,
+        deduct_from_paid_balance BOOLEAN NOT NULL DEFAULT FALSE,
+        status VARCHAR(20) NOT NULL DEFAULT 'pending',
+        admin_notes TEXT NULL,
+        reviewed_by INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
+        reviewed_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT leave_requests_date_range CHECK (end_date >= start_date),
+        CONSTRAINT leave_requests_total_days CHECK (total_days > 0),
+        CONSTRAINT leave_requests_status CHECK (status IN ('pending', 'approved', 'rejected'))
       );
 
       CREATE OR REPLACE FUNCTION upsert_attendance(
@@ -113,6 +133,18 @@ async function setupDatabase() {
 
       ALTER TABLE users
       ADD COLUMN IF NOT EXISTS position VARCHAR(255) NULL;
+
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS start_date DATE;
+
+      UPDATE users
+      SET start_date = COALESCE(start_date, created_at::date, CURRENT_DATE);
+
+      ALTER TABLE users
+      ALTER COLUMN start_date SET DEFAULT CURRENT_DATE;
+
+      ALTER TABLE users
+      ALTER COLUMN start_date SET NOT NULL;
 
       DO $$
       BEGIN
@@ -187,17 +219,17 @@ async function setupDatabase() {
     const hashedEmployeePassword = await bcrypt.hash('employee123', 10);
     
     await pool.query(
-      `INSERT INTO users (name, email, password, position, is_admin) 
-       VALUES ($1, $2, $3, $4, $5) 
+      `INSERT INTO users (name, email, password, position, start_date, is_admin) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
        ON CONFLICT (email) DO NOTHING`,
-      ['Admin User', 'admin@company.com', hashedAdminPassword, 'Manager', true]
+      ['Admin User', 'admin@company.com', hashedAdminPassword, 'Manager', '2020-01-15', true]
     );
     
     await pool.query(
-      `INSERT INTO users (name, email, password, position, is_admin) 
-       VALUES ($1, $2, $3, $4, $5) 
+      `INSERT INTO users (name, email, password, position, start_date, is_admin) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
        ON CONFLICT (email) DO NOTHING`,
-      ['John Doe', 'john@company.com', hashedEmployeePassword, 'Staff', false]
+      ['John Doe', 'john@company.com', hashedEmployeePassword, 'Staff', '2024-01-15', false]
     );
     
     console.log('Sample users created!');

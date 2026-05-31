@@ -8,6 +8,8 @@ import { fetchMyAttendance } from '@/modules/employee/api';
 import type { EmployeeAttendanceRecord, EmployeeAttendanceStats } from '@/modules/employee/types';
 import { StatsGrid } from '@/modules/employee/components/StatsGrid';
 import { AttendanceTable } from '@/modules/employee/components/AttendanceTable';
+import { LeaveManagementPanel } from '@/modules/employee/components/LeaveManagementPanel';
+import type { LeaveBalance, LeaveRequest } from '@/modules/leave/types';
 
 const defaultStats: EmployeeAttendanceStats = {
   present: 0,
@@ -21,11 +23,15 @@ export function EmployeeDashboardClient({
   initialYear,
   initialRecords,
   initialStats,
+  initialLeaveBalance,
+  initialLeaveRequests,
 }: {
   initialMonth: string;
   initialYear: string;
   initialRecords: EmployeeAttendanceRecord[];
   initialStats: EmployeeAttendanceStats;
+  initialLeaveBalance: LeaveBalance;
+  initialLeaveRequests: LeaveRequest[];
 }) {
   const [month, setMonth] = useState(initialMonth);
   const [year, setYear] = useState(initialYear);
@@ -97,6 +103,10 @@ export function EmployeeDashboardClient({
         stats={stats}
         onChangeMonth={onChangeMonth}
         onChangeYear={onChangeYear}
+      />
+      <LeaveManagementPanel
+        initialBalance={initialLeaveBalance}
+        initialRequests={initialLeaveRequests}
       />
       <AttendanceTable records={records} isLoading={isLoading} />
     </div>

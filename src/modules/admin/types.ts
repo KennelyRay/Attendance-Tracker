@@ -5,6 +5,7 @@ export type Employee = {
   name: string;
   email: string;
   position: string | null;
+  start_date: string;
   is_banned: boolean;
   restricted_until: string | null;
   created_at: string;
@@ -33,6 +34,7 @@ export type CreateEmployeeInput = {
   name: string;
   email: string;
   position: string;
+  startDate: string;
   password: string;
 };
 
@@ -41,6 +43,7 @@ export type UpdateEmployeeAccountInput = {
   name: string;
   email: string;
   position: string;
+  startDate: string;
 };
 
 export type UpdateEmployeeAccessInput = {

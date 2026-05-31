@@ -14,6 +14,18 @@ export async function ensureUserAccessColumns(pool: Pool) {
 
     ALTER TABLE users
     ADD COLUMN IF NOT EXISTS position VARCHAR(255) NULL;
+
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS start_date DATE;
+
+    UPDATE users
+    SET start_date = COALESCE(start_date, created_at::date, CURRENT_DATE);
+
+    ALTER TABLE users
+    ALTER COLUMN start_date SET DEFAULT CURRENT_DATE;
+
+    ALTER TABLE users
+    ALTER COLUMN start_date SET NOT NULL;
   `);
 
   ensured = true;

@@ -187,6 +187,7 @@ export function AccountManagementPanel({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [position, setPosition] = useState('');
+  const [startDate, setStartDate] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -199,6 +200,7 @@ export function AccountManagementPanel({
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editPosition, setEditPosition] = useState('');
+  const [editStartDate, setEditStartDate] = useState('');
 
   const sortedAccounts = useMemo(() => {
     return [...accounts].sort((a, b) => a.name.localeCompare(b.name));
@@ -214,6 +216,7 @@ export function AccountManagementPanel({
       setName('');
       setEmail('');
       setPosition('');
+      setStartDate('');
       setPassword('');
       setPendingCreate(null);
       setFeedbackModal({
@@ -235,6 +238,7 @@ export function AccountManagementPanel({
       name: name.trim(),
       email: email.trim(),
       position: position.trim(),
+      startDate,
       password,
     });
   };
@@ -246,6 +250,7 @@ export function AccountManagementPanel({
     setEditName(account.name);
     setEditEmail(account.email);
     setEditPosition(account.position ?? '');
+    setEditStartDate(account.start_date);
   };
 
   const saveEditedAccount = async () => {
@@ -261,6 +266,7 @@ export function AccountManagementPanel({
         name: editName.trim(),
         email: editEmail.trim(),
         position: editPosition.trim(),
+        startDate: editStartDate,
       });
       setPendingEdit(null);
       setFeedbackModal({
@@ -339,6 +345,17 @@ export function AccountManagementPanel({
                     value={position}
                     onChange={(event) => setPosition(event.target.value)}
                     placeholder="e.g. Team Lead"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-slate-300">Start Date</div>
+                <div className="mt-1">
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(event) => setStartDate(event.target.value)}
                     required
                   />
                 </div>
@@ -433,6 +450,12 @@ export function AccountManagementPanel({
                         <div>
                           <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Position</div>
                           <div className="mt-1 text-sm text-slate-300">{account.position || 'Not set'}</div>
+                        </div>
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Start Date</div>
+                          <div className="mt-1 text-sm text-slate-300">
+                            {new Date(account.start_date).toLocaleDateString()}
+                          </div>
                         </div>
                         <div>
                           <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Status</div>
@@ -564,6 +587,7 @@ export function AccountManagementPanel({
                   <tr>
                     <TH>Employee</TH>
                     <TH>Position</TH>
+                    <TH>Start Date</TH>
                     <TH>Status</TH>
                     <TH>Access Until</TH>
                     <TH>Restrict For</TH>
@@ -584,6 +608,9 @@ export function AccountManagementPanel({
                         </TD>
                         <TD className="whitespace-nowrap text-slate-300">
                           {account.position || 'Not set'}
+                        </TD>
+                        <TD className="whitespace-nowrap text-slate-300">
+                          {new Date(account.start_date).toLocaleDateString()}
                         </TD>
                         <TD className="whitespace-nowrap">
                           <span
@@ -736,6 +763,10 @@ export function AccountManagementPanel({
             <div className="mt-2 text-sm text-slate-300">
               <span className="font-medium text-slate-100">Position:</span> {pendingCreate.position}
             </div>
+            <div className="mt-2 text-sm text-slate-300">
+              <span className="font-medium text-slate-100">Start Date:</span>{' '}
+              {new Date(pendingCreate.startDate).toLocaleDateString()}
+            </div>
           </div>
         ) : null}
       </ConfirmationModal>
@@ -785,6 +816,17 @@ export function AccountManagementPanel({
                   value={editPosition}
                   onChange={(event) => setEditPosition(event.target.value)}
                   placeholder="e.g. Team Lead"
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <div className="text-sm font-medium text-slate-300">Start Date</div>
+              <div className="mt-1">
+                <Input
+                  type="date"
+                  value={editStartDate}
+                  onChange={(event) => setEditStartDate(event.target.value)}
                   required
                 />
               </div>

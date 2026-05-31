@@ -6,6 +6,11 @@ import type {
   UpdateEmployeeAccessInput,
   UpsertAttendanceInput,
 } from '@/modules/admin/types';
+import type {
+  AdminLeaveRequest,
+  LeaveRequest,
+  ReviewLeaveRequestInput,
+} from '@/modules/leave/types';
 
 export async function fetchEmployees(): Promise<Employee[]> {
   const response = await fetch('/api/admin/users', { cache: 'no-store' });
@@ -88,4 +93,28 @@ export async function deleteEmployeeAccount(userId: number): Promise<void> {
   if (!response.ok) {
     throw new Error(data?.error || 'Failed to remove account');
   }
+}
+
+export async function fetchLeaveRequests(): Promise<AdminLeaveRequest[]> {
+  const response = await fetch('/api/admin/leave-requests', { cache: 'no-store' });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || 'Failed to fetch leave requests');
+  }
+  return data.requests as AdminLeaveRequest[];
+}
+
+export async function reviewEmployeeLeaveRequest(
+  input: ReviewLeaveRequestInput
+): Promise<LeaveRequest> {
+  const response = await fetch('/api/admin/leave-requests', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || 'Failed to review leave request');
+  }
+  return data.request as LeaveRequest;
 }

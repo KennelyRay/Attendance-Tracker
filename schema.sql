@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
   position VARCHAR(255),
+  start_date DATE NOT NULL DEFAULT CURRENT_DATE,
   is_admin BOOLEAN NOT NULL DEFAULT FALSE,
   is_banned BOOLEAN NOT NULL DEFAULT FALSE,
   restricted_until TIMESTAMP NULL,
@@ -48,6 +49,25 @@ CREATE TABLE IF NOT EXISTS attendance_leave (
   created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(user_id, date)
+);
+
+CREATE TABLE IF NOT EXISTS leave_requests (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  leave_type VARCHAR(64) NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  total_days INTEGER NOT NULL,
+  reason TEXT NOT NULL,
+  deduct_from_paid_balance BOOLEAN NOT NULL DEFAULT FALSE,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  admin_notes TEXT NULL,
+  reviewed_by INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
+  reviewed_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT leave_requests_date_range CHECK (end_date >= start_date),
+  CONSTRAINT leave_requests_total_days CHECK (total_days > 0),
+  CONSTRAINT leave_requests_status CHECK (status IN ('pending', 'approved', 'rejected'))
 );
 
 CREATE OR REPLACE VIEW attendance_records AS

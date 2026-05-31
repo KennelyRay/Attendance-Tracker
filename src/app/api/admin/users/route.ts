@@ -4,6 +4,21 @@ import { getPool } from '@/lib/db';
 import { getSessionData } from '@/lib/session';
 import { ensureUserAccessColumns } from '@/lib/user-access';
 
+function parseStartDate(value: unknown) {
+  const cleanValue = typeof value === 'string' ? value.trim() : '';
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(cleanValue)) {
+    return null;
+  }
+
+  const parsed = new Date(`${cleanValue}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return cleanValue;
+}
+
 async function requireAdmin() {
   const session = await getSessionData();
 
@@ -19,7 +34,7 @@ async function listEmployeeUsers() {
   await ensureUserAccessColumns(pool);
   const result = await pool.query(
     `
-      SELECT id, name, email, position, is_banned, restricted_until, created_at
+      SELECT id, name, email, position, start_date, is_banned, restricted_until, created_at
       FROM users
       WHERE is_admin = false
       ORDER BY name
@@ -49,15 +64,16 @@ export async function POST(request: NextRequest) {
     const unauthorized = await requireAdmin();
     if (unauthorized) return unauthorized;
 
-    const { name, email, password, position } = await request.json();
+    const { name, email, password, position, startDate } = await request.json();
     const cleanName = typeof name === 'string' ? name.trim() : '';
     const cleanEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
     const cleanPassword = typeof password === 'string' ? password : '';
     const cleanPosition = typeof position === 'string' ? position.trim() : '';
+    const cleanStartDate = parseStartDate(startDate);
 
-    if (!cleanName || !cleanEmail || !cleanPassword || !cleanPosition) {
+    if (!cleanName || !cleanEmail || !cleanPassword || !cleanPosition || !cleanStartDate) {
       return NextResponse.json(
-        { error: 'Name, email, position, and password are required' },
+        { error: 'Name, email, position, start date, and password are required' },
         { status: 400 }
       );
     }
@@ -75,11 +91,11 @@ export async function POST(request: NextRequest) {
 
     const result = await pool.query(
       `
-        INSERT INTO users (name, email, password, position, is_admin, is_banned, restricted_until)
-        VALUES ($1, $2, $3, $4, false, false, null)
-        RETURNING id, name, email, position, is_banned, restricted_until, created_at
+        INSERT INTO users (name, email, password, position, start_date, is_admin, is_banned, restricted_until)
+        VALUES ($1, $2, $3, $4, $5, false, false, null)
+        RETURNING id, name, email, position, start_date, is_banned, restricted_until, created_at
       `,
-      [cleanName, cleanEmail, hashedPassword, cleanPosition]
+      [cleanName, cleanEmail, hashedPassword, cleanPosition, cleanStartDate]
     );
 
     return NextResponse.json({ user: result.rows[0] }, { status: 201 });
@@ -101,19 +117,20 @@ export async function PUT(request: NextRequest) {
     const unauthorized = await requireAdmin();
     if (unauthorized) return unauthorized;
 
-    const { userId, name, email, position } = await request.json();
+    const { userId, name, email, position, startDate } = await request.json();
     const employeeId = Number(userId);
     const cleanName = typeof name === 'string' ? name.trim() : '';
     const cleanEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
     const cleanPosition = typeof position === 'string' ? position.trim() : '';
+    const cleanStartDate = parseStartDate(startDate);
 
     if (!Number.isInteger(employeeId)) {
       return NextResponse.json({ error: 'Invalid user id' }, { status: 400 });
     }
 
-    if (!cleanName || !cleanEmail || !cleanPosition) {
+    if (!cleanName || !cleanEmail || !cleanPosition || !cleanStartDate) {
       return NextResponse.json(
-        { error: 'Name, email, and position are required' },
+        { error: 'Name, email, position, and start date are required' },
         { status: 400 }
       );
     }
@@ -123,11 +140,11 @@ export async function PUT(request: NextRequest) {
     const result = await pool.query(
       `
         UPDATE users
-        SET name = $2, email = $3, position = $4
+        SET name = $2, email = $3, position = $4, start_date = $5
         WHERE id = $1 AND is_admin = false
-        RETURNING id, name, email, position, is_banned, restricted_until, created_at
+        RETURNING id, name, email, position, start_date, is_banned, restricted_until, created_at
       `,
-      [employeeId, cleanName, cleanEmail, cleanPosition]
+      [employeeId, cleanName, cleanEmail, cleanPosition, cleanStartDate]
     );
 
     if (result.rows.length === 0) {
@@ -171,7 +188,7 @@ export async function PATCH(request: NextRequest) {
           UPDATE users
           SET is_banned = true, restricted_until = null
           WHERE id = $1 AND is_admin = false
-          RETURNING id, name, email, position, is_banned, restricted_until, created_at
+          RETURNING id, name, email, position, start_date, is_banned, restricted_until, created_at
         `,
         [employeeId]
       );
@@ -187,7 +204,7 @@ export async function PATCH(request: NextRequest) {
           SET is_banned = false,
               restricted_until = CURRENT_TIMESTAMP + ($2 || ' hours')::interval
           WHERE id = $1 AND is_admin = false
-          RETURNING id, name, email, position, is_banned, restricted_until, created_at
+          RETURNING id, name, email, position, start_date, is_banned, restricted_until, created_at
         `,
         [employeeId, String(hours)]
       );
@@ -197,7 +214,7 @@ export async function PATCH(request: NextRequest) {
           UPDATE users
           SET is_banned = false, restricted_until = null
           WHERE id = $1 AND is_admin = false
-          RETURNING id, name, email, position, is_banned, restricted_until, created_at
+          RETURNING id, name, email, position, start_date, is_banned, restricted_until, created_at
         `,
         [employeeId]
       );

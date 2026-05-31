@@ -2,6 +2,11 @@ import type {
   EmployeeAttendanceRecord,
   EmployeeAttendanceStats,
 } from '@/modules/employee/types';
+import type {
+  CreateLeaveRequestInput,
+  LeaveBalance,
+  LeaveRequest,
+} from '@/modules/leave/types';
 
 export async function fetchMyAttendance(month: string, year: string): Promise<{
   records: EmployeeAttendanceRecord[];
@@ -18,3 +23,38 @@ export async function fetchMyAttendance(month: string, year: string): Promise<{
   };
 }
 
+export async function fetchMyLeaveData(): Promise<{
+  balance: LeaveBalance;
+  requests: LeaveRequest[];
+}> {
+  const response = await fetch('/api/employee/leave-requests', { cache: 'no-store' });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || 'Failed to fetch leave data');
+  }
+
+  return {
+    balance: data.balance as LeaveBalance,
+    requests: data.requests as LeaveRequest[],
+  };
+}
+
+export async function createLeaveRequest(input: CreateLeaveRequestInput): Promise<{
+  request: LeaveRequest;
+  balance: LeaveBalance;
+}> {
+  const response = await fetch('/api/employee/leave-requests', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || 'Failed to submit leave request');
+  }
+
+  return {
+    request: data.request as LeaveRequest,
+    balance: data.balance as LeaveBalance,
+  };
+}

@@ -1,9 +1,13 @@
 'use client';
 
+import { useMemo, useState } from 'react';
+import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Table, TBody, TD, TH, THead } from '@/components/ui/Table';
 import { AttendanceStatusBadge } from '@/modules/attendance/components/AttendanceStatusBadge';
 import type { EmployeeAttendanceRecord } from '@/modules/employee/types';
+
+const ATTENDANCE_RECORDS_PER_PAGE = 7;
 
 export function AttendanceTable({
   records,
@@ -12,6 +16,14 @@ export function AttendanceTable({
   records: EmployeeAttendanceRecord[];
   isLoading: boolean;
 }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(records.length / ATTENDANCE_RECORDS_PER_PAGE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedRecords = useMemo(() => {
+    const startIndex = (safeCurrentPage - 1) * ATTENDANCE_RECORDS_PER_PAGE;
+    return records.slice(startIndex, startIndex + ATTENDANCE_RECORDS_PER_PAGE);
+  }, [records, safeCurrentPage]);
+
   return (
     <Card>
       <CardHeader title="Attendance History" subtitle={`${records.length} record(s)`} />
@@ -29,7 +41,7 @@ export function AttendanceTable({
         ) : (
           <>
             <div className="space-y-3 md:hidden">
-              {records.map((record) => (
+              {paginatedRecords.map((record) => (
                 <div
                   key={record.id}
                   className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 ring-1 ring-inset ring-white/5"
@@ -61,7 +73,7 @@ export function AttendanceTable({
                   </tr>
                 </THead>
                 <TBody>
-                  {records.map((record) => (
+                  {paginatedRecords.map((record) => (
                     <tr key={record.id} className="transition-colors hover:bg-slate-900/90">
                       <TD className="whitespace-nowrap">
                         {new Date(record.date).toLocaleDateString()}
@@ -75,6 +87,31 @@ export function AttendanceTable({
                 </TBody>
               </Table>
             </div>
+            {records.length > ATTENDANCE_RECORDS_PER_PAGE ? (
+              <div className="mt-5 flex flex-col gap-3 border-t border-slate-800/80 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-sm text-slate-400">
+                  Page {safeCurrentPage} of {totalPages}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                    disabled={safeCurrentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                    disabled={safeCurrentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </>
         )}
       </CardBody>

@@ -19,6 +19,7 @@ import type {
 
 const LEAVE_COOLDOWN_MS = 13 * 7 * 24 * 60 * 60 * 1000;
 const MAX_TIMEOUT_MS = 2_147_483_647;
+const LEAVE_REQUESTS_PER_PAGE = 3;
 
 function statusClass(status: LeaveRequestStatus) {
   switch (status) {
@@ -54,6 +55,7 @@ export function LeaveManagementPanel({
   const [pendingSubmission, setPendingSubmission] = useState<CreateLeaveRequestInput | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [requestPage, setRequestPage] = useState(1);
   const [now, setNow] = useState(() => Date.now());
   const selectedPolicy = useMemo(() => getLeavePolicy(leaveType), [leaveType]);
   const loadLeaveData = useCallback(async () => {
@@ -76,6 +78,12 @@ export function LeaveManagementPanel({
 
     return futureCooldownEndTimes.length > 0 ? new Date(futureCooldownEndTimes[0]) : null;
   }, [now, requests]);
+  const totalRequestPages = Math.max(1, Math.ceil(requests.length / LEAVE_REQUESTS_PER_PAGE));
+  const safeRequestPage = Math.min(requestPage, totalRequestPages);
+  const paginatedRequests = useMemo(() => {
+    const startIndex = (safeRequestPage - 1) * LEAVE_REQUESTS_PER_PAGE;
+    return requests.slice(startIndex, startIndex + LEAVE_REQUESTS_PER_PAGE);
+  }, [requests, safeRequestPage]);
 
   useEffect(() => {
     let cancelled = false;
@@ -337,7 +345,7 @@ export function LeaveManagementPanel({
             />
           ) : (
             <div className="space-y-4">
-              {requests.map((request) => {
+              {paginatedRequests.map((request) => {
                 const policy = getLeavePolicy(request.leave_type);
 
                 return (
@@ -379,6 +387,33 @@ export function LeaveManagementPanel({
               })}
             </div>
           )}
+          {requests.length > LEAVE_REQUESTS_PER_PAGE ? (
+            <div className="mt-5 flex flex-col gap-3 border-t border-slate-800/80 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm text-slate-400">
+                Page {safeRequestPage} of {totalRequestPages}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setRequestPage((currentPage) => Math.max(1, currentPage - 1))}
+                  disabled={safeRequestPage === 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() =>
+                    setRequestPage((currentPage) => Math.min(totalRequestPages, currentPage + 1))
+                  }
+                  disabled={safeRequestPage === totalRequestPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </CardBody>
       </Card>
 

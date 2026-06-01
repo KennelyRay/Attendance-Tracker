@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Card, CardBody } from '@/components/ui/Card';
+import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
   createEmployeeAccount,
@@ -16,6 +16,14 @@ import {
   upsertAttendance,
 } from '@/modules/admin/api';
 import { AccountManagementPanel } from '@/modules/admin/components/AccountManagementPanel';
+import {
+  AdminSidebar,
+  adminViewLabel,
+  type AdminView,
+} from '@/modules/admin/components/AdminSidebar';
+import { AdminOverviewPanel } from '@/modules/admin/components/AdminOverviewPanel';
+import { AdminInsightsPanel } from '@/modules/admin/components/AdminInsightsPanel';
+import { AdminPlaceholderPanel } from '@/modules/admin/components/AdminPlaceholderPanel';
 import { LeaveRequestsPanel } from '@/modules/admin/components/LeaveRequestsPanel';
 import { employeeAccountStatus } from '@/modules/admin/types';
 import type { Employee } from '@/modules/admin/types';
@@ -31,6 +39,25 @@ import type {
 import { AttendanceStatusBadge } from '@/modules/attendance/components/AttendanceStatusBadge';
 import type { AttendanceStatus } from '@/modules/attendance/types';
 import type { AdminLeaveRequest } from '@/modules/leave/types';
+
+const leaveAwareViews: AdminView[] = [
+  'dashboard',
+  'leave-requests',
+  'reports-charts',
+  'smart-insights',
+];
+
+const viewDescriptions: Record<AdminView, string> = {
+  dashboard: 'Main statistics and workforce charts',
+  employees: 'Attendance updates and employee detail management',
+  'leave-requests': 'Review pending leave requests and completed decisions',
+  'new-violation': 'Create a new employee violation case workspace',
+  'all-violation-cases': 'Review all existing violation cases and statuses',
+  'reports-charts': 'Deeper reports and management charts',
+  'smart-insights': 'Auto-generated operational guidance from current data',
+  'audit-trail': 'System activity timeline and administrative logs',
+  'employee-accounts': 'Account lifecycle, access controls, and edits',
+};
 
 export function AdminDashboardClient({
   initialEmployees,
@@ -52,7 +79,7 @@ export function AdminDashboardClient({
   const [isLeaveRequestsLoading, setIsLeaveRequestsLoading] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState<AdminLeaveRequest[]>([]);
   const [leaveError, setLeaveError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'attendance' | 'accounts' | 'leave'>('attendance');
+  const [activeView, setActiveView] = useState<AdminView>('dashboard');
   const [error, setError] = useState<string | null>(null);
 
   const selectedEmployee = useMemo(() => {
@@ -60,7 +87,7 @@ export function AdminDashboardClient({
     return employees.find((e) => e.id === selectedEmployeeId) || null;
   }, [employees, selectedEmployeeId]);
 
-  const last30DaysCounts = useMemo(() => {
+  const selectedEmployeeLast30DaysCounts = useMemo(() => {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 30);
 
@@ -98,6 +125,13 @@ export function AdminDashboardClient({
     );
   }, [employees]);
 
+  const pendingLeaveCount = useMemo(
+    () => leaveRequests.filter((request) => request.status === 'pending').length,
+    [leaveRequests]
+  );
+
+  const accountAttentionCount = adminStats.restricted + adminStats.banned;
+
   const reloadEmployees = async () => {
     setError(null);
     setIsEmployeesLoading(true);
@@ -130,7 +164,7 @@ export function AdminDashboardClient({
       : (list[0]?.id ?? null);
     setSelectedEmployeeId(nextSelectedEmployeeId);
 
-    if (activeTab === 'attendance') {
+    if (activeView === 'employees') {
       if (nextSelectedEmployeeId) {
         await reloadHistory(nextSelectedEmployeeId);
       } else {
@@ -249,13 +283,13 @@ export function AdminDashboardClient({
     await reviewEmployeeLeaveRequest(input);
     await loadLeaveRequests();
 
-    if (selectedEmployeeId && activeTab === 'leave') {
+    if (selectedEmployeeId) {
       await reloadHistory(selectedEmployeeId);
     }
   };
 
   useEffect(() => {
-    if (activeTab !== 'leave') {
+    if (!leaveAwareViews.includes(activeView)) {
       return;
     }
 
@@ -284,7 +318,19 @@ export function AdminDashboardClient({
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleFocus);
     };
-  }, [activeTab]);
+  }, [activeView]);
+
+  const openView = async (view: AdminView) => {
+    setActiveView(view);
+
+    if (view === 'employees' && selectedEmployeeId) {
+      await reloadHistory(selectedEmployeeId);
+    }
+
+    if (leaveAwareViews.includes(view) && leaveRequests.length === 0) {
+      await loadLeaveRequests();
+    }
+  };
 
   if (error) {
     return (
@@ -294,9 +340,11 @@ export function AdminDashboardClient({
         action={
           <Button
             variant="secondary"
-            onClick={() => {
-              reloadEmployees();
-              if (selectedEmployeeId) reloadHistory(selectedEmployeeId);
+            onClick={async () => {
+              await reloadEmployees();
+              if (leaveAwareViews.includes(activeView)) {
+                await loadLeaveRequests();
+              }
             }}
           >
             Retry
@@ -306,173 +354,207 @@ export function AdminDashboardClient({
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
-        <div className="rounded-2xl border border-sky-400/12 bg-sky-500/8 px-3 py-3 ring-1 ring-inset ring-sky-400/10 sm:px-5 sm:py-4">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-sky-300 sm:text-xs">Total Employees</div>
-          <div className="mt-1.5 text-xl font-semibold text-slate-50 sm:mt-2 sm:text-2xl">{adminStats.total}</div>
-          <div className="mt-1 text-[11px] leading-4 text-slate-400 sm:text-sm sm:leading-5">Accounts currently tracked by admin</div>
-        </div>
-        <div className="rounded-2xl border border-emerald-400/12 bg-emerald-500/8 px-3 py-3 ring-1 ring-inset ring-emerald-400/10 sm:px-5 sm:py-4">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300 sm:text-xs">Active</div>
-          <div className="mt-1.5 text-xl font-semibold text-slate-50 sm:mt-2 sm:text-2xl">{adminStats.active}</div>
-          <div className="mt-1 text-[11px] leading-4 text-slate-400 sm:text-sm sm:leading-5">Employees with normal access</div>
-        </div>
-        <div className="rounded-2xl border border-amber-400/12 bg-amber-500/8 px-3 py-3 ring-1 ring-inset ring-amber-400/10 sm:px-5 sm:py-4">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-300 sm:text-xs">Restricted</div>
-          <div className="mt-1.5 text-xl font-semibold text-slate-50 sm:mt-2 sm:text-2xl">{adminStats.restricted}</div>
-          <div className="mt-1 text-[11px] leading-4 text-slate-400 sm:text-sm sm:leading-5">Employees with temporary login blocks</div>
-        </div>
-        <div className="rounded-2xl border border-rose-400/12 bg-rose-500/8 px-3 py-3 ring-1 ring-inset ring-rose-400/10 sm:px-5 sm:py-4">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-rose-300 sm:text-xs">Banned</div>
-          <div className="mt-1.5 text-xl font-semibold text-slate-50 sm:mt-2 sm:text-2xl">{adminStats.banned}</div>
-          <div className="mt-1 text-[11px] leading-4 text-slate-400 sm:text-sm sm:leading-5">Employees permanently blocked</div>
-        </div>
+  const renderEmployeesView = () => (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="lg:col-span-1">
+        <EmployeeList
+          employees={employees}
+          selectedEmployeeId={selectedEmployeeId}
+          onSelect={onSelect}
+          isLoading={isEmployeesLoading}
+        />
       </div>
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <Button
-          className="w-full sm:w-auto"
-          variant={activeTab === 'attendance' ? 'primary' : 'secondary'}
-          onClick={async () => {
-            setActiveTab('attendance');
-            if (selectedEmployeeId) {
-              await reloadHistory(selectedEmployeeId);
+      <div className="space-y-6 lg:col-span-2">
+        {employees.length === 0 && !isEmployeesLoading ? (
+          <EmptyState
+            title="No employees found"
+            description="Create an employee account in System > Employee Accounts to start tracking attendance."
+            action={
+              <Button variant="secondary" onClick={() => void openView('employee-accounts')}>
+                Open Employee Accounts
+              </Button>
             }
-          }}
-        >
-          Attendance
-        </Button>
-        <Button
-          className="w-full sm:w-auto"
-          variant={activeTab === 'accounts' ? 'primary' : 'secondary'}
-          onClick={() => setActiveTab('accounts')}
-        >
-          Accounts
-        </Button>
-        <Button
-          className="w-full sm:w-auto"
-          variant={activeTab === 'leave' ? 'primary' : 'secondary'}
-          onClick={() => setActiveTab('leave')}
-        >
-          Leave Requests
-        </Button>
+          />
+        ) : selectedEmployee ? (
+          <>
+            <Card>
+              <CardBody>
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <div className="text-lg font-semibold text-slate-100">
+                      {selectedEmployee.name}
+                    </div>
+                    <div className="mt-1 text-sm text-slate-400">
+                      {selectedEmployee.email}
+                    </div>
+                    <div className="mt-2 inline-flex items-center rounded-full bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-300 ring-1 ring-inset ring-sky-400/20">
+                      {selectedEmployee.position || 'No position set'}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 min-[420px]:grid-cols-2 sm:grid-cols-4">
+                    <div className="rounded-xl bg-slate-900/85 px-3 py-2 ring-1 ring-inset ring-slate-800">
+                      <div className="text-xs font-medium text-slate-400">Present</div>
+                      <div className="mt-1 flex items-center justify-between gap-3">
+                        <div className="text-lg font-semibold text-slate-100">
+                          {selectedEmployeeLast30DaysCounts.present}
+                        </div>
+                        <AttendanceStatusBadge status="present" />
+                      </div>
+                    </div>
+                    <div className="rounded-xl bg-slate-900/85 px-3 py-2 ring-1 ring-inset ring-slate-800">
+                      <div className="text-xs font-medium text-slate-400">Absent</div>
+                      <div className="mt-1 flex items-center justify-between gap-3">
+                        <div className="text-lg font-semibold text-slate-100">
+                          {selectedEmployeeLast30DaysCounts.absent}
+                        </div>
+                        <AttendanceStatusBadge status="absent" />
+                      </div>
+                    </div>
+                    <div className="rounded-xl bg-slate-900/85 px-3 py-2 ring-1 ring-inset ring-slate-800">
+                      <div className="text-xs font-medium text-slate-400">Half Day</div>
+                      <div className="mt-1 flex items-center justify-between gap-3">
+                        <div className="text-lg font-semibold text-slate-100">
+                          {selectedEmployeeLast30DaysCounts['half-day']}
+                        </div>
+                        <AttendanceStatusBadge status="half-day" />
+                      </div>
+                    </div>
+                    <div className="rounded-xl bg-slate-900/85 px-3 py-2 ring-1 ring-inset ring-slate-800">
+                      <div className="text-xs font-medium text-slate-400">Leave</div>
+                      <div className="mt-1 flex items-center justify-between gap-3">
+                        <div className="text-lg font-semibold text-slate-100">
+                          {selectedEmployeeLast30DaysCounts.leave}
+                        </div>
+                        <AttendanceStatusBadge status="leave" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 text-xs text-slate-500">Last 30 days overview</div>
+              </CardBody>
+            </Card>
+            <AttendanceForm
+              employee={selectedEmployee}
+              onSave={onSave}
+              isSaving={isSaving}
+            />
+            <AttendanceTable records={records} isLoading={isHistoryLoading} />
+          </>
+        ) : (
+          <EmptyState
+            title="Select an employee"
+            description="Choose an employee from the list to view and manage attendance."
+          />
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="xl:sticky xl:top-24 xl:self-start">
+        <AdminSidebar
+          activeView={activeView}
+          pendingLeaveCount={pendingLeaveCount}
+          attentionCount={accountAttentionCount}
+          onSelect={(view) => void openView(view)}
+        />
       </div>
 
-      {activeTab === 'accounts' ? (
-        <AccountManagementPanel
-          accounts={employees}
-          onCreate={onCreateAccount}
-          onUpdateAccount={onUpdateAccount}
-          onUpdateAccess={onUpdateAccountAccess}
-          onDelete={onDeleteAccount}
-        />
-      ) : activeTab === 'leave' ? (
-        <LeaveRequestsPanel
-          requests={leaveRequests}
-          isLoading={isLeaveRequestsLoading}
-          error={leaveError}
-          onReview={onReviewLeaveRequest}
-          onRefresh={loadLeaveRequests}
-        />
-      ) : (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-1">
-            <EmployeeList
-              employees={employees}
-              selectedEmployeeId={selectedEmployeeId}
-              onSelect={onSelect}
-              isLoading={isEmployeesLoading}
-            />
-          </div>
-          <div className="space-y-6 lg:col-span-2">
-            {employees.length === 0 && !isEmployeesLoading ? (
-              <EmptyState
-                title="No employees found"
-                description="Create an employee account in the Accounts tab to start tracking attendance."
-                action={
-                  <Button variant="secondary" onClick={() => setActiveTab('accounts')}>
-                    Open Accounts
-                  </Button>
-                }
-              />
-            ) : selectedEmployee ? (
-              <>
-                <Card>
-                  <CardBody>
-                    <div className="flex flex-col gap-4">
-                      <div>
-                        <div className="text-lg font-semibold text-slate-100">
-                          {selectedEmployee.name}
-                        </div>
-                        <div className="mt-1 text-sm text-slate-400">
-                          {selectedEmployee.email}
-                        </div>
-                        <div className="mt-2 inline-flex items-center rounded-full bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-300 ring-1 ring-inset ring-sky-400/20">
-                          {selectedEmployee.position || 'No position set'}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 min-[420px]:grid-cols-2 sm:grid-cols-4">
-                        <div className="rounded-xl bg-slate-900/85 px-3 py-2 ring-1 ring-inset ring-slate-800">
-                          <div className="text-xs font-medium text-slate-400">Present</div>
-                          <div className="mt-1 flex items-center justify-between gap-3">
-                            <div className="text-lg font-semibold text-slate-100">
-                              {last30DaysCounts.present}
-                            </div>
-                            <AttendanceStatusBadge status="present" />
-                          </div>
-                        </div>
-                        <div className="rounded-xl bg-slate-900/85 px-3 py-2 ring-1 ring-inset ring-slate-800">
-                          <div className="text-xs font-medium text-slate-400">Absent</div>
-                          <div className="mt-1 flex items-center justify-between gap-3">
-                            <div className="text-lg font-semibold text-slate-100">
-                              {last30DaysCounts.absent}
-                            </div>
-                            <AttendanceStatusBadge status="absent" />
-                          </div>
-                        </div>
-                        <div className="rounded-xl bg-slate-900/85 px-3 py-2 ring-1 ring-inset ring-slate-800">
-                          <div className="text-xs font-medium text-slate-400">Half Day</div>
-                          <div className="mt-1 flex items-center justify-between gap-3">
-                            <div className="text-lg font-semibold text-slate-100">
-                              {last30DaysCounts['half-day']}
-                            </div>
-                            <AttendanceStatusBadge status="half-day" />
-                          </div>
-                        </div>
-                        <div className="rounded-xl bg-slate-900/85 px-3 py-2 ring-1 ring-inset ring-slate-800">
-                          <div className="text-xs font-medium text-slate-400">Leave</div>
-                          <div className="mt-1 flex items-center justify-between gap-3">
-                            <div className="text-lg font-semibold text-slate-100">
-                              {last30DaysCounts.leave}
-                            </div>
-                            <AttendanceStatusBadge status="leave" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-3 text-xs text-slate-500">
-                      Last 30 days overview
-                    </div>
-                  </CardBody>
-                </Card>
-                <AttendanceForm
-                  employee={selectedEmployee}
-                  onSave={onSave}
-                  isSaving={isSaving}
-                />
-                <AttendanceTable records={records} isLoading={isHistoryLoading} />
-              </>
-            ) : (
-              <EmptyState
-                title="Select an employee"
-                description="Choose an employee from the list to view and manage attendance."
-              />
-            )}
-          </div>
-        </div>
-      )}
+      <div className="space-y-6">
+        <Card>
+          <CardHeader
+            title={adminViewLabel(activeView)}
+            subtitle={viewDescriptions[activeView]}
+            right={
+              activeView === 'leave-requests' ? (
+                <Button variant="secondary" onClick={() => void loadLeaveRequests()}>
+                  Refresh Leave Queue
+                </Button>
+              ) : activeView === 'employees' ? (
+                <Button variant="secondary" onClick={() => void reloadEmployees()}>
+                  Refresh Employees
+                </Button>
+              ) : null
+            }
+          />
+        </Card>
+
+        {activeView === 'dashboard' ? (
+          <AdminOverviewPanel
+            employees={employees}
+            leaveRequests={leaveRequests}
+            isLeaveDataLoading={isLeaveRequestsLoading}
+            onOpenView={(view) => void openView(view)}
+          />
+        ) : activeView === 'employees' ? (
+          renderEmployeesView()
+        ) : activeView === 'leave-requests' ? (
+          <LeaveRequestsPanel
+            requests={leaveRequests}
+            isLoading={isLeaveRequestsLoading}
+            error={leaveError}
+            onReview={onReviewLeaveRequest}
+            onRefresh={loadLeaveRequests}
+          />
+        ) : activeView === 'reports-charts' ? (
+          <AdminOverviewPanel
+            mode="reports"
+            employees={employees}
+            leaveRequests={leaveRequests}
+            isLeaveDataLoading={isLeaveRequestsLoading}
+            onOpenView={(view) => void openView(view)}
+          />
+        ) : activeView === 'smart-insights' ? (
+          <AdminInsightsPanel
+            employees={employees}
+            leaveRequests={leaveRequests}
+            isLeaveDataLoading={isLeaveRequestsLoading}
+            onOpenView={(view) => void openView(view)}
+          />
+        ) : activeView === 'employee-accounts' ? (
+          <AccountManagementPanel
+            accounts={employees}
+            onCreate={onCreateAccount}
+            onUpdateAccount={onUpdateAccount}
+            onUpdateAccess={onUpdateAccountAccess}
+            onDelete={onDeleteAccount}
+          />
+        ) : activeView === 'new-violation' ? (
+          <AdminPlaceholderPanel
+            title="New Violation"
+            subtitle="Start a dedicated case workflow for employee violations."
+            description="This section is prepared for a future violation intake flow where admins can log incidents, attach policy references, capture evidence, and route cases for review."
+            highlights={[
+              'Create a new case with employee details, incident date, and violation category.',
+              'Attach supporting notes, witness statements, and policy references.',
+              'Track the case as it moves from review to resolution.',
+            ]}
+          />
+        ) : activeView === 'all-violation-cases' ? (
+          <AdminPlaceholderPanel
+            title="All Violation Cases"
+            subtitle="Centralize case review, statuses, and follow-up actions."
+            description="This workspace is ready for a full case register where admins can sort incidents by severity, assignee, and current outcome without leaving the dashboard shell."
+            highlights={[
+              'View all recorded violation cases in one searchable list.',
+              'Filter by employee, case status, and violation type.',
+              'Review timelines, actions taken, and final decisions.',
+            ]}
+          />
+        ) : (
+          <AdminPlaceholderPanel
+            title="Audit Trail"
+            subtitle="Track important admin-side system activity over time."
+            description="This section is reserved for a future audit trail feed that will record major actions such as attendance edits, leave decisions, account updates, and security-related changes."
+            highlights={[
+              'Log account edits, restrictions, bans, and restores.',
+              'Record attendance updates and leave review decisions.',
+              'Support timestamped activity history for transparency.',
+            ]}
+          />
+        )}
+      </div>
     </div>
   );
 }

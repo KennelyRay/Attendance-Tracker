@@ -11,9 +11,11 @@ import type { EmployeePortalProfile } from '@/modules/employee/types';
 export function TopNav({
   user,
   title,
+  fullWidth = false,
 }: {
   user: SessionUser;
   title: string;
+  fullWidth?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -87,7 +89,12 @@ export function TopNav({
 
   return (
     <header className="sticky top-0 z-10 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl flex-col gap-2 px-3 py-2.5 sm:h-16 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-0 lg:px-8">
+      <div
+        className={[
+          'flex flex-col gap-2 px-3 py-2.5 sm:h-16 sm:flex-row sm:items-center sm:justify-between sm:py-0',
+          fullWidth ? 'w-full sm:px-4 lg:px-6 xl:px-8' : 'mx-auto max-w-7xl sm:px-6 lg:px-8',
+        ].join(' ')}
+      >
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900/80 ring-1 ring-inset ring-sky-400/15 shadow-[0_10px_24px_rgba(34,211,238,0.18)] sm:h-9 sm:w-9">
             <Image

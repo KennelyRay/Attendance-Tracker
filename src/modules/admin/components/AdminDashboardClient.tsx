@@ -474,7 +474,7 @@ export function AdminDashboardClient({
 
       <div
         className={[
-          'grid grid-cols-1 gap-6',
+          'grid grid-cols-1 gap-6 px-3 sm:px-4 xl:pr-8 xl:pl-0',
           isSidebarCollapsed
             ? 'xl:grid-cols-[88px_minmax(0,1fr)]'
             : 'xl:grid-cols-[280px_minmax(0,1fr)]',

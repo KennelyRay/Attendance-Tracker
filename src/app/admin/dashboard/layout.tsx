@@ -19,7 +19,7 @@ export default async function AdminDashboardLayout({
   }
 
   return (
-    <AppShell user={session.user} title="Admin Dashboard">
+    <AppShell user={session.user} title="Admin Dashboard" fullWidth>
       {children}
     </AppShell>
   );

@@ -480,7 +480,7 @@ export function AdminDashboardClient({
             : 'xl:grid-cols-[280px_minmax(0,1fr)]',
         ].join(' ')}
       >
-        <div className="hidden xl:block xl:sticky xl:top-24 xl:self-start">
+        <div className="hidden xl:block xl:sticky xl:top-16 xl:self-start">
         <AdminSidebar
           activeView={activeView}
           pendingLeaveCount={pendingLeaveCount}

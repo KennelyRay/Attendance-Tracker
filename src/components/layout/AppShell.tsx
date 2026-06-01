@@ -21,7 +21,7 @@ export function AppShell({
       <main
         className={
           fullWidth
-            ? 'w-full py-5 sm:py-6 xl:py-8'
+            ? 'w-full pb-5 sm:pb-6 xl:pb-8'
             : 'mx-auto w-full max-w-7xl px-3 py-5 sm:px-6 sm:py-8 lg:px-8'
         }
       >

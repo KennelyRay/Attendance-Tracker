@@ -57,6 +57,28 @@ export async function POST(request: NextRequest) {
 
     const { userId, date, status, notes } = await request.json();
     const pool = getPool();
+
+    const existingApprovedLeave = await pool.query(
+      `
+        SELECT id
+        FROM attendance_leave
+        WHERE user_id = $1
+          AND date = $2
+          AND notes LIKE 'Approved leave:%'
+        LIMIT 1
+      `,
+      [userId, date]
+    );
+
+    if (existingApprovedLeave.rows.length > 0 && status !== 'leave') {
+      return NextResponse.json(
+        {
+          error:
+            'This date already has an approved leave record and cannot be replaced with another attendance status.',
+        },
+        { status: 409 }
+      );
+    }
     
     await pool.query('SELECT upsert_attendance($1, $2, $3, $4, $5)', [
       userId,

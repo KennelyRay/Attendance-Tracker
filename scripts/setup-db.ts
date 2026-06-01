@@ -88,6 +88,16 @@ async function setupDatabase() {
         p_created_by INTEGER
       ) RETURNS VOID AS $$
       BEGIN
+        IF p_status <> 'leave' AND EXISTS (
+          SELECT 1
+          FROM attendance_leave
+          WHERE user_id = p_user_id
+            AND date = p_date
+            AND notes LIKE 'Approved leave:%'
+        ) THEN
+          RAISE EXCEPTION 'Approved leave exists for this date and cannot be overwritten';
+        END IF;
+
         DELETE FROM attendance_present WHERE user_id = p_user_id AND date = p_date;
         DELETE FROM attendance_absent WHERE user_id = p_user_id AND date = p_date;
         DELETE FROM attendance_half_day WHERE user_id = p_user_id AND date = p_date;

@@ -52,6 +52,7 @@ export function LeaveManagementPanel({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingSubmission, setPendingSubmission] = useState<CreateLeaveRequestInput | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const selectedPolicy = useMemo(() => getLeavePolicy(leaveType), [leaveType]);
@@ -340,9 +341,11 @@ export function LeaveManagementPanel({
                 const policy = getLeavePolicy(request.leave_type);
 
                 return (
-                  <div
+                  <button
                     key={request.id}
-                    className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 ring-1 ring-inset ring-white/5"
+                    type="button"
+                    onClick={() => setSelectedRequest(request)}
+                    className="w-full rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 text-left ring-1 ring-inset ring-white/5 transition-colors hover:bg-slate-900/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
@@ -391,13 +394,101 @@ export function LeaveManagementPanel({
                         {request.admin_notes}
                       </div>
                     ) : null}
-                  </div>
+                    <div className="mt-4 text-xs font-medium uppercase tracking-wide text-sky-300/80">
+                      Click to view summary
+                    </div>
+                  </button>
                 );
               })}
             </div>
           )}
         </CardBody>
       </Card>
+
+      {selectedRequest ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="text-lg font-semibold text-slate-100">
+                  {getLeavePolicy(selectedRequest.leave_type).label}
+                </div>
+                <div className="mt-2 text-sm leading-6 text-slate-400">
+                  Review the full summary of your submitted leave request.
+                </div>
+              </div>
+              <span
+                className={[
+                  'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold capitalize',
+                  statusClass(selectedRequest.status),
+                ].join(' ')}
+              >
+                {selectedRequest.status}
+              </span>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Date Range
+                </div>
+                <div className="mt-2 text-sm text-slate-200">
+                  {formatDateOnly(selectedRequest.start_date)} to{' '}
+                  {formatDateOnly(selectedRequest.end_date)}
+                </div>
+              </div>
+              <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Total Days
+                </div>
+                <div className="mt-2 text-sm text-slate-200">{selectedRequest.total_days}</div>
+              </div>
+              <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Submitted
+                </div>
+                <div className="mt-2 text-sm text-slate-200">
+                  {new Date(selectedRequest.created_at).toLocaleString()}
+                </div>
+              </div>
+              <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Balance Impact
+                </div>
+                <div className="mt-2 text-sm text-slate-200">
+                  {selectedRequest.deduct_from_paid_balance
+                    ? 'Deducts from your paid leave balance'
+                    : 'Does not deduct from your paid leave balance'}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                Reason
+              </div>
+              <div className="mt-2 text-sm leading-6 text-slate-300">{selectedRequest.reason}</div>
+            </div>
+
+            {selectedRequest.admin_notes ? (
+              <div className="mt-4 rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Admin Note
+                </div>
+                <div className="mt-2 text-sm leading-6 text-slate-300">
+                  {selectedRequest.admin_notes}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="mt-6 flex justify-end">
+              <Button className="w-full sm:w-auto" onClick={() => setSelectedRequest(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {pendingSubmission ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">

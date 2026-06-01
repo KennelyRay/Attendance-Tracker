@@ -363,37 +363,14 @@ export function LeaveManagementPanel({
                         {request.status}
                       </span>
                     </div>
-                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                      <div>
-                        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                          Days
-                        </div>
-                        <div className="mt-1 text-sm text-slate-300">{request.total_days}</div>
-                      </div>
-                      <div>
-                        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                          Paid Balance
-                        </div>
-                        <div className="mt-1 text-sm text-slate-300">
-                          {request.deduct_from_paid_balance ? 'Deducts from balance' : 'No deduction'}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                          Submitted
-                        </div>
-                        <div className="mt-1 text-sm text-slate-300">
-                          {new Date(request.created_at).toLocaleString()}
-                        </div>
-                      </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2.5 text-xs text-slate-400">
+                      <span className="inline-flex items-center rounded-full bg-slate-900/80 px-2.5 py-1 ring-1 ring-inset ring-slate-800">
+                        {request.total_days} day{request.total_days === 1 ? '' : 's'}
+                      </span>
+                      <span className="inline-flex items-center rounded-full bg-slate-900/80 px-2.5 py-1 ring-1 ring-inset ring-slate-800">
+                        {request.deduct_from_paid_balance ? 'Paid balance used' : 'No balance deduction'}
+                      </span>
                     </div>
-                    <div className="mt-4 text-sm leading-6 text-slate-400">{request.reason}</div>
-                    {request.admin_notes ? (
-                      <div className="mt-4 rounded-xl bg-slate-950/70 px-4 py-3 text-sm text-slate-300 ring-1 ring-inset ring-slate-800">
-                        <span className="font-medium text-slate-100">Admin note:</span>{' '}
-                        {request.admin_notes}
-                      </div>
-                    ) : null}
                     <div className="mt-4 text-xs font-medium uppercase tracking-wide text-sky-300/80">
                       Click to view summary
                     </div>

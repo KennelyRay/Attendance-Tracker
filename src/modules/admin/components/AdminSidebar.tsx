@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { Card, CardBody } from '@/components/ui/Card';
 
 export type AdminView =
   | 'dashboard'
@@ -196,11 +196,19 @@ export function AdminSidebar({
   activeView,
   pendingLeaveCount,
   attentionCount,
+  isCollapsed = false,
+  mode = 'desktop',
+  onToggleCollapse,
+  onCloseMobile,
   onSelect,
 }: {
   activeView: AdminView;
   pendingLeaveCount: number;
   attentionCount: number;
+  isCollapsed?: boolean;
+  mode?: 'desktop' | 'mobile';
+  onToggleCollapse?: () => void;
+  onCloseMobile?: () => void;
   onSelect: (view: AdminView) => void;
 }) {
   const groups = adminNavigationGroups.map((group) => ({
@@ -220,19 +228,102 @@ export function AdminSidebar({
     })),
   }));
 
+  const renderToggleIcon = (collapsed: boolean) => (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
+      {collapsed ? (
+        <path
+          d="M7.5 5.5L12.5 10L7.5 14.5"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ) : (
+        <path
+          d="M12.5 5.5L7.5 10L12.5 14.5"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
+    </svg>
+  );
+
+  const isMobile = mode === 'mobile';
+  const showCollapsedDesktop = !isMobile && isCollapsed;
+
   return (
     <Card>
-      <CardHeader
-        title="Admin Console"
-        subtitle="Navigate the workspace by team, operations, and system tools."
-      />
+      <div
+        className={[
+          'flex items-center justify-between gap-3 border-b border-slate-800/80',
+          showCollapsedDesktop ? 'px-3 py-3' : 'px-5 py-4 sm:px-6 sm:py-5',
+        ].join(' ')}
+      >
+        {showCollapsedDesktop ? (
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10 text-sky-300 ring-1 ring-inset ring-sky-400/20">
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-5 w-5">
+              <path d="M4.5 10.5H8.5V15.5H4.5V10.5Z" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M11.5 4.5H15.5V15.5H11.5V4.5Z" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M4.5 4.5H8.5V8H4.5V4.5Z" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+          </div>
+        ) : (
+          <div className="min-w-0">
+            <div className="text-base font-semibold text-slate-100">Admin Console</div>
+            <div className="mt-1 text-sm text-slate-400">
+              Navigate the workspace by team, operations, and system tools.
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
+          {isMobile && onCloseMobile ? (
+            <button
+              type="button"
+              aria-label="Close admin navigation"
+              onClick={onCloseMobile}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800/80 bg-slate-950/80 text-slate-300 ring-1 ring-inset ring-white/5 transition-colors hover:bg-slate-900"
+            >
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
+                <path
+                  d="M6.5 6.5L13.5 13.5M13.5 6.5L6.5 13.5"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          ) : null}
+
+          {!isMobile && onToggleCollapse ? (
+            <button
+              type="button"
+              aria-label={showCollapsedDesktop ? 'Expand admin sidebar' : 'Collapse admin sidebar'}
+              onClick={onToggleCollapse}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800/80 bg-slate-950/80 text-slate-300 ring-1 ring-inset ring-white/5 transition-colors hover:bg-slate-900"
+            >
+              {renderToggleIcon(showCollapsedDesktop)}
+            </button>
+          ) : null}
+        </div>
+      </div>
+
       <CardBody>
-        <div className="space-y-5">
+        <div className={showCollapsedDesktop ? 'space-y-3' : 'space-y-5'}>
           {groups.map((group) => (
             <div key={group.heading}>
-              <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                {group.heading}
-              </div>
+              {showCollapsedDesktop ? (
+                <div className="mb-2 flex justify-center">
+                  <div className="h-px w-8 bg-slate-800/90" />
+                </div>
+              ) : (
+                <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  {group.heading}
+                </div>
+              )}
+
               <div className="space-y-2">
                 {group.items.map((item) => {
                   const isActive = activeView === item.view;
@@ -241,24 +332,49 @@ export function AdminSidebar({
                     <button
                       key={item.view}
                       type="button"
+                      title={showCollapsedDesktop ? item.label : undefined}
                       onClick={() => onSelect(item.view)}
                       className={[
-                        'w-full rounded-2xl border px-4 py-3 text-left transition-all',
+                        'w-full rounded-2xl border text-left transition-all',
                         'ring-1 ring-inset',
+                        showCollapsedDesktop
+                          ? 'px-0 py-3'
+                          : 'px-4 py-3',
                         isActive
                           ? 'border-sky-400/25 bg-sky-500/10 text-slate-50 ring-sky-400/20 shadow-[0_14px_34px_rgba(14,165,233,0.14)]'
                           : 'border-slate-800/80 bg-slate-900/60 text-slate-300 ring-white/5 hover:border-slate-700 hover:bg-slate-900/90',
                       ].join(' ')}
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 text-sm font-semibold">
+                      <div
+                        className={[
+                          'flex gap-3',
+                          showCollapsedDesktop
+                            ? 'items-center justify-center'
+                            : 'items-start justify-between',
+                        ].join(' ')}
+                      >
+                        <div className={showCollapsedDesktop ? 'relative' : 'min-w-0'}>
+                          <div
+                            className={[
+                              'flex text-sm font-semibold',
+                              showCollapsedDesktop
+                                ? 'items-center justify-center'
+                                : 'items-center gap-2',
+                            ].join(' ')}
+                          >
                             <SidebarIcon view={item.view} />
-                            <span className="truncate">{item.label}</span>
+                            {showCollapsedDesktop ? null : <span className="truncate">{item.label}</span>}
                           </div>
-                          <div className="mt-1 text-xs leading-5 text-slate-400">{item.description}</div>
+                          {showCollapsedDesktop ? null : (
+                            <div className="mt-1 text-xs leading-5 text-slate-400">{item.description}</div>
+                          )}
+                          {showCollapsedDesktop && item.badge ? (
+                            <span className="absolute -right-2 -top-2 inline-flex min-w-5 justify-center rounded-full bg-slate-950/95 px-1.5 py-0.5 text-[10px] font-semibold text-sky-300 ring-1 ring-inset ring-slate-700">
+                              {item.badge}
+                            </span>
+                          ) : null}
                         </div>
-                        {item.badge ? (
+                        {!showCollapsedDesktop && item.badge ? (
                           <span className="inline-flex min-w-7 justify-center rounded-full bg-slate-950/90 px-2 py-1 text-[11px] font-semibold text-sky-300 ring-1 ring-inset ring-slate-700">
                             {item.badge}
                           </span>

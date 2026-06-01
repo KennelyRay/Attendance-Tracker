@@ -80,6 +80,8 @@ export function AdminDashboardClient({
   const [leaveRequests, setLeaveRequests] = useState<AdminLeaveRequest[]>([]);
   const [leaveError, setLeaveError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<AdminView>('dashboard');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const selectedEmployee = useMemo(() => {
@@ -322,6 +324,7 @@ export function AdminDashboardClient({
 
   const openView = async (view: AdminView) => {
     setActiveView(view);
+    setIsMobileSidebarOpen(false);
 
     if (view === 'employees' && selectedEmployeeId) {
       await reloadHistory(selectedEmployeeId);
@@ -451,110 +454,147 @@ export function AdminDashboardClient({
   );
 
   return (
-    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
-      <div className="xl:sticky xl:top-24 xl:self-start">
+    <>
+      {isMobileSidebarOpen ? (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm xl:hidden">
+          <div className="h-full max-w-[20rem] p-3 sm:p-4">
+            <div className="max-h-full overflow-y-auto">
+              <AdminSidebar
+                mode="mobile"
+                activeView={activeView}
+                pendingLeaveCount={pendingLeaveCount}
+                attentionCount={accountAttentionCount}
+                onCloseMobile={() => setIsMobileSidebarOpen(false)}
+                onSelect={(view) => void openView(view)}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <div
+        className={[
+          'grid grid-cols-1 gap-6',
+          isSidebarCollapsed
+            ? 'xl:grid-cols-[88px_minmax(0,1fr)]'
+            : 'xl:grid-cols-[280px_minmax(0,1fr)]',
+        ].join(' ')}
+      >
+        <div className="hidden xl:block xl:sticky xl:top-24 xl:self-start">
         <AdminSidebar
           activeView={activeView}
           pendingLeaveCount={pendingLeaveCount}
           attentionCount={accountAttentionCount}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed((current) => !current)}
           onSelect={(view) => void openView(view)}
         />
-      </div>
+        </div>
 
-      <div className="space-y-6">
-        <Card>
-          <CardHeader
-            title={adminViewLabel(activeView)}
-            subtitle={viewDescriptions[activeView]}
-            right={
-              activeView === 'leave-requests' ? (
-                <Button variant="secondary" onClick={() => void loadLeaveRequests()}>
-                  Refresh Leave Queue
-                </Button>
-              ) : activeView === 'employees' ? (
-                <Button variant="secondary" onClick={() => void reloadEmployees()}>
-                  Refresh Employees
-                </Button>
-              ) : null
-            }
-          />
-        </Card>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader
+              title={adminViewLabel(activeView)}
+              subtitle={viewDescriptions[activeView]}
+              right={
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                  <Button
+                    className="xl:hidden"
+                    variant="secondary"
+                    onClick={() => setIsMobileSidebarOpen(true)}
+                  >
+                    Open Navigation
+                  </Button>
+                  {activeView === 'leave-requests' ? (
+                    <Button variant="secondary" onClick={() => void loadLeaveRequests()}>
+                      Refresh Leave Queue
+                    </Button>
+                  ) : activeView === 'employees' ? (
+                    <Button variant="secondary" onClick={() => void reloadEmployees()}>
+                      Refresh Employees
+                    </Button>
+                  ) : null}
+                </div>
+              }
+            />
+          </Card>
 
-        {activeView === 'dashboard' ? (
-          <AdminOverviewPanel
-            employees={employees}
-            leaveRequests={leaveRequests}
-            isLeaveDataLoading={isLeaveRequestsLoading}
-            onOpenView={(view) => void openView(view)}
-          />
-        ) : activeView === 'employees' ? (
-          renderEmployeesView()
-        ) : activeView === 'leave-requests' ? (
-          <LeaveRequestsPanel
-            requests={leaveRequests}
-            isLoading={isLeaveRequestsLoading}
-            error={leaveError}
-            onReview={onReviewLeaveRequest}
-            onRefresh={loadLeaveRequests}
-          />
-        ) : activeView === 'reports-charts' ? (
-          <AdminOverviewPanel
-            mode="reports"
-            employees={employees}
-            leaveRequests={leaveRequests}
-            isLeaveDataLoading={isLeaveRequestsLoading}
-            onOpenView={(view) => void openView(view)}
-          />
-        ) : activeView === 'smart-insights' ? (
-          <AdminInsightsPanel
-            employees={employees}
-            leaveRequests={leaveRequests}
-            isLeaveDataLoading={isLeaveRequestsLoading}
-            onOpenView={(view) => void openView(view)}
-          />
-        ) : activeView === 'employee-accounts' ? (
-          <AccountManagementPanel
-            accounts={employees}
-            onCreate={onCreateAccount}
-            onUpdateAccount={onUpdateAccount}
-            onUpdateAccess={onUpdateAccountAccess}
-            onDelete={onDeleteAccount}
-          />
-        ) : activeView === 'new-violation' ? (
-          <AdminPlaceholderPanel
-            title="New Violation"
-            subtitle="Start a dedicated case workflow for employee violations."
-            description="This section is prepared for a future violation intake flow where admins can log incidents, attach policy references, capture evidence, and route cases for review."
-            highlights={[
-              'Create a new case with employee details, incident date, and violation category.',
-              'Attach supporting notes, witness statements, and policy references.',
-              'Track the case as it moves from review to resolution.',
-            ]}
-          />
-        ) : activeView === 'all-violation-cases' ? (
-          <AdminPlaceholderPanel
-            title="All Violation Cases"
-            subtitle="Centralize case review, statuses, and follow-up actions."
-            description="This workspace is ready for a full case register where admins can sort incidents by severity, assignee, and current outcome without leaving the dashboard shell."
-            highlights={[
-              'View all recorded violation cases in one searchable list.',
-              'Filter by employee, case status, and violation type.',
-              'Review timelines, actions taken, and final decisions.',
-            ]}
-          />
-        ) : (
-          <AdminPlaceholderPanel
-            title="Audit Trail"
-            subtitle="Track important admin-side system activity over time."
-            description="This section is reserved for a future audit trail feed that will record major actions such as attendance edits, leave decisions, account updates, and security-related changes."
-            highlights={[
-              'Log account edits, restrictions, bans, and restores.',
-              'Record attendance updates and leave review decisions.',
-              'Support timestamped activity history for transparency.',
-            ]}
-          />
-        )}
+          {activeView === 'dashboard' ? (
+            <AdminOverviewPanel
+              employees={employees}
+              leaveRequests={leaveRequests}
+              isLeaveDataLoading={isLeaveRequestsLoading}
+              onOpenView={(view) => void openView(view)}
+            />
+          ) : activeView === 'employees' ? (
+            renderEmployeesView()
+          ) : activeView === 'leave-requests' ? (
+            <LeaveRequestsPanel
+              requests={leaveRequests}
+              isLoading={isLeaveRequestsLoading}
+              error={leaveError}
+              onReview={onReviewLeaveRequest}
+              onRefresh={loadLeaveRequests}
+            />
+          ) : activeView === 'reports-charts' ? (
+            <AdminOverviewPanel
+              mode="reports"
+              employees={employees}
+              leaveRequests={leaveRequests}
+              isLeaveDataLoading={isLeaveRequestsLoading}
+              onOpenView={(view) => void openView(view)}
+            />
+          ) : activeView === 'smart-insights' ? (
+            <AdminInsightsPanel
+              employees={employees}
+              leaveRequests={leaveRequests}
+              isLeaveDataLoading={isLeaveRequestsLoading}
+              onOpenView={(view) => void openView(view)}
+            />
+          ) : activeView === 'employee-accounts' ? (
+            <AccountManagementPanel
+              accounts={employees}
+              onCreate={onCreateAccount}
+              onUpdateAccount={onUpdateAccount}
+              onUpdateAccess={onUpdateAccountAccess}
+              onDelete={onDeleteAccount}
+            />
+          ) : activeView === 'new-violation' ? (
+            <AdminPlaceholderPanel
+              title="New Violation"
+              subtitle="Start a dedicated case workflow for employee violations."
+              description="This section is prepared for a future violation intake flow where admins can log incidents, attach policy references, capture evidence, and route cases for review."
+              highlights={[
+                'Create a new case with employee details, incident date, and violation category.',
+                'Attach supporting notes, witness statements, and policy references.',
+                'Track the case as it moves from review to resolution.',
+              ]}
+            />
+          ) : activeView === 'all-violation-cases' ? (
+            <AdminPlaceholderPanel
+              title="All Violation Cases"
+              subtitle="Centralize case review, statuses, and follow-up actions."
+              description="This workspace is ready for a full case register where admins can sort incidents by severity, assignee, and current outcome without leaving the dashboard shell."
+              highlights={[
+                'View all recorded violation cases in one searchable list.',
+                'Filter by employee, case status, and violation type.',
+                'Review timelines, actions taken, and final decisions.',
+              ]}
+            />
+          ) : (
+            <AdminPlaceholderPanel
+              title="Audit Trail"
+              subtitle="Track important admin-side system activity over time."
+              description="This section is reserved for a future audit trail feed that will record major actions such as attendance edits, leave decisions, account updates, and security-related changes."
+              highlights={[
+                'Log account edits, restrictions, bans, and restores.',
+                'Record attendance updates and leave review decisions.',
+                'Support timestamped activity history for transparency.',
+              ]}
+            />
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

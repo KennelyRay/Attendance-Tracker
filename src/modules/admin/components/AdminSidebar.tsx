@@ -1,7 +1,5 @@
 'use client';
 
-import { Card, CardBody } from '@/components/ui/Card';
-
 export type AdminView =
   | 'dashboard'
   | 'employees'
@@ -252,9 +250,8 @@ export function AdminSidebar({
 
   const isMobile = mode === 'mobile';
   const showCollapsedDesktop = !isMobile && isCollapsed;
-
-  return (
-    <Card>
+  const sidebarContent = (
+    <>
       <div
         className={[
           'flex items-center justify-between gap-3 border-b border-slate-800/80',
@@ -272,9 +269,6 @@ export function AdminSidebar({
         ) : (
           <div className="min-w-0">
             <div className="text-base font-semibold text-slate-100">Admin Console</div>
-            <div className="mt-1 text-sm text-slate-400">
-              Navigate the workspace by team, operations, and system tools.
-            </div>
           </div>
         )}
 
@@ -310,7 +304,7 @@ export function AdminSidebar({
         </div>
       </div>
 
-      <CardBody>
+      <div className={showCollapsedDesktop ? 'px-3 py-4' : 'px-5 py-4 sm:px-6 sm:py-5'}>
         <div className={showCollapsedDesktop ? 'space-y-3' : 'space-y-5'}>
           {groups.map((group) => (
             <div key={group.heading}>
@@ -387,7 +381,24 @@ export function AdminSidebar({
             </div>
           ))}
         </div>
-      </CardBody>
-    </Card>
+      </div>
+    </>
+  );
+
+  return (
+    isMobile ? (
+      <div className="overflow-hidden rounded-2xl border border-sky-400/10 bg-slate-950/80 shadow-[0_22px_60px_rgba(2,8,23,0.45)] ring-1 ring-inset ring-white/5 backdrop-blur-xl">
+        {sidebarContent}
+      </div>
+    ) : (
+      <aside
+        className={[
+          'h-full text-slate-100',
+          showCollapsedDesktop ? 'w-[88px]' : 'w-full',
+        ].join(' ')}
+      >
+        {sidebarContent}
+      </aside>
+    )
   );
 }

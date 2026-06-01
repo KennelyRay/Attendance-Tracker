@@ -474,13 +474,13 @@ export function AdminDashboardClient({
 
       <div
         className={[
-          'grid grid-cols-1 gap-6 px-3 sm:px-4 xl:pr-8 xl:pl-0',
+          'grid grid-cols-1 gap-6 px-3 sm:px-4 xl:gap-0 xl:px-0',
           isSidebarCollapsed
             ? 'xl:grid-cols-[88px_minmax(0,1fr)]'
             : 'xl:grid-cols-[280px_minmax(0,1fr)]',
         ].join(' ')}
       >
-        <div className="hidden xl:block xl:sticky xl:top-16 xl:self-start">
+        <div className="hidden xl:block xl:sticky xl:top-16 xl:self-start xl:border-r xl:border-slate-800/80 xl:bg-slate-950/35">
         <AdminSidebar
           activeView={activeView}
           pendingLeaveCount={pendingLeaveCount}
@@ -491,33 +491,31 @@ export function AdminDashboardClient({
         />
         </div>
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader
-              title={adminViewLabel(activeView)}
-              subtitle={viewDescriptions[activeView]}
-              right={
-                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                  <Button
-                    className="xl:hidden"
-                    variant="secondary"
-                    onClick={() => setIsMobileSidebarOpen(true)}
-                  >
-                    Open Navigation
+        <div className="space-y-6 xl:px-8">
+          <CardHeader
+            title={adminViewLabel(activeView)}
+            subtitle={viewDescriptions[activeView]}
+            right={
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <Button
+                  className="xl:hidden"
+                  variant="secondary"
+                  onClick={() => setIsMobileSidebarOpen(true)}
+                >
+                  Open Navigation
+                </Button>
+                {activeView === 'leave-requests' ? (
+                  <Button variant="secondary" onClick={() => void loadLeaveRequests()}>
+                    Refresh Leave Queue
                   </Button>
-                  {activeView === 'leave-requests' ? (
-                    <Button variant="secondary" onClick={() => void loadLeaveRequests()}>
-                      Refresh Leave Queue
-                    </Button>
-                  ) : activeView === 'employees' ? (
-                    <Button variant="secondary" onClick={() => void reloadEmployees()}>
-                      Refresh Employees
-                    </Button>
-                  ) : null}
-                </div>
-              }
-            />
-          </Card>
+                ) : activeView === 'employees' ? (
+                  <Button variant="secondary" onClick={() => void reloadEmployees()}>
+                    Refresh Employees
+                  </Button>
+                ) : null}
+              </div>
+            }
+          />
 
           {activeView === 'dashboard' ? (
             <AdminOverviewPanel

@@ -59,6 +59,42 @@ function buildAttendancePie(segments: Array<{ percentage: number; color: string 
   return `conic-gradient(${stops.join(', ')})`;
 }
 
+function EmployeeMobileNavIcon({ view }: { view: EmployeeView }) {
+  switch (view) {
+    case 'dashboard':
+      return (
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
+          <path d="M4.5 10.5H8.5V15.5H4.5V10.5Z" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M11.5 4.5H15.5V15.5H11.5V4.5Z" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M4.5 4.5H8.5V8H4.5V4.5Z" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      );
+    case 'leave':
+      return (
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
+          <path d="M6 4.5H14C14.8284 4.5 15.5 5.17157 15.5 6V16L10 13.2L4.5 16V6C4.5 5.17157 5.17157 4.5 6 4.5Z" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      );
+    case 'violations':
+      return (
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
+          <rect x="4.5" y="4.5" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M7.5 8H12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M7.5 11H12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      );
+    case 'attendance':
+      return (
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
+          <path d="M6 3.75V6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M14 3.75V6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <rect x="4.5" y="5.25" width="11" height="10.25" rx="2" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M4.5 8.5H15.5" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      );
+  }
+}
+
 export function EmployeeDashboardClient({
   initialMonth,
   initialYear,
@@ -354,57 +390,224 @@ export function EmployeeDashboardClient({
       default:
         return (
           <div className="space-y-6">
-            <Card>
-              <CardHeader
-                title="Attendance Insights"
-                subtitle="Use the month filter to review your attendance with actual graph views."
-                right={
-                  <MonthYearPicker
-                    month={month}
-                    year={year}
-                    onChangeMonth={onChangeMonth}
-                    onChangeYear={onChangeYear}
-                  />
-                }
-              />
-              <CardBody>
-                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-                    <div className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-5 ring-1 ring-inset ring-white/5">
-                      <div className="text-sm font-semibold text-slate-100">Pie Graph</div>
-                      <div className="mt-1 text-xs text-slate-500">
-                        Distribution for {monthLabel(month, year)}
+            <div className="md:hidden space-y-4">
+              <Card>
+                <CardHeader
+                  title="Mobile Overview"
+                  subtitle={`Your ${monthLabel(month, year)} attendance at a glance.`}
+                  right={
+                    <MonthYearPicker
+                      month={month}
+                      year={year}
+                      onChangeMonth={onChangeMonth}
+                      onChangeYear={onChangeYear}
+                    />
+                  }
+                />
+                <CardBody>
+                  <div className="grid grid-cols-2 gap-3">
+                    {dashboardSignals.map((signal) => (
+                      <div
+                        key={signal.label}
+                        className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 ring-1 ring-inset ring-white/5"
+                      >
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          {signal.label}
+                        </div>
+                        <div className="mt-2 text-2xl font-semibold text-slate-100">{signal.value}</div>
+                        <div className="mt-2 text-xs leading-5 text-slate-400">{signal.helper}</div>
                       </div>
-                      <div className="mt-6 flex flex-col items-center justify-center gap-5">
-                        <div
-                          className="relative h-44 w-44 rounded-full ring-1 ring-inset ring-white/10"
-                          style={{ background: attendancePieBackground }}
-                        >
-                          <div className="absolute inset-[22%] flex items-center justify-center rounded-full bg-slate-950/95 ring-1 ring-inset ring-slate-800">
-                            <div className="text-center">
-                              <div className="text-3xl font-semibold text-slate-100">{totalTrackedDays}</div>
-                              <div className="mt-1 text-xs uppercase tracking-wide text-slate-500">
-                                Tracked Days
+                    ))}
+                  </div>
+                  <div className="mt-4 grid grid-cols-1 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setActiveView('leave')}
+                      className="rounded-2xl border border-sky-400/15 bg-sky-500/10 px-4 py-4 text-left ring-1 ring-inset ring-sky-400/10"
+                    >
+                      <div className="text-sm font-semibold text-slate-50">Go To Leave</div>
+                      <div className="mt-1 text-sm leading-6 text-slate-400">
+                        Apply for leave or check request progress without opening the desktop-style dashboard.
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveView('attendance')}
+                      className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 text-left ring-1 ring-inset ring-white/5"
+                    >
+                      <div className="text-sm font-semibold text-slate-50">Open Attendance History</div>
+                      <div className="mt-1 text-sm leading-6 text-slate-400">
+                        Review the full record list with the mobile card layout.
+                      </div>
+                    </button>
+                  </div>
+                </CardBody>
+              </Card>
+
+              <Card>
+                <CardHeader
+                  title="Attendance Breakdown"
+                  subtitle="Compact progress view designed for smaller screens."
+                />
+                <CardBody>
+                  <div className="space-y-4">
+                    {attendanceSummary.map((item) => (
+                      <div key={item.label}>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="h-2.5 w-2.5 rounded-full"
+                              style={{ backgroundColor: item.pieColor }}
+                            />
+                            <div className="text-sm font-medium text-slate-200">{item.label}</div>
+                          </div>
+                          <div
+                            className={[
+                              'rounded-full px-2.5 py-1 text-xs font-semibold',
+                              item.toneClass,
+                            ].join(' ')}
+                          >
+                            {item.value} day{item.value === 1 ? '' : 's'} · {item.percentage}%
+                          </div>
+                        </div>
+                        <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-950/90 ring-1 ring-inset ring-slate-800">
+                          <div
+                            className={['h-full rounded-full transition-all', item.barClass].join(' ')}
+                            style={{ width: `${Math.max(item.percentage, item.value > 0 ? 10 : 0)}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardBody>
+              </Card>
+
+              <Card>
+                <CardHeader title="Profile Snapshot" subtitle="Key account details that matter on mobile." />
+                <CardBody>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="rounded-xl bg-slate-950/65 px-3 py-3 ring-1 ring-inset ring-slate-800">
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        Company
+                      </div>
+                      <div className="mt-1.5 text-sm font-medium text-slate-100">
+                        {employeeProfile?.company || 'Not assigned yet'}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-xl bg-slate-950/65 px-3 py-3 ring-1 ring-inset ring-slate-800">
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          Position
+                        </div>
+                        <div className="mt-1.5 text-sm font-medium text-slate-100">
+                          {employeeProfile?.position || 'Not assigned'}
+                        </div>
+                      </div>
+                      <div className="rounded-xl bg-slate-950/65 px-3 py-3 ring-1 ring-inset ring-slate-800">
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          Start Date
+                        </div>
+                        <div className="mt-1.5 text-sm font-medium text-slate-100">
+                          {employeeProfile?.startDate
+                            ? new Date(employeeProfile.startDate).toLocaleDateString()
+                            : 'Not set'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
+
+            <div className="hidden md:block">
+              <Card>
+                <CardHeader
+                  title="Attendance Insights"
+                  subtitle="Use the month filter to review your attendance with actual graph views."
+                  right={
+                    <MonthYearPicker
+                      month={month}
+                      year={year}
+                      onChangeMonth={onChangeMonth}
+                      onChangeYear={onChangeYear}
+                    />
+                  }
+                />
+                <CardBody>
+                  <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+                      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-5 ring-1 ring-inset ring-white/5">
+                        <div className="text-sm font-semibold text-slate-100">Pie Graph</div>
+                        <div className="mt-1 text-xs text-slate-500">
+                          Distribution for {monthLabel(month, year)}
+                        </div>
+                        <div className="mt-6 flex flex-col items-center justify-center gap-5">
+                          <div
+                            className="relative h-44 w-44 rounded-full ring-1 ring-inset ring-white/10"
+                            style={{ background: attendancePieBackground }}
+                          >
+                            <div className="absolute inset-[22%] flex items-center justify-center rounded-full bg-slate-950/95 ring-1 ring-inset ring-slate-800">
+                              <div className="text-center">
+                                <div className="text-3xl font-semibold text-slate-100">{totalTrackedDays}</div>
+                                <div className="mt-1 text-xs uppercase tracking-wide text-slate-500">
+                                  Tracked Days
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="grid w-full grid-cols-2 gap-2">
-                          {attendanceSummary.map((item) => (
-                            <div
-                              key={item.label}
-                              className="rounded-xl border border-slate-800/80 bg-slate-950/60 px-3 py-2.5 ring-1 ring-inset ring-white/5"
-                            >
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className="h-2.5 w-2.5 rounded-full"
-                                  style={{ backgroundColor: item.pieColor }}
-                                />
-                                <span className="text-xs font-medium text-slate-300">{item.label}</span>
+                          <div className="grid w-full grid-cols-2 gap-2">
+                            {attendanceSummary.map((item) => (
+                              <div
+                                key={item.label}
+                                className="rounded-xl border border-slate-800/80 bg-slate-950/60 px-3 py-2.5 ring-1 ring-inset ring-white/5"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className="h-2.5 w-2.5 rounded-full"
+                                    style={{ backgroundColor: item.pieColor }}
+                                  />
+                                  <span className="text-xs font-medium text-slate-300">{item.label}</span>
+                                </div>
+                                <div className="mt-2 text-sm font-semibold text-slate-100">
+                                  {item.value} day{item.value === 1 ? '' : 's'}
+                                </div>
                               </div>
-                              <div className="mt-2 text-sm font-semibold text-slate-100">
-                                {item.value} day{item.value === 1 ? '' : 's'}
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-5 ring-1 ring-inset ring-white/5">
+                        <div className="text-sm font-semibold text-slate-100">Bar Graph</div>
+                        <div className="mt-1 text-xs text-slate-500">
+                          Compare each attendance type side by side
+                        </div>
+                        <div className="mt-5 space-y-4">
+                          {attendanceSummary.map((item) => (
+                            <div key={item.label}>
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className="h-2.5 w-2.5 rounded-full"
+                                    style={{ backgroundColor: item.pieColor }}
+                                  />
+                                  <div className="text-sm font-medium text-slate-200">{item.label}</div>
+                                </div>
+                                <div
+                                  className={[
+                                    'rounded-full px-2.5 py-1 text-xs font-semibold',
+                                    item.toneClass,
+                                  ].join(' ')}
+                                >
+                                  {item.value} day{item.value === 1 ? '' : 's'} · {item.percentage}%
+                                </div>
+                              </div>
+                              <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-950/90 ring-1 ring-inset ring-slate-800">
+                                <div
+                                  className={['h-full rounded-full transition-all', item.barClass].join(' ')}
+                                  style={{ width: `${Math.max(item.percentage, item.value > 0 ? 8 : 0)}%` }}
+                                />
                               </div>
                             </div>
                           ))}
@@ -412,98 +615,62 @@ export function EmployeeDashboardClient({
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-5 ring-1 ring-inset ring-white/5">
-                      <div className="text-sm font-semibold text-slate-100">Bar Graph</div>
-                      <div className="mt-1 text-xs text-slate-500">
-                        Compare each attendance type side by side
+                    <div className="space-y-3">
+                      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 ring-1 ring-inset ring-white/5">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Profile Snapshot
+                        </div>
+                        <div className="mt-3 grid grid-cols-1 gap-3">
+                          <div className="rounded-xl bg-slate-950/65 px-3 py-3 ring-1 ring-inset ring-slate-800">
+                            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                              Company
+                            </div>
+                            <div className="mt-1.5 text-sm font-medium text-slate-100">
+                              {employeeProfile?.company || 'Not assigned yet'}
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="rounded-xl bg-slate-950/65 px-3 py-3 ring-1 ring-inset ring-slate-800">
+                              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                Position
+                              </div>
+                              <div className="mt-1.5 text-sm font-medium text-slate-100">
+                                {employeeProfile?.position || 'Not assigned'}
+                              </div>
+                            </div>
+                            <div className="rounded-xl bg-slate-950/65 px-3 py-3 ring-1 ring-inset ring-slate-800">
+                              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                Start Date
+                              </div>
+                              <div className="mt-1.5 text-sm font-medium text-slate-100">
+                                {employeeProfile?.startDate
+                                  ? new Date(employeeProfile.startDate).toLocaleDateString()
+                                  : 'Not set'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="mt-5 space-y-4">
-                        {attendanceSummary.map((item) => (
-                          <div key={item.label}>
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className="h-2.5 w-2.5 rounded-full"
-                                  style={{ backgroundColor: item.pieColor }}
-                                />
-                                <div className="text-sm font-medium text-slate-200">{item.label}</div>
-                              </div>
-                              <div
-                                className={[
-                                  'rounded-full px-2.5 py-1 text-xs font-semibold',
-                                  item.toneClass,
-                                ].join(' ')}
-                              >
-                                {item.value} day{item.value === 1 ? '' : 's'} · {item.percentage}%
-                              </div>
+
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {dashboardSignals.map((signal) => (
+                          <div
+                            key={signal.label}
+                            className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 ring-1 ring-inset ring-white/5"
+                          >
+                            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                              {signal.label}
                             </div>
-                            <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-950/90 ring-1 ring-inset ring-slate-800">
-                              <div
-                                className={['h-full rounded-full transition-all', item.barClass].join(' ')}
-                                style={{ width: `${Math.max(item.percentage, item.value > 0 ? 8 : 0)}%` }}
-                              />
-                            </div>
+                            <div className="mt-3 text-2xl font-semibold text-slate-100">{signal.value}</div>
+                            <div className="mt-2 text-sm leading-6 text-slate-400">{signal.helper}</div>
                           </div>
                         ))}
                       </div>
                     </div>
                   </div>
-
-                  <div className="space-y-3">
-                    <div className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 ring-1 ring-inset ring-white/5">
-                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Profile Snapshot
-                      </div>
-                      <div className="mt-3 grid grid-cols-1 gap-3">
-                        <div className="rounded-xl bg-slate-950/65 px-3 py-3 ring-1 ring-inset ring-slate-800">
-                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                            Company
-                          </div>
-                          <div className="mt-1.5 text-sm font-medium text-slate-100">
-                            {employeeProfile?.company || 'Not assigned yet'}
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="rounded-xl bg-slate-950/65 px-3 py-3 ring-1 ring-inset ring-slate-800">
-                            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                              Position
-                            </div>
-                            <div className="mt-1.5 text-sm font-medium text-slate-100">
-                              {employeeProfile?.position || 'Not assigned'}
-                            </div>
-                          </div>
-                          <div className="rounded-xl bg-slate-950/65 px-3 py-3 ring-1 ring-inset ring-slate-800">
-                            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                              Start Date
-                            </div>
-                            <div className="mt-1.5 text-sm font-medium text-slate-100">
-                              {employeeProfile?.startDate
-                                ? new Date(employeeProfile.startDate).toLocaleDateString()
-                                : 'Not set'}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      {dashboardSignals.map((signal) => (
-                        <div
-                          key={signal.label}
-                          className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 ring-1 ring-inset ring-white/5"
-                        >
-                          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                            {signal.label}
-                          </div>
-                          <div className="mt-3 text-2xl font-semibold text-slate-100">{signal.value}</div>
-                          <div className="mt-2 text-sm leading-6 text-slate-400">{signal.helper}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
+                </CardBody>
+              </Card>
+            </div>
           </div>
         );
     }
@@ -518,6 +685,8 @@ export function EmployeeDashboardClient({
       router.push('/employee/leave-policy');
     });
   };
+
+  const mobileNavViews: EmployeeView[] = ['dashboard', 'leave', 'violations', 'attendance'];
 
   return (
     <>
@@ -546,7 +715,7 @@ export function EmployeeDashboardClient({
       ) : null}
 
       <div
-        className="grid grid-cols-1 gap-6 px-3 sm:px-4 xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-0 xl:px-0"
+        className="app-mobile-content-pad grid grid-cols-1 gap-6 px-3 sm:px-4 xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-0 xl:px-0 xl:pb-0"
       >
         <div className="hidden border-r border-slate-800/80 xl:block">
           <div className="sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
@@ -556,6 +725,32 @@ export function EmployeeDashboardClient({
 
         <div className="min-w-0 xl:px-6 xl:py-6">
           <div className="space-y-6">
+            <div className="xl:hidden">
+              <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="flex min-w-max gap-2">
+                  {mobileNavViews.map((view) => {
+                    const isActive = activeView === view;
+                    return (
+                      <button
+                        key={view}
+                        type="button"
+                        onClick={() => setActiveView(view)}
+                        className={[
+                          'inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition-all ring-1 ring-inset',
+                          isActive
+                            ? 'border-sky-400/25 bg-sky-500/12 text-slate-50 ring-sky-400/20'
+                            : 'border-slate-800/80 bg-slate-900/70 text-slate-300 ring-white/5',
+                        ].join(' ')}
+                      >
+                        <EmployeeMobileNavIcon view={view} />
+                        {employeeViewLabel(view)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
             <div className="flex flex-col gap-3 border-b border-slate-800/80 pb-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
                 <button
@@ -599,6 +794,28 @@ export function EmployeeDashboardClient({
 
             {renderActiveView()}
           </div>
+        </div>
+      </div>
+
+      <div className="app-mobile-bottom-nav xl:hidden">
+        <div className="grid grid-cols-4 gap-2 rounded-[1.6rem] border border-slate-800/80 bg-slate-950/90 p-2 shadow-[0_22px_60px_rgba(2,8,23,0.45)] ring-1 ring-inset ring-white/5 backdrop-blur-xl">
+          {mobileNavViews.map((view) => {
+            const isActive = activeView === view;
+            return (
+              <button
+                key={view}
+                type="button"
+                onClick={() => setActiveView(view)}
+                className={[
+                  'flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-center text-[11px] font-medium transition-all',
+                  isActive ? 'bg-sky-500/12 text-slate-50' : 'text-slate-400 hover:bg-slate-900/80',
+                ].join(' ')}
+              >
+                <EmployeeMobileNavIcon view={view} />
+                <span>{view === 'attendance' ? 'History' : employeeViewLabel(view)}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </>

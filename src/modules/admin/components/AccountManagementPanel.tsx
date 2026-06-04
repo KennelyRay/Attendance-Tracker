@@ -203,10 +203,49 @@ export function AccountManagementPanel({
   const [editCompany, setEditCompany] = useState('');
   const [editPosition, setEditPosition] = useState('');
   const [editStartDate, setEditStartDate] = useState('');
+  const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'restricted' | 'banned'>('all');
 
-  const sortedAccounts = useMemo(() => {
-    return [...accounts].sort((a, b) => a.name.localeCompare(b.name));
-  }, [accounts]);
+  const filteredAccounts = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return [...accounts]
+      .filter((account) => {
+        const status = employeeAccountStatus(account);
+        if (statusFilter !== 'all' && status !== statusFilter) {
+          return false;
+        }
+
+        if (!normalizedQuery) {
+          return true;
+        }
+
+        return [
+          account.name,
+          account.email,
+          account.company || '',
+          account.position || '',
+          status,
+        ].some((value) => value.toLowerCase().includes(normalizedQuery));
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [accounts, query, statusFilter]);
+
+  const statusSummary = useMemo(
+    () =>
+      accounts.reduce(
+        (totals, account) => {
+          totals[employeeAccountStatus(account)] += 1;
+          return totals;
+        },
+        {
+          active: 0,
+          restricted: 0,
+          banned: 0,
+        }
+      ),
+    [accounts]
+  );
 
   const createAccount = async (input: CreateEmployeeInput) => {
     setError(null);
@@ -437,7 +476,7 @@ export function AccountManagementPanel({
         </Card>
       </div>
 
-      {sortedAccounts.length === 0 ? (
+      {accounts.length === 0 ? (
         <EmptyState
           title="No employee accounts"
           description="Create an employee account to manage access and attendance."
@@ -446,11 +485,57 @@ export function AccountManagementPanel({
         <Card>
           <CardHeader
             title="Employee Accounts"
-            subtitle={`${sortedAccounts.length} employee account(s) with live access controls`}
+            subtitle={`${filteredAccounts.length} employee account(s) shown with live access controls`}
           />
           <CardBody>
+            <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-xl bg-slate-900/80 px-4 py-3 ring-1 ring-inset ring-slate-800">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-300">
+                  Active
+                </div>
+                <div className="mt-2 text-2xl font-semibold text-slate-50">{statusSummary.active}</div>
+              </div>
+              <div className="rounded-xl bg-slate-900/80 px-4 py-3 ring-1 ring-inset ring-slate-800">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-amber-300">
+                  Restricted
+                </div>
+                <div className="mt-2 text-2xl font-semibold text-slate-50">{statusSummary.restricted}</div>
+              </div>
+              <div className="rounded-xl bg-slate-900/80 px-4 py-3 ring-1 ring-inset ring-slate-800">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-rose-300">
+                  Banned
+                </div>
+                <div className="mt-2 text-2xl font-semibold text-slate-50">{statusSummary.banned}</div>
+              </div>
+            </div>
+
+            <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search by employee, email, company, position, or status..."
+              />
+              <Select
+                value={statusFilter}
+                onChange={(event) =>
+                  setStatusFilter(event.target.value as 'all' | 'active' | 'restricted' | 'banned')
+                }
+              >
+                <option value="all">All status</option>
+                <option value="active">Active</option>
+                <option value="restricted">Restricted</option>
+                <option value="banned">Banned</option>
+              </Select>
+            </div>
+
+            {filteredAccounts.length === 0 ? (
+              <div className="rounded-xl bg-slate-900/80 px-4 py-8 text-center text-sm text-slate-400 ring-1 ring-inset ring-slate-800">
+                No employee accounts match the current search or status filter.
+              </div>
+            ) : null}
+
             <div className="space-y-4 md:hidden">
-              {sortedAccounts.map((account) => {
+              {filteredAccounts.map((account) => {
                 const status = employeeAccountStatus(account);
                 const restrictionHours = restrictionHoursByUser[account.id] ?? String(restrictionOptions[0].hours);
                 const isBusy = busyAccountId === account.id;
@@ -604,7 +689,7 @@ export function AccountManagementPanel({
               })}
             </div>
 
-            <div className="hidden md:block">
+            <div className={filteredAccounts.length === 0 ? 'hidden' : 'hidden md:block'}>
               <Table>
                 <THead>
                   <tr>
@@ -619,7 +704,7 @@ export function AccountManagementPanel({
                   </tr>
                 </THead>
                 <TBody>
-                  {sortedAccounts.map((account) => {
+                  {filteredAccounts.map((account) => {
                     const status = employeeAccountStatus(account);
                     const restrictionHours = restrictionHoursByUser[account.id] ?? String(restrictionOptions[0].hours);
                     const isBusy = busyAccountId === account.id;

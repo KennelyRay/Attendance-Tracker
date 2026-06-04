@@ -60,6 +60,19 @@ body {
   }
 }
 
+.app-mobile-content-pad {
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+}
+
+.app-mobile-bottom-nav {
+  position: fixed;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  left: 0.75rem;
+  z-index: 40;
+  padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
+}
+
 ::selection {
   background: rgba(56, 189, 248, 0.28);
 }

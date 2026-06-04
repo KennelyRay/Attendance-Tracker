@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Select } from '@/components/ui/Select';
 import type { AdminLeaveRequest, ReviewLeaveRequestInput } from '@/modules/leave/types';
 import {
   LeaveAttachmentPreviewModal,
@@ -45,7 +46,9 @@ export function LeaveRequestsPanel({
   const [rejectReason, setRejectReason] = useState('');
   const [previewAttachment, setPreviewAttachment] = useState<LeaveAttachmentPreview | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | AdminLeaveRequest['status']>('all');
   const [page, setPage] = useState(1);
+  const [expandedRequestIds, setExpandedRequestIds] = useState<number[]>([]);
 
   const grouped = useMemo(() => {
     return {
@@ -62,6 +65,10 @@ export function LeaveRequestsPanel({
     }
 
     return requests.filter((request) => {
+      if (statusFilter !== 'all' && request.status !== statusFilter) {
+        return false;
+      }
+
       const policy = getLeavePolicy(request.leave_type);
       const searchableFields = [
         request.user_name,
@@ -83,7 +90,7 @@ export function LeaveRequestsPanel({
 
       return searchableFields.some((value) => value.toLowerCase().includes(normalizedSearch));
     });
-  }, [requests, searchTerm]);
+  }, [requests, searchTerm, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRequests.length / REQUESTS_PER_PAGE));
   const currentPage = Math.min(page, totalPages);
@@ -168,6 +175,14 @@ export function LeaveRequestsPanel({
     });
   };
 
+  const toggleExpanded = (requestId: number) => {
+    setExpandedRequestIds((current) =>
+      current.includes(requestId)
+        ? current.filter((id) => id !== requestId)
+        : [...current, requestId]
+    );
+  };
+
   if (error) {
     return (
       <EmptyState
@@ -233,6 +248,20 @@ export function LeaveRequestsPanel({
                   placeholder="Search by name, email, company, position, leave type..."
                 />
               </div>
+              <div className="w-full sm:w-40">
+                <Select
+                  value={statusFilter}
+                  onChange={(event) => {
+                    setStatusFilter(event.target.value as 'all' | AdminLeaveRequest['status']);
+                    setPage(1);
+                  }}
+                >
+                  <option value="all">All status</option>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </Select>
+              </div>
               <Button variant="secondary" onClick={onRefresh} disabled={isLoading}>
                 {isLoading ? 'Refreshing...' : 'Refresh'}
               </Button>
@@ -264,6 +293,7 @@ export function LeaveRequestsPanel({
               {paginatedRequests.map((request) => {
                 const policy = getLeavePolicy(request.leave_type);
                 const isBusy = busyRequestId === request.id;
+                const isExpanded = expandedRequestIds.includes(request.id);
 
                 return (
                   <div
@@ -310,32 +340,8 @@ export function LeaveRequestsPanel({
                       </span>
                     </div>
 
-                    <div className="mt-3 grid grid-cols-1 gap-3 text-sm md:grid-cols-3 xl:grid-cols-4">
-                      <div>
-                        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                          Company
-                        </div>
-                        <div className="mt-1 text-sm text-slate-300">
-                          {request.user_company || 'Unassigned'}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                          Service Start
-                        </div>
-                        <div className="mt-1 text-sm text-slate-300">
-                          {new Date(request.user_start_date).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                          Balance Effect
-                        </div>
-                        <div className="mt-1 text-sm text-slate-300">
-                          {request.deduct_from_paid_balance ? 'Deducts paid balance' : 'No paid balance deduction'}
-                        </div>
-                      </div>
-                      <div>
+                    <div className="mt-3 grid grid-cols-2 gap-3 text-sm lg:grid-cols-4">
+                      <div className="rounded-xl bg-slate-950/55 px-3 py-2.5 ring-1 ring-inset ring-slate-800">
                         <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                           Filed
                         </div>
@@ -343,8 +349,24 @@ export function LeaveRequestsPanel({
                           {new Date(request.created_at).toLocaleDateString()}
                         </div>
                       </div>
+                      <div className="rounded-xl bg-slate-950/55 px-3 py-2.5 ring-1 ring-inset ring-slate-800">
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          Service Start
+                        </div>
+                        <div className="mt-1 text-sm text-slate-300">
+                          {new Date(request.user_start_date).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="rounded-xl bg-slate-950/55 px-3 py-2.5 ring-1 ring-inset ring-slate-800">
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          Balance Effect
+                        </div>
+                        <div className="mt-1 text-sm text-slate-300">
+                          {request.deduct_from_paid_balance ? 'Deducts paid balance' : 'No deduction'}
+                        </div>
+                      </div>
                       {request.reviewed_at ? (
-                        <div>
+                        <div className="rounded-xl bg-slate-950/55 px-3 py-2.5 ring-1 ring-inset ring-slate-800">
                           <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                             Reviewed
                           </div>
@@ -355,39 +377,60 @@ export function LeaveRequestsPanel({
                       ) : null}
                     </div>
 
-                    <div className="mt-3">
-                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                        Reason
-                      </div>
-                      <div className="mt-1 text-sm leading-6 text-slate-400">{request.reason}</div>
+                    <div className="mt-3 flex justify-end">
+                      <Button variant="ghost" size="sm" onClick={() => toggleExpanded(request.id)}>
+                        {isExpanded ? 'Hide Details' : 'View Details'}
+                      </Button>
                     </div>
 
-                    <div className="mt-3">
-                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                        Supporting Documents
-                      </div>
-                      {request.attachments.length > 0 ? (
-                        <div className="mt-2 space-y-2">
-                          {request.attachments.map((attachment) => (
-                            <button
-                              key={attachment.id}
-                              type="button"
-                              onClick={() => openAttachmentPreview(attachment)}
-                              className="flex items-center justify-between rounded-xl bg-slate-950/70 px-4 py-3 text-sm text-slate-300 ring-1 ring-inset ring-slate-800 transition-colors hover:bg-slate-900/90"
-                            >
-                              <span className="truncate pr-3 text-left">{attachment.file_name}</span>
-                              <span className="whitespace-nowrap text-xs text-slate-400">
-                                Preview
-                              </span>
-                            </button>
-                          ))}
+                    {isExpanded ? (
+                      <>
+                        <div className="mt-3 grid grid-cols-1 gap-3 text-sm md:grid-cols-3 xl:grid-cols-4">
+                          <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                              Company
+                            </div>
+                            <div className="mt-1 text-sm text-slate-300">
+                              {request.user_company || 'Unassigned'}
+                            </div>
+                          </div>
                         </div>
-                      ) : (
-                        <div className="mt-1 text-sm text-slate-400">
-                          No supporting documents uploaded.
+
+                        <div className="mt-3">
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            Reason
+                          </div>
+                          <div className="mt-1 text-sm leading-6 text-slate-400">{request.reason}</div>
                         </div>
-                      )}
-                    </div>
+
+                        <div className="mt-3">
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            Supporting Documents
+                          </div>
+                          {request.attachments.length > 0 ? (
+                            <div className="mt-2 space-y-2">
+                              {request.attachments.map((attachment) => (
+                                <button
+                                  key={attachment.id}
+                                  type="button"
+                                  onClick={() => openAttachmentPreview(attachment)}
+                                  className="flex items-center justify-between rounded-xl bg-slate-950/70 px-4 py-3 text-sm text-slate-300 ring-1 ring-inset ring-slate-800 transition-colors hover:bg-slate-900/90"
+                                >
+                                  <span className="truncate pr-3 text-left">{attachment.file_name}</span>
+                                  <span className="whitespace-nowrap text-xs text-slate-400">
+                                    Preview
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="mt-1 text-sm text-slate-400">
+                              No supporting documents uploaded.
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : null}
 
                     {request.status === 'pending' ? (
                       <div className="mt-3">

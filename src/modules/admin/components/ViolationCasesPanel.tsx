@@ -182,6 +182,7 @@ export function ViolationCasesPanel({
   const [editingViolation, setEditingViolation] = useState<AdminViolationRecord | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyViolationId, setBusyViolationId] = useState<number | null>(null);
+  const [expandedViolationIds, setExpandedViolationIds] = useState<number[]>([]);
 
   const filteredViolations = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -244,6 +245,14 @@ export function ViolationCasesPanel({
     } finally {
       setBusyViolationId(null);
     }
+  };
+
+  const toggleExpanded = (violationId: number) => {
+    setExpandedViolationIds((current) =>
+      current.includes(violationId)
+        ? current.filter((id) => id !== violationId)
+        : [...current, violationId]
+    );
   };
 
   return (
@@ -339,6 +348,10 @@ export function ViolationCasesPanel({
                     key={violation.id}
                     className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 ring-1 ring-inset ring-white/5"
                   >
+                    {(() => {
+                      const isExpanded = expandedViolationIds.includes(violation.id);
+                      return (
+                        <>
                     <div className="flex flex-col gap-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -391,14 +404,9 @@ export function ViolationCasesPanel({
                         <div className="text-sm font-medium text-slate-100">
                           {violation.violation_type}
                         </div>
-                        <div className="mt-2 text-sm leading-6 text-slate-400">
+                        <div className="mt-2 text-sm leading-6 text-slate-400 line-clamp-3">
                           {violation.description}
                         </div>
-                        {violation.action_taken ? (
-                          <div className="mt-3 text-xs text-slate-500">
-                            Action: {violation.action_taken}
-                          </div>
-                        ) : null}
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 text-xs text-slate-400">
@@ -417,12 +425,47 @@ export function ViolationCasesPanel({
                           <div className="mt-1 text-sm text-slate-300">
                             {new Date(violation.created_at).toLocaleDateString()}
                           </div>
-                          <div className="mt-1 text-xs text-slate-500">
-                            {violation.created_by_name || 'System'}
-                          </div>
                         </div>
                       </div>
+
+                      <Button variant="ghost" size="sm" onClick={() => toggleExpanded(violation.id)}>
+                        {isExpanded ? 'Hide Details' : 'View Details'}
+                      </Button>
+
+                      {isExpanded ? (
+                        <div className="space-y-3">
+                          <div className="rounded-xl bg-slate-950/70 px-3 py-3 ring-1 ring-inset ring-slate-800">
+                            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                              Full Details
+                            </div>
+                            <div className="mt-2 text-sm leading-6 text-slate-400">
+                              {violation.description}
+                            </div>
+                          </div>
+                          {violation.action_taken ? (
+                            <div className="rounded-xl bg-slate-950/70 px-3 py-3 ring-1 ring-inset ring-slate-800">
+                              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                Action Taken
+                              </div>
+                              <div className="mt-2 text-sm leading-6 text-slate-400">
+                                {violation.action_taken}
+                              </div>
+                            </div>
+                          ) : null}
+                          <div className="rounded-xl bg-slate-950/55 px-3 py-2.5 ring-1 ring-inset ring-slate-800">
+                            <div className="font-semibold uppercase tracking-wide text-slate-500">
+                              Recorded By
+                            </div>
+                            <div className="mt-1 text-sm text-slate-300">
+                              {violation.created_by_name || 'System'}
+                            </div>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 ))}
               </div>

@@ -22,6 +22,7 @@ import { AccountManagementPanel } from '@/modules/admin/components/AccountManage
 import {
   AdminSidebar,
   adminViewLabel,
+  adminNavigationGroups,
   type AdminView,
 } from '@/modules/admin/components/AdminSidebar';
 import { AdminOverviewPanel } from '@/modules/admin/components/AdminOverviewPanel';
@@ -75,6 +76,55 @@ const viewDescriptions: Record<AdminView, string> = {
   'employee-accounts': 'Account lifecycle, access controls, and edits',
 };
 
+function AdminMobilePrimaryIcon({
+  item,
+}: {
+  item: 'dashboard' | 'employees' | 'leave-requests' | 'smart-insights' | 'menu';
+}) {
+  switch (item) {
+    case 'dashboard':
+      return (
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
+          <path d="M4.5 10.5H8.5V15.5H4.5V10.5Z" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M11.5 4.5H15.5V15.5H11.5V4.5Z" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M4.5 4.5H8.5V8H4.5V4.5Z" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      );
+    case 'employees':
+      return (
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
+          <path
+            d="M6.5 8C7.88071 8 9 6.88071 9 5.5C9 4.11929 7.88071 3 6.5 3C5.11929 3 4 4.11929 4 5.5C4 6.88071 5.11929 8 6.5 8Z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          />
+          <path d="M3.5 15C3.9 12.9 5.1 12 6.6 12H8.2C9.7 12 10.9 12.9 11.3 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M12.2 6H16.2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M12.2 9H16.2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      );
+    case 'leave-requests':
+      return (
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
+          <path d="M6 4.5H14C14.8284 4.5 15.5 5.17157 15.5 6V16L10 13.2L4.5 16V6C4.5 5.17157 5.17157 4.5 6 4.5Z" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      );
+    case 'smart-insights':
+      return (
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
+          <path d="M10 3.5C7.1 3.5 4.75 5.85 4.75 8.75C4.75 10.55 5.55 11.9 6.6 12.85C7.15 13.35 7.5 13.95 7.5 14.65V15.25H12.5V14.65C12.5 13.95 12.85 13.35 13.4 12.85C14.45 11.9 15.25 10.55 15.25 8.75C15.25 5.85 12.9 3.5 10 3.5Z" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M8 17H12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      );
+    case 'menu':
+      return (
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
+          <path d="M4.5 6.5H15.5M4.5 10H15.5M4.5 13.5H15.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      );
+  }
+}
+
 export function AdminDashboardClient({
   initialEmployees,
   initialSelectedEmployeeId,
@@ -101,6 +151,7 @@ export function AdminDashboardClient({
   const [activeView, setActiveView] = useState<AdminView>('dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isEmployeePickerOpen, setIsEmployeePickerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const selectedEmployee = useMemo(() => {
@@ -378,7 +429,7 @@ export function AdminDashboardClient({
   }, [activeView]);
 
   useEffect(() => {
-    if (!isMobileSidebarOpen) {
+    if (!isMobileSidebarOpen && !isEmployeePickerOpen) {
       return;
     }
 
@@ -388,7 +439,7 @@ export function AdminDashboardClient({
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [isMobileSidebarOpen]);
+  }, [isEmployeePickerOpen, isMobileSidebarOpen]);
 
   const openView = async (view: AdminView) => {
     setActiveView(view);
@@ -438,17 +489,81 @@ export function AdminDashboardClient({
     );
   }
 
+  const renderSelectedEmployeeSummary = (showPickerButton: boolean) =>
+    selectedEmployee ? (
+      <Card>
+        <CardBody>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="text-lg font-semibold text-slate-100">{selectedEmployee.name}</div>
+                <div className="mt-1 text-sm text-slate-400">{selectedEmployee.email}</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <div className="inline-flex items-center rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-300 ring-1 ring-inset ring-cyan-400/20">
+                    {selectedEmployee.company || 'Unassigned company'}
+                  </div>
+                  <div className="inline-flex items-center rounded-full bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-300 ring-1 ring-inset ring-sky-400/20">
+                    {selectedEmployee.position || 'No position set'}
+                  </div>
+                </div>
+              </div>
+              {showPickerButton ? (
+                <Button
+                  className="w-full sm:w-auto"
+                  variant="secondary"
+                  onClick={() => setIsEmployeePickerOpen(true)}
+                >
+                  Switch Employee
+                </Button>
+              ) : null}
+            </div>
+            <div className="grid grid-cols-2 gap-2 min-[420px]:grid-cols-2 sm:grid-cols-4">
+              <div className="rounded-xl bg-slate-900/85 px-3 py-2 ring-1 ring-inset ring-slate-800">
+                <div className="text-xs font-medium text-slate-400">Present</div>
+                <div className="mt-1 flex items-center justify-between gap-3">
+                  <div className="text-lg font-semibold text-slate-100">
+                    {selectedEmployeeLast30DaysCounts.present}
+                  </div>
+                  <AttendanceStatusBadge status="present" />
+                </div>
+              </div>
+              <div className="rounded-xl bg-slate-900/85 px-3 py-2 ring-1 ring-inset ring-slate-800">
+                <div className="text-xs font-medium text-slate-400">Absent</div>
+                <div className="mt-1 flex items-center justify-between gap-3">
+                  <div className="text-lg font-semibold text-slate-100">
+                    {selectedEmployeeLast30DaysCounts.absent}
+                  </div>
+                  <AttendanceStatusBadge status="absent" />
+                </div>
+              </div>
+              <div className="rounded-xl bg-slate-900/85 px-3 py-2 ring-1 ring-inset ring-slate-800">
+                <div className="text-xs font-medium text-slate-400">Half Day</div>
+                <div className="mt-1 flex items-center justify-between gap-3">
+                  <div className="text-lg font-semibold text-slate-100">
+                    {selectedEmployeeLast30DaysCounts['half-day']}
+                  </div>
+                  <AttendanceStatusBadge status="half-day" />
+                </div>
+              </div>
+              <div className="rounded-xl bg-slate-900/85 px-3 py-2 ring-1 ring-inset ring-slate-800">
+                <div className="text-xs font-medium text-slate-400">Leave</div>
+                <div className="mt-1 flex items-center justify-between gap-3">
+                  <div className="text-lg font-semibold text-slate-100">
+                    {selectedEmployeeLast30DaysCounts.leave}
+                  </div>
+                  <AttendanceStatusBadge status="leave" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 text-xs text-slate-500">Last 30 days overview</div>
+        </CardBody>
+      </Card>
+    ) : null;
+
   const renderEmployeesView = () => (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <div className="lg:col-span-1">
-        <EmployeeList
-          employees={employees}
-          selectedEmployeeId={selectedEmployeeId}
-          onSelect={onSelect}
-          isLoading={isEmployeesLoading}
-        />
-      </div>
-      <div className="space-y-6 lg:col-span-2">
+    <>
+      <div className="space-y-6 lg:hidden">
         {employees.length === 0 && !isEmployeesLoading ? (
           <EmptyState
             title="No employees found"
@@ -461,82 +576,58 @@ export function AdminDashboardClient({
           />
         ) : selectedEmployee ? (
           <>
-            <Card>
-              <CardBody>
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <div className="text-lg font-semibold text-slate-100">
-                      {selectedEmployee.name}
-                    </div>
-                    <div className="mt-1 text-sm text-slate-400">
-                      {selectedEmployee.email}
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <div className="inline-flex items-center rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-300 ring-1 ring-inset ring-cyan-400/20">
-                        {selectedEmployee.company || 'Unassigned company'}
-                      </div>
-                      <div className="inline-flex items-center rounded-full bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-300 ring-1 ring-inset ring-sky-400/20">
-                        {selectedEmployee.position || 'No position set'}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 min-[420px]:grid-cols-2 sm:grid-cols-4">
-                    <div className="rounded-xl bg-slate-900/85 px-3 py-2 ring-1 ring-inset ring-slate-800">
-                      <div className="text-xs font-medium text-slate-400">Present</div>
-                      <div className="mt-1 flex items-center justify-between gap-3">
-                        <div className="text-lg font-semibold text-slate-100">
-                          {selectedEmployeeLast30DaysCounts.present}
-                        </div>
-                        <AttendanceStatusBadge status="present" />
-                      </div>
-                    </div>
-                    <div className="rounded-xl bg-slate-900/85 px-3 py-2 ring-1 ring-inset ring-slate-800">
-                      <div className="text-xs font-medium text-slate-400">Absent</div>
-                      <div className="mt-1 flex items-center justify-between gap-3">
-                        <div className="text-lg font-semibold text-slate-100">
-                          {selectedEmployeeLast30DaysCounts.absent}
-                        </div>
-                        <AttendanceStatusBadge status="absent" />
-                      </div>
-                    </div>
-                    <div className="rounded-xl bg-slate-900/85 px-3 py-2 ring-1 ring-inset ring-slate-800">
-                      <div className="text-xs font-medium text-slate-400">Half Day</div>
-                      <div className="mt-1 flex items-center justify-between gap-3">
-                        <div className="text-lg font-semibold text-slate-100">
-                          {selectedEmployeeLast30DaysCounts['half-day']}
-                        </div>
-                        <AttendanceStatusBadge status="half-day" />
-                      </div>
-                    </div>
-                    <div className="rounded-xl bg-slate-900/85 px-3 py-2 ring-1 ring-inset ring-slate-800">
-                      <div className="text-xs font-medium text-slate-400">Leave</div>
-                      <div className="mt-1 flex items-center justify-between gap-3">
-                        <div className="text-lg font-semibold text-slate-100">
-                          {selectedEmployeeLast30DaysCounts.leave}
-                        </div>
-                        <AttendanceStatusBadge status="leave" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-3 text-xs text-slate-500">Last 30 days overview</div>
-              </CardBody>
-            </Card>
-            <AttendanceForm
-              employee={selectedEmployee}
-              onSave={onSave}
-              isSaving={isSaving}
-            />
+            {renderSelectedEmployeeSummary(true)}
+            <AttendanceForm employee={selectedEmployee} onSave={onSave} isSaving={isSaving} />
             <AttendanceTable records={records} isLoading={isHistoryLoading} />
           </>
         ) : (
           <EmptyState
             title="Select an employee"
-            description="Choose an employee from the list to view and manage attendance."
+            description="Choose an employee to manage attendance and recent activity."
+            action={
+              <Button variant="secondary" onClick={() => setIsEmployeePickerOpen(true)}>
+                Choose Employee
+              </Button>
+            }
           />
         )}
       </div>
-    </div>
+
+      <div className="hidden lg:grid lg:grid-cols-3 lg:gap-6">
+        <div className="lg:col-span-1">
+          <EmployeeList
+            employees={employees}
+            selectedEmployeeId={selectedEmployeeId}
+            onSelect={onSelect}
+            isLoading={isEmployeesLoading}
+          />
+        </div>
+        <div className="space-y-6 lg:col-span-2">
+          {employees.length === 0 && !isEmployeesLoading ? (
+            <EmptyState
+              title="No employees found"
+              description="Create an employee account in System > Employee Accounts to start tracking attendance."
+              action={
+                <Button variant="secondary" onClick={() => void openView('employee-accounts')}>
+                  Open Employee Accounts
+                </Button>
+              }
+            />
+          ) : selectedEmployee ? (
+            <>
+              {renderSelectedEmployeeSummary(false)}
+              <AttendanceForm employee={selectedEmployee} onSave={onSave} isSaving={isSaving} />
+              <AttendanceTable records={records} isLoading={isHistoryLoading} />
+            </>
+          ) : (
+            <EmptyState
+              title="Select an employee"
+              description="Choose an employee from the list to view and manage attendance."
+            />
+          )}
+        </div>
+      </div>
+    </>
   );
 
   return (
@@ -563,7 +654,7 @@ export function AdminDashboardClient({
 
       <div
         className={[
-          'grid grid-cols-1 gap-6 px-3 sm:px-4 xl:gap-0 xl:px-0',
+          'app-mobile-content-pad grid grid-cols-1 gap-6 px-3 sm:px-4 xl:gap-0 xl:px-0 xl:pb-0',
           isSidebarCollapsed
             ? 'xl:grid-cols-[104px_minmax(0,1fr)]'
             : 'xl:grid-cols-[280px_minmax(0,1fr)]',
@@ -581,6 +672,33 @@ export function AdminDashboardClient({
         </div>
 
         <div className="space-y-6 xl:px-8">
+          <div className="xl:hidden">
+            <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex min-w-max gap-2">
+                {adminNavigationGroups.flatMap((group) =>
+                  group.items.map((item) => {
+                    const isActive = activeView === item.view;
+                    return (
+                      <button
+                        key={item.view}
+                        type="button"
+                        onClick={() => void openView(item.view)}
+                        className={[
+                          'inline-flex items-center rounded-full border px-3 py-2 text-sm font-medium transition-all ring-1 ring-inset',
+                          isActive
+                            ? 'border-sky-400/25 bg-sky-500/12 text-slate-50 ring-sky-400/20'
+                            : 'border-slate-800/80 bg-slate-900/70 text-slate-300 ring-white/5',
+                        ].join(' ')}
+                      >
+                        {item.label}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+
           <CardHeader
             title={adminViewLabel(activeView)}
             subtitle={viewDescriptions[activeView]}
@@ -694,6 +812,68 @@ export function AdminDashboardClient({
               ]}
             />
           )}
+        </div>
+      </div>
+
+      {isEmployeePickerOpen ? (
+        <div className="app-overlay-scroll bg-slate-950/75 backdrop-blur-sm lg:hidden">
+          <div className="app-overlay-panel max-w-2xl rounded-2xl border border-slate-800/80 bg-slate-950/95 p-4 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5 sm:p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <div className="text-lg font-semibold text-slate-100">Choose Employee</div>
+                <div className="mt-1 text-sm text-slate-400">
+                  Switch the active employee without using the desktop split view.
+                </div>
+              </div>
+              <Button variant="secondary" size="sm" onClick={() => setIsEmployeePickerOpen(false)}>
+                Close
+              </Button>
+            </div>
+            <EmployeeList
+              employees={employees}
+              selectedEmployeeId={selectedEmployeeId}
+              onSelect={async (employee) => {
+                await onSelect(employee);
+                setIsEmployeePickerOpen(false);
+              }}
+              isLoading={isEmployeesLoading}
+            />
+          </div>
+        </div>
+      ) : null}
+
+      <div className="app-mobile-bottom-nav xl:hidden">
+        <div className="grid grid-cols-5 gap-2 rounded-[1.6rem] border border-slate-800/80 bg-slate-950/90 p-2 shadow-[0_22px_60px_rgba(2,8,23,0.45)] ring-1 ring-inset ring-white/5 backdrop-blur-xl">
+          {([
+            ['dashboard', 'Home'],
+            ['employees', 'Staff'],
+            ['leave-requests', 'Leave'],
+            ['smart-insights', 'Insights'],
+          ] as const).map(([view, label]) => {
+            const isActive = activeView === view;
+            return (
+              <button
+                key={view}
+                type="button"
+                onClick={() => void openView(view)}
+                className={[
+                  'flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-center text-[11px] font-medium transition-all',
+                  isActive ? 'bg-sky-500/12 text-slate-50' : 'text-slate-400 hover:bg-slate-900/80',
+                ].join(' ')}
+              >
+                <AdminMobilePrimaryIcon item={view} />
+                <span>{label}</span>
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-center text-[11px] font-medium text-slate-400 transition-all hover:bg-slate-900/80"
+          >
+            <AdminMobilePrimaryIcon item="menu" />
+            <span>More</span>
+          </button>
         </div>
       </div>
     </>

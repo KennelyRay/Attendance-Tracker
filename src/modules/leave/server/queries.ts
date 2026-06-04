@@ -54,6 +54,12 @@ const LEAVE_REQUEST_RETURNING_COLUMNS = `
   created_at
 `;
 
+const LEAVE_REQUEST_RETURNING_COLUMNS_FOR_ALIAS = LEAVE_REQUEST_RETURNING_COLUMNS.split(',')
+  .map((column) => column.trim())
+  .filter(Boolean)
+  .map((column) => `lr.${column}`)
+  .join(',\n        ');
+
 function buildLeaveRequestAttachment(row: LeaveRequestAttachmentRow): LeaveRequestAttachment {
   return {
     id: row.id,
@@ -217,11 +223,7 @@ export async function listLeaveRequestsForAdmin(): Promise<AdminLeaveRequest[]> 
   const result = await pool.query(
     `
       SELECT
-        ${LEAVE_REQUEST_RETURNING_COLUMNS.split('\n')
-          .map((line) => line.trim())
-          .filter(Boolean)
-          .map((line) => `lr.${line}`)
-          .join(',\n        ')},
+        ${LEAVE_REQUEST_RETURNING_COLUMNS_FOR_ALIAS},
         u.name AS user_name,
         u.email AS user_email,
         u.company AS user_company,

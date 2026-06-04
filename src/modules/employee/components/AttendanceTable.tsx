@@ -9,6 +9,10 @@ import type { EmployeeAttendanceRecord } from '@/modules/employee/types';
 
 const ATTENDANCE_RECORDS_PER_PAGE = 7;
 
+function recordKey(record: EmployeeAttendanceRecord) {
+  return `${record.status}-${record.date}-${record.id}-${record.created_at}`;
+}
+
 export function AttendanceTable({
   records,
   isLoading,
@@ -43,7 +47,7 @@ export function AttendanceTable({
             <div className="space-y-3 md:hidden">
               {paginatedRecords.map((record) => (
                 <div
-                  key={record.id}
+                  key={recordKey(record)}
                   className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 ring-1 ring-inset ring-white/5"
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -74,7 +78,7 @@ export function AttendanceTable({
                 </THead>
                 <TBody>
                   {paginatedRecords.map((record) => (
-                    <tr key={record.id} className="transition-colors hover:bg-slate-900/90">
+                    <tr key={recordKey(record)} className="transition-colors hover:bg-slate-900/90">
                       <TD className="whitespace-nowrap">
                         {new Date(record.date).toLocaleDateString()}
                       </TD>

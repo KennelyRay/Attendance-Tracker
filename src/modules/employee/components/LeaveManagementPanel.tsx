@@ -180,7 +180,7 @@ export function LeaveManagementPanel({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.75fr)]">
         <Card>
           <CardHeader
             title="Apply For Leave"
@@ -293,40 +293,57 @@ export function LeaveManagementPanel({
         <Card>
           <CardHeader
             title="Leave Balance"
-            subtitle="Your paid leave entitlement updates automatically from your years of service."
+            subtitle="A compact summary of your paid leave entitlement and service-based growth."
           />
           <CardBody>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-sky-500/10 px-4 py-4 ring-1 ring-inset ring-sky-400/20">
-                <div className="text-xs font-semibold uppercase tracking-wide text-sky-300">
-                  Remaining
-                </div>
-                <div className="mt-2 text-2xl font-semibold text-slate-50">{balance.remaining}</div>
-              </div>
-              <div className="rounded-2xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Used
-                </div>
-                <div className="mt-2 text-2xl font-semibold text-slate-50">{balance.used}</div>
-              </div>
-              <div className="rounded-2xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Annual Entitlement
-                </div>
-                <div className="mt-2 text-2xl font-semibold text-slate-50">
-                  {balance.annualEntitlement}
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-sky-400/20 bg-sky-500/10 px-4 py-4 ring-1 ring-inset ring-sky-400/20">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-wide text-sky-300">
+                      Remaining Leave
+                    </div>
+                    <div className="mt-2 text-3xl font-semibold text-slate-50">
+                      {balance.remaining}
+                    </div>
+                    <div className="mt-1 text-sm text-slate-300">
+                      out of {balance.annualEntitlement} total paid leave days
+                    </div>
+                  </div>
+                  <div className="rounded-full bg-slate-950/80 px-3 py-1.5 text-xs font-semibold text-sky-300 ring-1 ring-inset ring-slate-800">
+                    Used {balance.used}
+                  </div>
                 </div>
               </div>
-              <div className="rounded-2xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Years Of Service
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-slate-900/80 px-4 py-3.5 ring-1 ring-inset ring-slate-800">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Entitlement
+                  </div>
+                  <div className="mt-2 text-xl font-semibold text-slate-50">
+                    {balance.annualEntitlement}
+                  </div>
                 </div>
-                <div className="mt-2 text-2xl font-semibold text-slate-50">{balance.serviceYears}</div>
+                <div className="rounded-2xl bg-slate-900/80 px-4 py-3.5 ring-1 ring-inset ring-slate-800">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Service Years
+                  </div>
+                  <div className="mt-2 text-xl font-semibold text-slate-50">
+                    {balance.serviceYears}
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="mt-4 text-sm leading-6 text-slate-400">
-              Start date: {formatDateOnly(balance.startDate)}. Paid leave starts at 5 days and grows
-              by 1 day for every completed year of service.
+
+              <div className="rounded-2xl bg-slate-900/80 px-4 py-3.5 ring-1 ring-inset ring-slate-800">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Leave Policy Note
+                </div>
+                <div className="mt-2 text-sm leading-6 text-slate-400">
+                  Start date: {formatDateOnly(balance.startDate)}. Paid leave starts at 5 days and
+                  grows by 1 day for every completed year of service.
+                </div>
+              </div>
             </div>
           </CardBody>
         </Card>

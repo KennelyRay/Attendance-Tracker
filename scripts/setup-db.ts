@@ -80,6 +80,24 @@ async function setupDatabase() {
         CONSTRAINT leave_requests_status CHECK (status IN ('pending', 'approved', 'rejected'))
       );
 
+      CREATE TABLE IF NOT EXISTS employee_violations (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        violation_type VARCHAR(120) NOT NULL,
+        company VARCHAR(255) NULL,
+        severity VARCHAR(20) NOT NULL DEFAULT 'medium',
+        case_status VARCHAR(20) NOT NULL DEFAULT 'open',
+        incident_date DATE NOT NULL,
+        description TEXT NOT NULL,
+        action_taken TEXT NULL,
+        created_by INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT employee_violations_severity CHECK (severity IN ('low', 'medium', 'high')),
+        CONSTRAINT employee_violations_case_status CHECK (
+          case_status IN ('open', 'under-review', 'resolved')
+        )
+      );
+
       CREATE OR REPLACE FUNCTION upsert_attendance(
         p_user_id INTEGER,
         p_date DATE,

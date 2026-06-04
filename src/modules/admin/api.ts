@@ -1,5 +1,8 @@
 import type {
   AdminAttendanceRecord,
+  AdminViolationRecord,
+  CreateViolationInput,
+  UpdateViolationInput,
   CreateEmployeeInput,
   Employee,
   UpdateEmployeeAccountInput,
@@ -117,4 +120,43 @@ export async function reviewEmployeeLeaveRequest(
     throw new Error(data?.error || 'Failed to review leave request');
   }
   return data.request as LeaveRequest;
+}
+
+export async function fetchViolationCases(): Promise<AdminViolationRecord[]> {
+  const response = await fetch('/api/admin/violations', { cache: 'no-store' });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || 'Failed to fetch violation cases');
+  }
+  return data.violations as AdminViolationRecord[];
+}
+
+export async function createViolationCase(
+  input: CreateViolationInput
+): Promise<AdminViolationRecord> {
+  const response = await fetch('/api/admin/violations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || 'Failed to create violation case');
+  }
+  return data.violation as AdminViolationRecord;
+}
+
+export async function updateViolationCase(
+  input: UpdateViolationInput
+): Promise<AdminViolationRecord> {
+  const response = await fetch('/api/admin/violations', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || 'Failed to update violation case');
+  }
+  return data.violation as AdminViolationRecord;
 }

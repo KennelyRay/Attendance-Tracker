@@ -52,6 +52,62 @@ export type UpdateEmployeeAccessInput = {
   durationHours?: number;
 };
 
+export type ViolationSeverity = 'low' | 'medium' | 'high';
+
+export type ViolationCaseStatus = 'open' | 'under-review' | 'resolved';
+
+export type AdminViolationRecord = {
+  id: number;
+  user_id: number;
+  user_name: string;
+  user_email: string;
+  user_position: string | null;
+  violation_type: string;
+  company: string | null;
+  severity: ViolationSeverity;
+  case_status: ViolationCaseStatus;
+  incident_date: string;
+  description: string;
+  action_taken: string | null;
+  created_by: number | null;
+  created_by_name: string | null;
+  created_at: string;
+};
+
+export type EmployeeViolationRecord = {
+  id: number;
+  violation_type: string;
+  company: string | null;
+  severity: ViolationSeverity;
+  case_status: ViolationCaseStatus;
+  incident_date: string;
+  description: string;
+  action_taken: string | null;
+  created_at: string;
+};
+
+export type CreateViolationInput = {
+  userId: number;
+  violationType: string;
+  company?: string;
+  severity: ViolationSeverity;
+  caseStatus: ViolationCaseStatus;
+  incidentDate: string;
+  description: string;
+  actionTaken?: string;
+};
+
+export type UpdateViolationInput = {
+  violationId: number;
+  violationType: string;
+  company?: string;
+  severity: ViolationSeverity;
+  caseStatus: ViolationCaseStatus;
+  incidentDate: string;
+  description: string;
+  actionTaken?: string;
+};
+
 export function employeeAccountStatus(employee: Pick<Employee, 'is_banned' | 'restricted_until'>): AccountStatus {
   if (employee.is_banned) {
     return 'banned';

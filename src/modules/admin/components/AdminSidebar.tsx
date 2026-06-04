@@ -254,8 +254,10 @@ export function AdminSidebar({
     <>
       <div
         className={[
-          'flex items-center justify-between gap-3 border-b border-slate-800/80',
-          showCollapsedDesktop ? 'px-3 py-3' : 'px-5 py-4 sm:px-6 sm:py-5',
+          'border-b border-slate-800/80',
+          showCollapsedDesktop
+            ? 'flex flex-col items-center justify-center gap-3 px-2 py-4'
+            : 'flex items-center justify-between gap-3 px-5 py-4 sm:px-6 sm:py-5',
         ].join(' ')}
       >
         {showCollapsedDesktop ? (
@@ -272,7 +274,7 @@ export function AdminSidebar({
           </div>
         )}
 
-        <div className="flex items-center gap-2">
+        <div className={showCollapsedDesktop ? 'flex items-center justify-center' : 'flex items-center gap-2'}>
           {isMobile && onCloseMobile ? (
             <button
               type="button"
@@ -304,7 +306,7 @@ export function AdminSidebar({
         </div>
       </div>
 
-      <div className={showCollapsedDesktop ? 'px-3 py-4' : 'px-5 py-4 sm:px-6 sm:py-5'}>
+      <div className={showCollapsedDesktop ? 'px-2 py-4' : 'px-5 py-4 sm:px-6 sm:py-5'}>
         <div className={showCollapsedDesktop ? 'space-y-3' : 'space-y-5'}>
           {groups.map((group) => (
             <div key={group.heading}>
@@ -332,7 +334,7 @@ export function AdminSidebar({
                         'w-full rounded-2xl border text-left transition-all',
                         'ring-1 ring-inset',
                         showCollapsedDesktop
-                          ? 'px-0 py-3'
+                          ? 'min-h-[52px] px-0 py-3.5'
                           : 'px-4 py-3',
                         isActive
                           ? 'border-sky-400/25 bg-sky-500/10 text-slate-50 ring-sky-400/20 shadow-[0_14px_34px_rgba(14,165,233,0.14)]'
@@ -394,7 +396,7 @@ export function AdminSidebar({
       <aside
         className={[
           'h-full text-slate-100',
-          showCollapsedDesktop ? 'w-[88px]' : 'w-full',
+          showCollapsedDesktop ? 'w-[104px]' : 'w-full',
         ].join(' ')}
       >
         {sidebarContent}

@@ -2,6 +2,7 @@ import type {
   EmployeeAttendanceRecord,
   EmployeeAttendanceStats,
   EmployeePortalProfile,
+  EmployeeViolationRecord,
 } from '@/modules/employee/types';
 import type {
   CreateLeaveRequestInput,
@@ -68,4 +69,14 @@ export async function createLeaveRequest(input: CreateLeaveRequestInput): Promis
     request: data.request as LeaveRequest,
     balance: data.balance as LeaveBalance,
   };
+}
+
+export async function fetchMyViolations(): Promise<EmployeeViolationRecord[]> {
+  const response = await fetch('/api/employee/violations', { cache: 'no-store' });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || 'Failed to fetch violations');
+  }
+
+  return data.violations as EmployeeViolationRecord[];
 }

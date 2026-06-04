@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { NavigationTransitionOverlay } from "@/components/layout/NavigationTransitionOverlay";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -33,6 +34,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full bg-[#07111f] antialiased`}
     >
       <body className="min-h-full bg-[#07111f] text-slate-100 flex flex-col overflow-x-hidden">
+        <NavigationTransitionOverlay />
         {children}
       </body>
     </html>

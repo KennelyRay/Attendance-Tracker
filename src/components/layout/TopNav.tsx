@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
+import { triggerGlobalNavigationLoader } from '@/components/layout/navigation-loader';
 import { Button } from '@/components/ui/Button';
 import type { SessionUser } from '@/lib/session';
 import { fetchMyProfile } from '@/modules/employee/api';
@@ -77,6 +78,12 @@ export function TopNav({
   };
 
   const onPolicyNavigate = () => {
+    triggerGlobalNavigationLoader({
+      title: isLeavePolicyPage ? 'Loading dashboard' : 'Loading leave policy',
+      description: isLeavePolicyPage
+        ? 'Bringing your employee workspace back into focus.'
+        : 'Preparing the latest leave guidance for a smoother read.',
+    });
     router.push(isLeavePolicyPage ? '/employee/dashboard' : '/employee/leave-policy');
   };
 

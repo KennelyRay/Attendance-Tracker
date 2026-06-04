@@ -1,6 +1,6 @@
 import { EmployeeDashboardClient } from '@/modules/employee/components/EmployeeDashboardClient';
 import { getSessionData } from '@/lib/session';
-import { getMyAttendanceForMonth } from '@/modules/employee/server/queries';
+import { getMyAttendanceForMonth, getMyViolations } from '@/modules/employee/server/queries';
 import {
   getLeaveBalanceForUser,
   listLeaveRequestsForUser,
@@ -20,10 +20,11 @@ export default async function EmployeeDashboardPage() {
   const month = String(monthNumber).padStart(2, '0');
   const year = String(yearNumber);
 
-  const [data, leaveBalance, leaveRequests] = await Promise.all([
+  const [data, leaveBalance, leaveRequests, violations] = await Promise.all([
     getMyAttendanceForMonth(session.user.id, monthNumber, yearNumber),
     getLeaveBalanceForUser(session.user.id),
     listLeaveRequestsForUser(session.user.id),
+    getMyViolations(session.user.id),
   ]);
 
   return (
@@ -34,6 +35,7 @@ export default async function EmployeeDashboardPage() {
       initialStats={data.stats}
       initialLeaveBalance={leaveBalance}
       initialLeaveRequests={leaveRequests}
+      initialViolations={violations}
     />
   );
 }

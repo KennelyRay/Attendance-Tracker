@@ -5,14 +5,17 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
+  createViolationCase,
   createEmployeeAccount,
   deleteEmployeeAccount,
   fetchAttendanceHistory,
   fetchEmployees,
   fetchLeaveRequests,
+  fetchViolationCases,
   reviewEmployeeLeaveRequest,
   updateEmployeeAccount,
   updateEmployeeAccess,
+  updateViolationCase,
   upsertAttendance,
 } from '@/modules/admin/api';
 import { AccountManagementPanel } from '@/modules/admin/components/AccountManagementPanel';
@@ -25,6 +28,8 @@ import { AdminOverviewPanel } from '@/modules/admin/components/AdminOverviewPane
 import { AdminInsightsPanel } from '@/modules/admin/components/AdminInsightsPanel';
 import { AdminPlaceholderPanel } from '@/modules/admin/components/AdminPlaceholderPanel';
 import { LeaveRequestsPanel } from '@/modules/admin/components/LeaveRequestsPanel';
+import { NewViolationPanel } from '@/modules/admin/components/NewViolationPanel';
+import { ViolationCasesPanel } from '@/modules/admin/components/ViolationCasesPanel';
 import { employeeAccountStatus } from '@/modules/admin/types';
 import type { Employee } from '@/modules/admin/types';
 import { EmployeeList } from '@/modules/admin/components/EmployeeList';
@@ -32,9 +37,12 @@ import { AttendanceForm } from '@/modules/admin/components/AttendanceForm';
 import { AttendanceTable } from '@/modules/admin/components/AttendanceTable';
 import type {
   AdminAttendanceRecord,
+  AdminViolationRecord,
+  CreateViolationInput,
   CreateEmployeeInput,
   UpdateEmployeeAccountInput,
   UpdateEmployeeAccessInput,
+  UpdateViolationInput,
 } from '@/modules/admin/types';
 import { AttendanceStatusBadge } from '@/modules/attendance/components/AttendanceStatusBadge';
 import type { AttendanceStatus } from '@/modules/attendance/types';
@@ -46,6 +54,8 @@ const leaveAwareViews: AdminView[] = [
   'reports-charts',
   'smart-insights',
 ];
+
+const violationAwareViews: AdminView[] = ['new-violation', 'all-violation-cases'];
 
 const viewDescriptions: Record<AdminView, string> = {
   dashboard: 'Main statistics and workforce charts',
@@ -79,6 +89,9 @@ export function AdminDashboardClient({
   const [isLeaveRequestsLoading, setIsLeaveRequestsLoading] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState<AdminLeaveRequest[]>([]);
   const [leaveError, setLeaveError] = useState<string | null>(null);
+  const [isViolationsLoading, setIsViolationsLoading] = useState(false);
+  const [violations, setViolations] = useState<AdminViolationRecord[]>([]);
+  const [violationsError, setViolationsError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<AdminView>('dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -203,6 +216,23 @@ export function AdminDashboardClient({
     }
   };
 
+  const loadViolationCases = async () => {
+    setViolationsError(null);
+    setIsViolationsLoading(true);
+    try {
+      const items = await fetchViolationCases();
+      setViolations(items);
+    } catch (violationLoadError) {
+      setViolationsError(
+        violationLoadError instanceof Error
+          ? violationLoadError.message
+          : 'Failed to load violation cases'
+      );
+    } finally {
+      setIsViolationsLoading(false);
+    }
+  };
+
   const onSelect = async (employee: Employee) => {
     setSelectedEmployeeId(employee.id);
     await reloadHistory(employee.id);
@@ -290,6 +320,18 @@ export function AdminDashboardClient({
     }
   };
 
+  const onCreateViolation = async (input: CreateViolationInput) => {
+    const createdViolation = await createViolationCase(input);
+    setViolations((current) => [createdViolation, ...current]);
+  };
+
+  const onUpdateViolation = async (input: UpdateViolationInput) => {
+    const updatedViolation = await updateViolationCase(input);
+    setViolations((current) =>
+      current.map((violation) => (violation.id === updatedViolation.id ? updatedViolation : violation))
+    );
+  };
+
   useEffect(() => {
     if (!leaveAwareViews.includes(activeView)) {
       return;
@@ -333,6 +375,10 @@ export function AdminDashboardClient({
     if (leaveAwareViews.includes(view) && leaveRequests.length === 0) {
       await loadLeaveRequests();
     }
+
+    if (violationAwareViews.includes(view) && violations.length === 0) {
+      await loadViolationCases();
+    }
   };
 
   if (error) {
@@ -347,6 +393,9 @@ export function AdminDashboardClient({
               await reloadEmployees();
               if (leaveAwareViews.includes(activeView)) {
                 await loadLeaveRequests();
+              }
+              if (violationAwareViews.includes(activeView)) {
+                await loadViolationCases();
               }
             }}
           >
@@ -476,7 +525,7 @@ export function AdminDashboardClient({
         className={[
           'grid grid-cols-1 gap-6 px-3 sm:px-4 xl:gap-0 xl:px-0',
           isSidebarCollapsed
-            ? 'xl:grid-cols-[88px_minmax(0,1fr)]'
+            ? 'xl:grid-cols-[104px_minmax(0,1fr)]'
             : 'xl:grid-cols-[280px_minmax(0,1fr)]',
         ].join(' ')}
       >
@@ -507,6 +556,10 @@ export function AdminDashboardClient({
                 {activeView === 'leave-requests' ? (
                   <Button variant="secondary" onClick={() => void loadLeaveRequests()}>
                     Refresh Leave Queue
+                  </Button>
+                ) : violationAwareViews.includes(activeView) ? (
+                  <Button variant="secondary" onClick={() => void loadViolationCases()}>
+                    Refresh Violations
                   </Button>
                 ) : activeView === 'employees' ? (
                   <Button variant="secondary" onClick={() => void reloadEmployees()}>
@@ -558,26 +611,21 @@ export function AdminDashboardClient({
               onDelete={onDeleteAccount}
             />
           ) : activeView === 'new-violation' ? (
-            <AdminPlaceholderPanel
-              title="New Violation"
-              subtitle="Start a dedicated case workflow for employee violations."
-              description="This section is prepared for a future violation intake flow where admins can log incidents, attach policy references, capture evidence, and route cases for review."
-              highlights={[
-                'Create a new case with employee details, incident date, and violation category.',
-                'Attach supporting notes, witness statements, and policy references.',
-                'Track the case as it moves from review to resolution.',
-              ]}
+            <NewViolationPanel
+              employees={employees}
+              violations={violations}
+              isLoading={isViolationsLoading}
+              error={violationsError}
+              onCreate={onCreateViolation}
+              onRefresh={loadViolationCases}
             />
           ) : activeView === 'all-violation-cases' ? (
-            <AdminPlaceholderPanel
-              title="All Violation Cases"
-              subtitle="Centralize case review, statuses, and follow-up actions."
-              description="This workspace is ready for a full case register where admins can sort incidents by severity, assignee, and current outcome without leaving the dashboard shell."
-              highlights={[
-                'View all recorded violation cases in one searchable list.',
-                'Filter by employee, case status, and violation type.',
-                'Review timelines, actions taken, and final decisions.',
-              ]}
+            <ViolationCasesPanel
+              violations={violations}
+              isLoading={isViolationsLoading}
+              error={violationsError}
+              onRefresh={loadViolationCases}
+              onUpdate={onUpdateViolation}
             />
           ) : (
             <AdminPlaceholderPanel

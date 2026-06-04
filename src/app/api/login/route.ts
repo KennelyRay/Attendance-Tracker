@@ -74,9 +74,15 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ user: sessionData.user });
   } catch (error) {
-    console.error('Login error:', error);
+    const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
+
+    console.error('Login error', {
+      code: 'LOGIN_ROUTE_FAILURE',
+      requestId,
+    });
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', requestId },
       { status: 500 }
     );
   }

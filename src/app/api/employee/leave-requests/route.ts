@@ -48,11 +48,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ request: leaveRequest, balance }, { status: 201 });
   } catch (error) {
+    console.error('Create employee leave request error:', error);
+
     if (error instanceof Error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid leave request' }, { status: 400 });
     }
 
-    console.error('Create employee leave request error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Unable to create leave request' }, { status: 500 });
   }
 }

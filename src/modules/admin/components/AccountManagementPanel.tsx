@@ -186,6 +186,7 @@ export function AccountManagementPanel({
 }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [company, setCompany] = useState('');
   const [position, setPosition] = useState('');
   const [startDate, setStartDate] = useState('');
   const [password, setPassword] = useState('');
@@ -199,6 +200,7 @@ export function AccountManagementPanel({
   const [feedbackModal, setFeedbackModal] = useState<{ title: string; description: string } | null>(null);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [editCompany, setEditCompany] = useState('');
   const [editPosition, setEditPosition] = useState('');
   const [editStartDate, setEditStartDate] = useState('');
 
@@ -215,6 +217,7 @@ export function AccountManagementPanel({
       await onCreate(input);
       setName('');
       setEmail('');
+      setCompany('');
       setPosition('');
       setStartDate('');
       setPassword('');
@@ -237,6 +240,7 @@ export function AccountManagementPanel({
     setPendingCreate({
       name: name.trim(),
       email: email.trim(),
+      company: company.trim(),
       position: position.trim(),
       startDate,
       password,
@@ -249,6 +253,7 @@ export function AccountManagementPanel({
     setPendingEdit(account);
     setEditName(account.name);
     setEditEmail(account.email);
+    setEditCompany(account.company ?? '');
     setEditPosition(account.position ?? '');
     setEditStartDate(account.start_date);
   };
@@ -265,6 +270,7 @@ export function AccountManagementPanel({
         userId: pendingEdit.id,
         name: editName.trim(),
         email: editEmail.trim(),
+        company: editCompany.trim(),
         position: editPosition.trim(),
         startDate: editStartDate,
       });
@@ -338,15 +344,28 @@ export function AccountManagementPanel({
                   </div>
                 </div>
               </div>
-              <div>
-                <div className="text-sm font-medium text-slate-300">Position</div>
-                <div className="mt-1">
-                  <Input
-                    value={position}
-                    onChange={(event) => setPosition(event.target.value)}
-                    placeholder="e.g. Team Lead"
-                    required
-                  />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <div className="text-sm font-medium text-slate-300">Company</div>
+                  <div className="mt-1">
+                    <Input
+                      value={company}
+                      onChange={(event) => setCompany(event.target.value)}
+                      placeholder="e.g. Head Office"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-slate-300">Position</div>
+                  <div className="mt-1">
+                    <Input
+                      value={position}
+                      onChange={(event) => setPosition(event.target.value)}
+                      placeholder="e.g. Team Lead"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
               <div>
@@ -447,6 +466,10 @@ export function AccountManagementPanel({
                         <div className="mt-1 break-all text-xs text-slate-400">{account.email}</div>
                       </div>
                       <div className="grid grid-cols-1 gap-3">
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Company</div>
+                          <div className="mt-1 text-sm text-slate-300">{account.company || 'Not set'}</div>
+                        </div>
                         <div>
                           <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Position</div>
                           <div className="mt-1 text-sm text-slate-300">{account.position || 'Not set'}</div>
@@ -586,6 +609,7 @@ export function AccountManagementPanel({
                 <THead>
                   <tr>
                     <TH>Employee</TH>
+                    <TH>Company</TH>
                     <TH>Position</TH>
                     <TH>Start Date</TH>
                     <TH>Status</TH>
@@ -605,6 +629,9 @@ export function AccountManagementPanel({
                         <TD>
                           <div className="font-medium text-slate-100">{account.name}</div>
                           <div className="mt-1 text-xs text-slate-400">{account.email}</div>
+                        </TD>
+                        <TD className="whitespace-nowrap text-slate-300">
+                          {account.company || 'Not set'}
                         </TD>
                         <TD className="whitespace-nowrap text-slate-300">
                           {account.position || 'Not set'}
@@ -761,6 +788,9 @@ export function AccountManagementPanel({
               <span className="font-medium text-slate-100">Email:</span> {pendingCreate.email}
             </div>
             <div className="mt-2 text-sm text-slate-300">
+              <span className="font-medium text-slate-100">Company:</span> {pendingCreate.company}
+            </div>
+            <div className="mt-2 text-sm text-slate-300">
               <span className="font-medium text-slate-100">Position:</span> {pendingCreate.position}
             </div>
             <div className="mt-2 text-sm text-slate-300">
@@ -805,6 +835,17 @@ export function AccountManagementPanel({
                   value={editEmail}
                   onChange={(event) => setEditEmail(event.target.value)}
                   placeholder="employee@company.com"
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <div className="text-sm font-medium text-slate-300">Company</div>
+              <div className="mt-1">
+                <Input
+                  value={editCompany}
+                  onChange={(event) => setEditCompany(event.target.value)}
+                  placeholder="e.g. Head Office"
                   required
                 />
               </div>

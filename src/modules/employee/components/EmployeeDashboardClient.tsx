@@ -6,10 +6,11 @@ import { triggerGlobalNavigationLoader } from '@/components/layout/navigation-lo
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
-import { fetchMyAttendance, fetchMyViolations } from '@/modules/employee/api';
+import { fetchMyAttendance, fetchMyProfile, fetchMyViolations } from '@/modules/employee/api';
 import type {
   EmployeeAttendanceRecord,
   EmployeeAttendanceStats,
+  EmployeePortalProfile,
   EmployeeViolationRecord,
 } from '@/modules/employee/types';
 import {
@@ -88,6 +89,7 @@ export function EmployeeDashboardClient({
   const [violations, setViolations] = useState<EmployeeViolationRecord[]>(initialViolations);
   const [isViolationsLoading, setIsViolationsLoading] = useState(false);
   const [violationsError, setViolationsError] = useState<string | null>(null);
+  const [employeeProfile, setEmployeeProfile] = useState<EmployeePortalProfile | null>(null);
   const [activeView, setActiveView] = useState<EmployeeView>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
@@ -146,6 +148,40 @@ export function EmployeeDashboardClient({
 
     const handleFocus = () => {
       void refresh();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadProfile = async () => {
+      try {
+        const profile = await fetchMyProfile();
+        if (!cancelled) {
+          setEmployeeProfile(profile);
+        }
+      } catch {
+        // Keep the current dashboard summary visible if the refresh fails.
+      }
+    };
+
+    void loadProfile();
+    const intervalId = window.setInterval(() => {
+      void loadProfile();
+    }, 10000);
+
+    const handleFocus = () => {
+      void loadProfile();
     };
 
     window.addEventListener('focus', handleFocus);
@@ -258,6 +294,7 @@ export function EmployeeDashboardClient({
       case 'leave':
         return (
           <LeaveManagementPanel
+            employeeProfile={employeeProfile}
             initialBalance={initialLeaveBalance}
             initialRequests={initialLeaveRequests}
           />
@@ -265,6 +302,7 @@ export function EmployeeDashboardClient({
       case 'violations':
         return (
           <EmployeeViolationsPanel
+            employeeProfile={employeeProfile}
             violations={violations}
             isLoading={isViolationsLoading}
             error={violationsError}
@@ -293,7 +331,11 @@ export function EmployeeDashboardClient({
                 </div>
               </CardBody>
             </Card>
-            <AttendanceTable records={records} isLoading={isLoading} />
+            <AttendanceTable
+              employeeProfile={employeeProfile}
+              records={records}
+              isLoading={isLoading}
+            />
           </div>
         );
       default:
@@ -394,19 +436,57 @@ export function EmployeeDashboardClient({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    {dashboardSignals.map((signal) => (
-                      <div
-                        key={signal.label}
-                        className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 ring-1 ring-inset ring-white/5"
-                      >
-                        <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          {signal.label}
-                        </div>
-                        <div className="mt-3 text-2xl font-semibold text-slate-100">{signal.value}</div>
-                        <div className="mt-2 text-sm leading-6 text-slate-400">{signal.helper}</div>
+                  <div className="space-y-3">
+                    <div className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 ring-1 ring-inset ring-white/5">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Profile Snapshot
                       </div>
-                    ))}
+                      <div className="mt-3 grid grid-cols-1 gap-3">
+                        <div className="rounded-xl bg-slate-950/65 px-3 py-3 ring-1 ring-inset ring-slate-800">
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            Company
+                          </div>
+                          <div className="mt-1.5 text-sm font-medium text-slate-100">
+                            {employeeProfile?.company || 'Not assigned yet'}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="rounded-xl bg-slate-950/65 px-3 py-3 ring-1 ring-inset ring-slate-800">
+                            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                              Position
+                            </div>
+                            <div className="mt-1.5 text-sm font-medium text-slate-100">
+                              {employeeProfile?.position || 'Not assigned'}
+                            </div>
+                          </div>
+                          <div className="rounded-xl bg-slate-950/65 px-3 py-3 ring-1 ring-inset ring-slate-800">
+                            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                              Start Date
+                            </div>
+                            <div className="mt-1.5 text-sm font-medium text-slate-100">
+                              {employeeProfile?.startDate
+                                ? new Date(employeeProfile.startDate).toLocaleDateString()
+                                : 'Not set'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      {dashboardSignals.map((signal) => (
+                        <div
+                          key={signal.label}
+                          className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 ring-1 ring-inset ring-white/5"
+                        >
+                          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            {signal.label}
+                          </div>
+                          <div className="mt-3 text-2xl font-semibold text-slate-100">{signal.value}</div>
+                          <div className="mt-2 text-sm leading-6 text-slate-400">{signal.helper}</div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </CardBody>

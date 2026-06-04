@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
-import type { EmployeeViolationRecord } from '@/modules/employee/types';
+import type { EmployeePortalProfile, EmployeeViolationRecord } from '@/modules/employee/types';
 import type { ViolationCaseStatus, ViolationSeverity } from '@/modules/admin/types';
 
 const PAGE_SIZE = 5;
@@ -32,11 +32,13 @@ function statusClass(status: ViolationCaseStatus) {
 }
 
 export function EmployeeViolationsPanel({
+  employeeProfile,
   violations,
   isLoading,
   error,
   onRefresh,
 }: {
+  employeeProfile?: EmployeePortalProfile | null;
   violations: EmployeeViolationRecord[];
   isLoading: boolean;
   error: string | null;
@@ -55,7 +57,7 @@ export function EmployeeViolationsPanel({
     <Card>
       <CardHeader
         title="My Violations"
-        subtitle="Review your recorded violation cases, their severity, and the latest status."
+        subtitle="Review your recorded violation cases, their severity, latest status, and assigned company context."
         right={
           <Button variant="secondary" onClick={onRefresh} disabled={isLoading}>
             {isLoading ? 'Refreshing...' : 'Refresh'}
@@ -76,6 +78,14 @@ export function EmployeeViolationsPanel({
           />
         ) : (
           <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-flex items-center rounded-full bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-300 ring-1 ring-inset ring-cyan-400/20">
+                {employeeProfile?.company || 'Unassigned company'}
+              </span>
+              <span className="inline-flex items-center rounded-full bg-slate-950/80 px-2.5 py-1 text-[11px] font-medium text-slate-300 ring-1 ring-inset ring-slate-800">
+                {employeeProfile?.position || 'No position set'}
+              </span>
+            </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-slate-400">
                 Showing {paginatedViolations.length} of {violations.length} recorded cases

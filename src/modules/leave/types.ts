@@ -56,6 +56,7 @@ export type LeaveRequest = {
 export type AdminLeaveRequest = LeaveRequest & {
   user_name: string;
   user_email: string;
+  user_company: string | null;
   user_position: string | null;
   user_start_date: string;
   user_leave_remaining: number;

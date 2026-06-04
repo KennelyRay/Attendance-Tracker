@@ -55,7 +55,12 @@ const leaveAwareViews: AdminView[] = [
   'smart-insights',
 ];
 
-const violationAwareViews: AdminView[] = ['new-violation', 'all-violation-cases'];
+const violationAwareViews: AdminView[] = [
+  'dashboard',
+  'reports-charts',
+  'new-violation',
+  'all-violation-cases',
+];
 
 const viewDescriptions: Record<AdminView, string> = {
   dashboard: 'Main statistics and workforce charts',
@@ -333,7 +338,10 @@ export function AdminDashboardClient({
   };
 
   useEffect(() => {
-    if (!leaveAwareViews.includes(activeView)) {
+    const shouldLoadLeave = leaveAwareViews.includes(activeView);
+    const shouldLoadViolations = violationAwareViews.includes(activeView);
+
+    if (!shouldLoadLeave && !shouldLoadViolations) {
       return;
     }
 
@@ -341,7 +349,11 @@ export function AdminDashboardClient({
 
     const refresh = async () => {
       if (cancelled) return;
-      await loadLeaveRequests();
+
+      await Promise.allSettled([
+        shouldLoadLeave ? loadLeaveRequests() : Promise.resolve(),
+        shouldLoadViolations ? loadViolationCases() : Promise.resolve(),
+      ]);
     };
 
     void refresh();
@@ -372,12 +384,18 @@ export function AdminDashboardClient({
       await reloadHistory(selectedEmployeeId);
     }
 
+    const pendingLoads: Array<Promise<void>> = [];
+
     if (leaveAwareViews.includes(view) && leaveRequests.length === 0) {
-      await loadLeaveRequests();
+      pendingLoads.push(loadLeaveRequests());
     }
 
     if (violationAwareViews.includes(view) && violations.length === 0) {
-      await loadViolationCases();
+      pendingLoads.push(loadViolationCases());
+    }
+
+    if (pendingLoads.length > 0) {
+      await Promise.allSettled(pendingLoads);
     }
   };
 
@@ -439,8 +457,13 @@ export function AdminDashboardClient({
                     <div className="mt-1 text-sm text-slate-400">
                       {selectedEmployee.email}
                     </div>
-                    <div className="mt-2 inline-flex items-center rounded-full bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-300 ring-1 ring-inset ring-sky-400/20">
-                      {selectedEmployee.position || 'No position set'}
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <div className="inline-flex items-center rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-300 ring-1 ring-inset ring-cyan-400/20">
+                        {selectedEmployee.company || 'Unassigned company'}
+                      </div>
+                      <div className="inline-flex items-center rounded-full bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-300 ring-1 ring-inset ring-sky-400/20">
+                        {selectedEmployee.position || 'No position set'}
+                      </div>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 min-[420px]:grid-cols-2 sm:grid-cols-4">
@@ -574,7 +597,9 @@ export function AdminDashboardClient({
             <AdminOverviewPanel
               employees={employees}
               leaveRequests={leaveRequests}
+              violations={violations}
               isLeaveDataLoading={isLeaveRequestsLoading}
+              isViolationDataLoading={isViolationsLoading}
               onOpenView={(view) => void openView(view)}
             />
           ) : activeView === 'employees' ? (
@@ -592,7 +617,9 @@ export function AdminDashboardClient({
               mode="reports"
               employees={employees}
               leaveRequests={leaveRequests}
+              violations={violations}
               isLeaveDataLoading={isLeaveRequestsLoading}
+              isViolationDataLoading={isViolationsLoading}
               onOpenView={(view) => void openView(view)}
             />
           ) : activeView === 'smart-insights' ? (

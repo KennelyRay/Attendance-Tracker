@@ -40,6 +40,10 @@ function statusClass(status: ViolationCaseStatus) {
   }
 }
 
+function companyLabel(company: string | null) {
+  return company?.trim() || 'Unassigned company';
+}
+
 function EditViolationModal({
   violation,
   isSubmitting,
@@ -70,7 +74,7 @@ function EditViolationModal({
       <div className="w-full max-w-2xl rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
         <div className="text-lg font-semibold text-slate-100">Edit Violation Case</div>
         <div className="mt-2 text-sm leading-6 text-slate-400">
-          Update the case details for {violation.user_name}.
+          Update the case details for {violation.user_name} from {companyLabel(violation.company)}.
         </div>
         {error ? (
           <div className="mt-4 rounded-xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300 ring-1 ring-inset ring-rose-400/20">
@@ -329,71 +333,25 @@ export function ViolationCasesPanel({
             </div>
           ) : (
             <div className="mt-4 space-y-4">
-              <Table>
-                <THead>
-                  <tr>
-                    <TH>Employee</TH>
-                    <TH>Case</TH>
-                    <TH>Company</TH>
-                    <TH>Severity</TH>
-                    <TH>Status</TH>
-                    <TH>Incident</TH>
-                    <TH>Recorded</TH>
-                    <TH>Actions</TH>
-                  </tr>
-                </THead>
-                <TBody>
-                  {pagedViolations.map((violation) => (
-                    <tr key={violation.id}>
-                      <TD>
-                        <div className="font-medium text-slate-100">{violation.user_name}</div>
-                        <div className="mt-1 text-xs text-slate-400">{violation.user_email}</div>
-                        <div className="mt-1 text-xs text-slate-500">
-                          {violation.user_position || 'No position set'}
-                        </div>
-                      </TD>
-                      <TD>
-                        <div className="font-medium text-slate-100">{violation.violation_type}</div>
-                        <div className="mt-1 max-w-md text-xs leading-6 text-slate-400">
-                          {violation.description}
-                        </div>
-                        {violation.action_taken ? (
-                          <div className="mt-2 text-xs text-slate-500">
-                            Action: {violation.action_taken}
+              <div className="space-y-3 md:hidden">
+                {pagedViolations.map((violation) => (
+                  <div
+                    key={violation.id}
+                    className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 ring-1 ring-inset ring-white/5"
+                  >
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-slate-100">
+                            {violation.user_name}
                           </div>
-                        ) : null}
-                      </TD>
-                      <TD>{violation.company || 'Not specified'}</TD>
-                      <TD>
-                        <span
-                          className={[
-                            'inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize',
-                            severityClass(violation.severity),
-                          ].join(' ')}
-                        >
-                          {violation.severity}
-                        </span>
-                      </TD>
-                      <TD>
-                        <span
-                          className={[
-                            'inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize',
-                            statusClass(violation.case_status),
-                          ].join(' ')}
-                        >
-                          {violation.case_status.replace('-', ' ')}
-                        </span>
-                      </TD>
-                      <TD>{new Date(violation.incident_date).toLocaleDateString()}</TD>
-                      <TD>
-                        <div>{new Date(violation.created_at).toLocaleDateString()}</div>
-                        <div className="mt-1 text-xs text-slate-500">
-                          {violation.created_by_name || 'System'}
+                          <div className="mt-1 break-all text-xs text-slate-400">
+                            {violation.user_email}
+                          </div>
                         </div>
-                      </TD>
-                      <TD>
                         <Button
                           variant="secondary"
+                          size="sm"
                           onClick={() => {
                             setActionError(null);
                             setEditingViolation(violation);
@@ -402,11 +360,157 @@ export function ViolationCasesPanel({
                         >
                           {busyViolationId === violation.id ? 'Saving...' : 'Edit'}
                         </Button>
-                      </TD>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <span className="inline-flex items-center rounded-full bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-300 ring-1 ring-inset ring-cyan-400/20">
+                          {companyLabel(violation.company)}
+                        </span>
+                        <span className="inline-flex items-center rounded-full bg-slate-950/80 px-2.5 py-1 text-[11px] font-medium text-slate-300 ring-1 ring-inset ring-slate-800">
+                          {violation.user_position || 'No position set'}
+                        </span>
+                        <span
+                          className={[
+                            'inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize',
+                            severityClass(violation.severity),
+                          ].join(' ')}
+                        >
+                          {violation.severity}
+                        </span>
+                        <span
+                          className={[
+                            'inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize',
+                            statusClass(violation.case_status),
+                          ].join(' ')}
+                        >
+                          {violation.case_status.replace('-', ' ')}
+                        </span>
+                      </div>
+
+                      <div className="rounded-xl bg-slate-950/70 px-3 py-3 ring-1 ring-inset ring-slate-800">
+                        <div className="text-sm font-medium text-slate-100">
+                          {violation.violation_type}
+                        </div>
+                        <div className="mt-2 text-sm leading-6 text-slate-400">
+                          {violation.description}
+                        </div>
+                        {violation.action_taken ? (
+                          <div className="mt-3 text-xs text-slate-500">
+                            Action: {violation.action_taken}
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-xs text-slate-400">
+                        <div className="rounded-xl bg-slate-950/55 px-3 py-2.5 ring-1 ring-inset ring-slate-800">
+                          <div className="font-semibold uppercase tracking-wide text-slate-500">
+                            Incident
+                          </div>
+                          <div className="mt-1 text-sm text-slate-300">
+                            {new Date(violation.incident_date).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="rounded-xl bg-slate-950/55 px-3 py-2.5 ring-1 ring-inset ring-slate-800">
+                          <div className="font-semibold uppercase tracking-wide text-slate-500">
+                            Recorded
+                          </div>
+                          <div className="mt-1 text-sm text-slate-300">
+                            {new Date(violation.created_at).toLocaleDateString()}
+                          </div>
+                          <div className="mt-1 text-xs text-slate-500">
+                            {violation.created_by_name || 'System'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden md:block">
+                <Table>
+                  <THead>
+                    <tr>
+                      <TH>Employee</TH>
+                      <TH>Case</TH>
+                      <TH>Company</TH>
+                      <TH>Severity</TH>
+                      <TH>Status</TH>
+                      <TH>Incident</TH>
+                      <TH>Recorded</TH>
+                      <TH>Actions</TH>
                     </tr>
-                  ))}
-                </TBody>
-              </Table>
+                  </THead>
+                  <TBody>
+                    {pagedViolations.map((violation) => (
+                      <tr key={violation.id}>
+                        <TD>
+                          <div className="font-medium text-slate-100">{violation.user_name}</div>
+                          <div className="mt-1 text-xs text-slate-400">{violation.user_email}</div>
+                          <div className="mt-1 text-xs text-slate-500">
+                            {violation.user_position || 'No position set'}
+                          </div>
+                        </TD>
+                        <TD>
+                          <div className="font-medium text-slate-100">{violation.violation_type}</div>
+                          <div className="mt-1 max-w-md text-xs leading-6 text-slate-400">
+                            {violation.description}
+                          </div>
+                          {violation.action_taken ? (
+                            <div className="mt-2 text-xs text-slate-500">
+                              Action: {violation.action_taken}
+                            </div>
+                          ) : null}
+                        </TD>
+                        <TD>
+                          <span className="inline-flex items-center rounded-full bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-300 ring-1 ring-inset ring-cyan-400/20">
+                            {companyLabel(violation.company)}
+                          </span>
+                        </TD>
+                        <TD>
+                          <span
+                            className={[
+                              'inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize',
+                              severityClass(violation.severity),
+                            ].join(' ')}
+                          >
+                            {violation.severity}
+                          </span>
+                        </TD>
+                        <TD>
+                          <span
+                            className={[
+                              'inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize',
+                              statusClass(violation.case_status),
+                            ].join(' ')}
+                          >
+                            {violation.case_status.replace('-', ' ')}
+                          </span>
+                        </TD>
+                        <TD>{new Date(violation.incident_date).toLocaleDateString()}</TD>
+                        <TD>
+                          <div>{new Date(violation.created_at).toLocaleDateString()}</div>
+                          <div className="mt-1 text-xs text-slate-500">
+                            {violation.created_by_name || 'System'}
+                          </div>
+                        </TD>
+                        <TD>
+                          <Button
+                            variant="secondary"
+                            onClick={() => {
+                              setActionError(null);
+                              setEditingViolation(violation);
+                            }}
+                            disabled={busyViolationId === violation.id}
+                          >
+                            {busyViolationId === violation.id ? 'Saving...' : 'Edit'}
+                          </Button>
+                        </TD>
+                      </tr>
+                    ))}
+                  </TBody>
+                </Table>
+              </div>
 
               {totalPages > 1 ? (
                 <div className="flex flex-col gap-3 border-t border-slate-800/80 pt-4 sm:flex-row sm:items-center sm:justify-between">

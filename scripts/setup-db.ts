@@ -13,6 +13,7 @@ async function setupDatabase() {
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
+        company VARCHAR(255),
         position VARCHAR(255),
         start_date DATE NOT NULL DEFAULT CURRENT_DATE,
         is_admin BOOLEAN NOT NULL DEFAULT FALSE,
@@ -163,6 +164,9 @@ async function setupDatabase() {
       ADD COLUMN IF NOT EXISTS position VARCHAR(255) NULL;
 
       ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS company VARCHAR(255) NULL;
+
+      ALTER TABLE users
       ADD COLUMN IF NOT EXISTS start_date DATE;
 
       UPDATE users
@@ -247,17 +251,17 @@ async function setupDatabase() {
     const hashedEmployeePassword = await bcrypt.hash('employee123', 10);
     
     await pool.query(
-      `INSERT INTO users (name, email, password, position, start_date, is_admin) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
+      `INSERT INTO users (name, email, password, company, position, start_date, is_admin) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7) 
        ON CONFLICT (email) DO NOTHING`,
-      ['Admin User', 'admin@company.com', hashedAdminPassword, 'Manager', '2020-01-15', true]
+      ['Admin User', 'admin@company.com', hashedAdminPassword, 'Head Office', 'Manager', '2020-01-15', true]
     );
     
     await pool.query(
-      `INSERT INTO users (name, email, password, position, start_date, is_admin) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
+      `INSERT INTO users (name, email, password, company, position, start_date, is_admin) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7) 
        ON CONFLICT (email) DO NOTHING`,
-      ['John Doe', 'john@company.com', hashedEmployeePassword, 'Staff', '2024-01-15', false]
+      ['John Doe', 'john@company.com', hashedEmployeePassword, 'Head Office', 'Staff', '2024-01-15', false]
     );
     
     console.log('Sample users created!');

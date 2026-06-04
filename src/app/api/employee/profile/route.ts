@@ -17,7 +17,7 @@ export async function GET() {
 
     const result = await pool.query(
       `
-        SELECT id, name, email, position, start_date
+        SELECT id, name, email, company, position, start_date
         FROM users
         WHERE id = $1 AND is_admin = false
       `,
@@ -35,6 +35,7 @@ export async function GET() {
         id: user.id,
         name: user.name,
         email: user.email,
+        company: user.company,
         position: user.position,
         startDate: normalizeDateOnly(user.start_date),
       },

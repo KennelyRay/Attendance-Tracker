@@ -58,7 +58,7 @@ export function NewViolationPanel({
 }) {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>(employees[0]?.id ? String(employees[0].id) : '');
   const [violationType, setViolationType] = useState('');
-  const [company, setCompany] = useState('');
+  const [company, setCompany] = useState(employees[0]?.company ?? '');
   const [severity, setSeverity] = useState<ViolationSeverity>('medium');
   const [caseStatus, setCaseStatus] = useState<ViolationCaseStatus>('open');
   const [incidentDate, setIncidentDate] = useState(todayDateOnly());
@@ -150,7 +150,16 @@ export function NewViolationPanel({
           <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
               <div className="mb-2 text-sm font-medium text-slate-300">Employee</div>
-              <Select value={selectedEmployeeId} onChange={(event) => setSelectedEmployeeId(event.target.value)}>
+              <Select
+                value={selectedEmployeeId}
+                onChange={(event) => {
+                  const nextEmployeeId = event.target.value;
+                  setSelectedEmployeeId(nextEmployeeId);
+                  const nextEmployee =
+                    employees.find((employee) => String(employee.id) === nextEmployeeId) ?? null;
+                  setCompany(nextEmployee?.company ?? '');
+                }}
+              >
                 {employees.length === 0 ? <option value="">No employees available</option> : null}
                 {employees.map((employee) => (
                   <option key={employee.id} value={employee.id}>
@@ -241,7 +250,7 @@ export function NewViolationPanel({
           title="Employee Violation Record"
           subtitle={
             selectedEmployee
-              ? `Recent violation history for ${selectedEmployee.name}`
+              ? `Recent violation history for ${selectedEmployee.name} from ${selectedEmployee.company || 'an unassigned company'}`
               : 'Select an employee to review recent violation history.'
           }
         />
@@ -267,6 +276,9 @@ export function NewViolationPanel({
                     <div className="text-sm font-semibold text-slate-100">{violation.violation_type}</div>
                     <span className="inline-flex rounded-full bg-slate-950/80 px-2.5 py-1 text-[11px] font-medium text-slate-300 ring-1 ring-inset ring-slate-800">
                       {new Date(violation.incident_date).toLocaleDateString()}
+                    </span>
+                    <span className="inline-flex rounded-full bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-300 ring-1 ring-inset ring-cyan-400/20">
+                      {violation.company || selectedEmployee.company || 'Unassigned company'}
                     </span>
                     <span
                       className={[

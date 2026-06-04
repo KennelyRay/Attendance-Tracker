@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Table, TBody, TD, TH, THead } from '@/components/ui/Table';
 import { AttendanceStatusBadge } from '@/modules/attendance/components/AttendanceStatusBadge';
-import type { EmployeeAttendanceRecord } from '@/modules/employee/types';
+import type { EmployeeAttendanceRecord, EmployeePortalProfile } from '@/modules/employee/types';
 
 const ATTENDANCE_RECORDS_PER_PAGE = 7;
 
@@ -14,9 +14,11 @@ function recordKey(record: EmployeeAttendanceRecord) {
 }
 
 export function AttendanceTable({
+  employeeProfile,
   records,
   isLoading,
 }: {
+  employeeProfile?: EmployeePortalProfile | null;
   records: EmployeeAttendanceRecord[];
   isLoading: boolean;
 }) {
@@ -30,7 +32,20 @@ export function AttendanceTable({
 
   return (
     <Card>
-      <CardHeader title="Attendance History" subtitle={`${records.length} record(s)`} />
+      <CardHeader
+        title="Attendance History"
+        subtitle={`${records.length} record(s)`}
+        right={
+          <div className="flex flex-wrap gap-2">
+            <span className="inline-flex items-center rounded-full bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-300 ring-1 ring-inset ring-cyan-400/20">
+              {employeeProfile?.company || 'Unassigned company'}
+            </span>
+            <span className="inline-flex items-center rounded-full bg-slate-950/80 px-2.5 py-1 text-[11px] font-medium text-slate-300 ring-1 ring-inset ring-slate-800">
+              {employeeProfile?.position || 'No position set'}
+            </span>
+          </div>
+        }
+      />
       <CardBody>
         {isLoading ? (
           <div className="space-y-3">

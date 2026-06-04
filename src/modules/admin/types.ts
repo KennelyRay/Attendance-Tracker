@@ -4,6 +4,7 @@ export type Employee = {
   id: number;
   name: string;
   email: string;
+  company: string | null;
   position: string | null;
   start_date: string;
   is_banned: boolean;
@@ -33,6 +34,7 @@ export type AccountStatus = 'active' | 'restricted' | 'banned';
 export type CreateEmployeeInput = {
   name: string;
   email: string;
+  company: string;
   position: string;
   startDate: string;
   password: string;
@@ -42,6 +44,7 @@ export type UpdateEmployeeAccountInput = {
   userId: number;
   name: string;
   email: string;
+  company: string;
   position: string;
   startDate: string;
 };

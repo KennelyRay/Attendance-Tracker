@@ -67,6 +67,7 @@ export function TopNav({
       ...user,
       name: employeeProfile?.name ?? user.name,
       email: employeeProfile?.email ?? user.email,
+      company: employeeProfile?.company ?? null,
       position: employeeProfile?.position ?? null,
     }),
     [employeeProfile, user]
@@ -116,6 +117,7 @@ export function TopNav({
             <div className="truncate text-[13px] font-semibold text-slate-100 sm:text-sm">{title}</div>
             <div className="truncate text-[11px] text-slate-400 sm:text-xs">
               {displayUser.name} · {user.isAdmin ? 'Admin' : 'Employee'}
+              {isEmployee && displayUser.company ? ` · ${displayUser.company}` : ''}
               {isEmployee && displayUser.position ? ` · ${displayUser.position}` : ''}
             </div>
           </div>
@@ -125,8 +127,15 @@ export function TopNav({
             <div className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-sky-400 to-cyan-300 text-xs font-semibold text-slate-950">
               {initials || 'U'}
             </div>
-            <div className="hidden max-w-[7.5rem] truncate pr-1 text-[11px] font-medium text-slate-300 min-[380px]:block sm:max-w-[12rem] sm:text-xs">
-              {displayUser.email}
+            <div className="hidden min-w-0 max-w-[8.5rem] pr-1 min-[380px]:block sm:max-w-[13rem]">
+              <div className="truncate text-[11px] font-medium text-slate-300 sm:text-xs">
+                {displayUser.email}
+              </div>
+              {isEmployee && displayUser.company ? (
+                <div className="truncate text-[10px] text-slate-500 sm:text-[11px]">
+                  {displayUser.company}
+                </div>
+              ) : null}
             </div>
           </div>
           {isEmployee ? (

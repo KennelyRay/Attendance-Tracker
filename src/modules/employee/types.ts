@@ -18,6 +18,7 @@ export type EmployeePortalProfile = {
   id: number;
   name: string;
   email: string;
+  company: string | null;
   position: string | null;
   startDate: string;
 };

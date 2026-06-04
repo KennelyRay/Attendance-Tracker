@@ -155,6 +155,7 @@ export async function listLeaveRequestsForAdmin(): Promise<AdminLeaveRequest[]> 
         lr.created_at,
         u.name AS user_name,
         u.email AS user_email,
+        u.company AS user_company,
         u.position AS user_position,
         u.start_date AS user_start_date
       FROM leave_requests lr

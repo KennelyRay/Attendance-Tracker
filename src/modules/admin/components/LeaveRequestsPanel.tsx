@@ -59,6 +59,7 @@ export function LeaveRequestsPanel({
       const searchableFields = [
         request.user_name,
         request.user_email,
+        request.user_company || '',
         request.user_position || '',
         request.leave_type,
         policy.label,
@@ -189,7 +190,7 @@ export function LeaveRequestsPanel({
                     setPage(1);
                   }}
                   className="w-full rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-2.5 text-sm text-slate-100 shadow-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/70"
-                  placeholder="Search by name, email, position, leave type..."
+                  placeholder="Search by name, email, company, position, leave type..."
                 />
               </div>
               <Button variant="secondary" onClick={onRefresh} disabled={isLoading}>
@@ -207,7 +208,7 @@ export function LeaveRequestsPanel({
           ) : filteredRequests.length === 0 ? (
             <EmptyState
               title="No matching leave requests"
-              description="Try another search using employee name, email, position, leave type, or status."
+              description="Try another search using employee name, email, company, position, leave type, or status."
             />
           ) : (
             <div className="space-y-4">
@@ -235,9 +236,15 @@ export function LeaveRequestsPanel({
                           {request.user_name}
                         </div>
                         <div className="mt-1 text-xs text-slate-400 sm:text-sm">
-                          {request.user_email} · {request.user_position || 'No position set'}
+                          {request.user_email}
                         </div>
                         <div className="mt-2 flex flex-wrap gap-2">
+                          <span className="inline-flex items-center rounded-full bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-300 ring-1 ring-inset ring-cyan-400/20">
+                            {request.user_company || 'Unassigned company'}
+                          </span>
+                          <span className="inline-flex items-center rounded-full bg-slate-950/80 px-2.5 py-1 text-[11px] font-medium text-slate-300 ring-1 ring-inset ring-slate-800">
+                            {request.user_position || 'No position set'}
+                          </span>
                           <span className="inline-flex items-center rounded-full bg-sky-500/10 px-2.5 py-1 text-[11px] font-semibold text-sky-300 ring-1 ring-inset ring-sky-400/20">
                             {policy.label}
                           </span>
@@ -264,6 +271,14 @@ export function LeaveRequestsPanel({
                     </div>
 
                     <div className="mt-3 grid grid-cols-1 gap-3 text-sm md:grid-cols-3 xl:grid-cols-4">
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          Company
+                        </div>
+                        <div className="mt-1 text-sm text-slate-300">
+                          {request.user_company || 'Unassigned'}
+                        </div>
+                      </div>
                       <div>
                         <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                           Service Start

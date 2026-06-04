@@ -29,6 +29,7 @@ export function EmployeeList({
       return (
         e.name.toLowerCase().includes(q) ||
         e.email.toLowerCase().includes(q) ||
+        (e.company ?? '').toLowerCase().includes(q) ||
         (e.position ?? '').toLowerCase().includes(q)
       );
     });
@@ -52,7 +53,7 @@ export function EmployeeList({
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search..."
+              placeholder="Search name, email, company..."
               aria-label="Search employees"
             />
           </div>
@@ -88,6 +89,9 @@ export function EmployeeList({
                         {employee.name}
                       </div>
                       <div className="break-all text-xs text-slate-400">{employee.email}</div>
+                      <div className="mt-1 text-[11px] font-medium text-cyan-300">
+                        {employee.company || 'Unassigned company'}
+                      </div>
                     </div>
                     <div className="self-start rounded-full bg-slate-800/90 px-2.5 py-1 text-[10px] font-medium text-sky-300 ring-1 ring-inset ring-slate-700 sm:text-[11px]">
                       {employee.position || 'No position'}

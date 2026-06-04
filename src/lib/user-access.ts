@@ -16,6 +16,9 @@ export async function ensureUserAccessColumns(pool: Pool) {
     ADD COLUMN IF NOT EXISTS position VARCHAR(255) NULL;
 
     ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS company VARCHAR(255) NULL;
+
+    ALTER TABLE users
     ADD COLUMN IF NOT EXISTS start_date DATE;
 
     UPDATE users

@@ -9,6 +9,7 @@ import { Select } from '@/components/ui/Select';
 import { createLeaveRequest, fetchMyLeaveData } from '@/modules/employee/api';
 import { leavePolicies, getLeavePolicy } from '@/modules/leave/policy';
 import { formatDateOnly } from '@/modules/leave/utils';
+import type { EmployeePortalProfile } from '@/modules/employee/types';
 import type {
   CreateLeaveRequestInput,
   LeaveBalance,
@@ -37,9 +38,11 @@ function addMilliseconds(dateString: string, milliseconds: number) {
 }
 
 export function LeaveManagementPanel({
+  employeeProfile,
   initialBalance,
   initialRequests,
 }: {
+  employeeProfile?: EmployeePortalProfile | null;
   initialBalance: LeaveBalance;
   initialRequests: LeaveRequest[];
 }) {
@@ -188,6 +191,20 @@ export function LeaveManagementPanel({
           />
           <CardBody>
             <form onSubmit={submit} className="space-y-4">
+              <div className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-3.5 ring-1 ring-inset ring-white/5">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Requesting Account
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center rounded-full bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-300 ring-1 ring-inset ring-cyan-400/20">
+                    {employeeProfile?.company || 'Unassigned company'}
+                  </span>
+                  <span className="inline-flex items-center rounded-full bg-slate-950/80 px-2.5 py-1 text-[11px] font-medium text-slate-300 ring-1 ring-inset ring-slate-800">
+                    {employeeProfile?.position || 'No position set'}
+                  </span>
+                </div>
+              </div>
+
               <div>
                 <div className="text-sm font-medium text-slate-300">Leave Type</div>
                 <div className="mt-1">
@@ -340,6 +357,7 @@ export function LeaveManagementPanel({
                   Leave Policy Note
                 </div>
                 <div className="mt-2 text-sm leading-6 text-slate-400">
+                  {employeeProfile?.company ? `${employeeProfile.company} account. ` : ''}
                   Start date: {formatDateOnly(balance.startDate)}. Paid leave starts at 5 days and
                   grows by 1 day for every completed year of service.
                 </div>

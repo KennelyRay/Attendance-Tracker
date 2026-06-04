@@ -10,7 +10,7 @@ import type { EmployeeAttendanceRecord, EmployeePortalProfile } from '@/modules/
 const ATTENDANCE_RECORDS_PER_PAGE = 7;
 
 function recordKey(record: EmployeeAttendanceRecord) {
-  return `${record.status}-${record.date}-${record.id}-${record.created_at}`;
+  return `${record.status}-${record.date}-${record.id}`;
 }
 
 export function AttendanceTable({

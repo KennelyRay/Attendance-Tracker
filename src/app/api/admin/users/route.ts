@@ -20,6 +20,17 @@ function parseStartDate(value: unknown) {
   return cleanValue;
 }
 
+function getRequestId(request: NextRequest) {
+  return request.headers.get('x-request-id') ?? crypto.randomUUID();
+}
+
+function logAdminUsersRouteError(code: string, requestId: string) {
+  console.error('Admin users route error', {
+    code,
+    requestId,
+  });
+}
+
 async function requireAdmin() {
   const session = await getSessionData();
 
@@ -47,17 +58,19 @@ async function listEmployeeUsers() {
   }));
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const unauthorized = await requireAdmin();
     if (unauthorized) return unauthorized;
 
     const users = await listEmployeeUsers();
     return NextResponse.json({ users });
-  } catch (error) {
-    console.error('Get users error:', error);
+  } catch {
+    const requestId = getRequestId(request);
+    logAdminUsersRouteError('ADMIN_USERS_GET_FAILED', requestId);
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', requestId },
       { status: 500 }
     );
   }
@@ -117,9 +130,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email already exists' }, { status: 409 });
     }
 
-    console.error('Create user error:', error);
+    const requestId = getRequestId(request);
+    logAdminUsersRouteError('ADMIN_USERS_CREATE_FAILED', requestId);
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', requestId },
       { status: 500 }
     );
   }
@@ -176,9 +191,11 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Email already exists' }, { status: 409 });
     }
 
-    console.error('Update user profile error:', error);
+    const requestId = getRequestId(request);
+    logAdminUsersRouteError('ADMIN_USERS_UPDATE_PROFILE_FAILED', requestId);
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', requestId },
       { status: 500 }
     );
   }
@@ -251,10 +268,12 @@ export async function PATCH(request: NextRequest) {
         start_date: normalizeDateOnly(result.rows[0]?.start_date),
       },
     });
-  } catch (error) {
-    console.error('Update user access error:', error);
+  } catch {
+    const requestId = getRequestId(request);
+    logAdminUsersRouteError('ADMIN_USERS_UPDATE_ACCESS_FAILED', requestId);
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', requestId },
       { status: 500 }
     );
   }
@@ -284,10 +303,12 @@ export async function DELETE(request: NextRequest) {
     }
 
     return NextResponse.json({ ok: true });
-  } catch (error) {
-    console.error('Delete user error:', error);
+  } catch {
+    const requestId = getRequestId(request);
+    logAdminUsersRouteError('ADMIN_USERS_DELETE_FAILED', requestId);
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', requestId },
       { status: 500 }
     );
   }

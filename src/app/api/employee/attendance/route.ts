@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
 import { getSessionData } from '@/lib/session';
 
+const EMPLOYEE_ATTENDANCE_RECORD_COLUMNS = 'id, date, status, notes';
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getSessionData();
@@ -15,7 +17,7 @@ export async function GET(request: NextRequest) {
     const year = searchParams.get('year');
 
     const pool = getPool();
-    let query = 'SELECT * FROM attendance_records WHERE user_id = $1';
+    let query = `SELECT ${EMPLOYEE_ATTENDANCE_RECORD_COLUMNS} FROM attendance_records WHERE user_id = $1`;
     const params = [session.user.id];
     
     if (month && year) {

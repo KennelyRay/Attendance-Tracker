@@ -15,6 +15,13 @@ const emptyStats: EmployeeAttendanceStats = {
   leave: 0,
 };
 
+const EMPLOYEE_ATTENDANCE_RECORD_COLUMNS = `
+  id,
+  date,
+  status,
+  notes
+`;
+
 export async function getMyAttendanceForMonth(
   userId: number,
   month: number,
@@ -24,7 +31,7 @@ export async function getMyAttendanceForMonth(
 
   const recordsResult = await pool.query(
     `
-      SELECT *
+      SELECT ${EMPLOYEE_ATTENDANCE_RECORD_COLUMNS}
       FROM attendance_records
       WHERE user_id = $1
       AND EXTRACT(MONTH FROM date) = $2

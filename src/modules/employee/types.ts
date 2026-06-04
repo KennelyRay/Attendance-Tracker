@@ -5,11 +5,9 @@ import type {
 
 export type EmployeeAttendanceRecord = {
   id: number;
-  user_id: number;
   date: string;
   status: AttendanceStatus;
   notes?: string | null;
-  created_at: string;
 };
 
 export type EmployeeAttendanceStats = Record<AttendanceStatus, number>;

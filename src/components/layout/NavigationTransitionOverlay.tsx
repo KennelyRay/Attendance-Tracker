@@ -108,8 +108,10 @@ export function NavigationTransitionOverlay() {
   }
 
   return (
-    <div className="fixed inset-0 z-[80] bg-slate-950/72 px-4 pt-20 backdrop-blur-sm">
-      <AmbientPageLoader title={detail.title} description={detail.description} />
+    <div className="app-overlay-scroll z-[80] bg-slate-950/72 px-3 py-5 backdrop-blur-sm sm:px-4 sm:py-8">
+      <div className="app-overlay-panel max-w-xl">
+        <AmbientPageLoader title={detail.title} description={detail.description} />
+      </div>
     </div>
   );
 }

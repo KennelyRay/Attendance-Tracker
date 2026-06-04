@@ -47,6 +47,7 @@ export type UpdateEmployeeAccountInput = {
   company: string;
   position: string;
   startDate: string;
+  password?: string;
 };
 
 export type UpdateEmployeeAccessInput = {

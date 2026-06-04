@@ -203,6 +203,7 @@ export function AccountManagementPanel({
   const [editCompany, setEditCompany] = useState('');
   const [editPosition, setEditPosition] = useState('');
   const [editStartDate, setEditStartDate] = useState('');
+  const [editPassword, setEditPassword] = useState('');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'restricted' | 'banned'>('all');
 
@@ -295,10 +296,16 @@ export function AccountManagementPanel({
     setEditCompany(account.company ?? '');
     setEditPosition(account.position ?? '');
     setEditStartDate(account.start_date);
+    setEditPassword('');
   };
 
   const saveEditedAccount = async () => {
     if (!pendingEdit) return;
+
+    if (editPassword && editPassword.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
 
     setError(null);
     setFeedbackModal(null);
@@ -312,11 +319,16 @@ export function AccountManagementPanel({
         company: editCompany.trim(),
         position: editPosition.trim(),
         startDate: editStartDate,
+        password: editPassword || undefined,
       });
+      const passwordWasUpdated = Boolean(editPassword);
       setPendingEdit(null);
+      setEditPassword('');
       setFeedbackModal({
         title: 'Account Updated',
-        description: `${editName.trim()} has been updated successfully.`,
+        description: passwordWasUpdated
+          ? `${editName.trim()} has been updated successfully, including a new password.`
+          : `${editName.trim()} has been updated successfully.`,
       });
     } catch (updateError) {
       setError(updateError instanceof Error ? updateError.message : 'Failed to update account');
@@ -895,6 +907,8 @@ export function AccountManagementPanel({
         onCancel={() => {
           if (busyAccountId !== pendingEdit?.id) {
             setPendingEdit(null);
+            setEditPassword('');
+            setError(null);
           }
         }}
         onConfirm={saveEditedAccount}
@@ -955,6 +969,21 @@ export function AccountManagementPanel({
                   onChange={(event) => setEditStartDate(event.target.value)}
                   required
                 />
+              </div>
+            </div>
+            <div>
+              <div className="text-sm font-medium text-slate-300">New Password</div>
+              <div className="mt-1">
+                <Input
+                  type="password"
+                  value={editPassword}
+                  onChange={(event) => setEditPassword(event.target.value)}
+                  placeholder="Leave blank to keep the current password"
+                  minLength={6}
+                />
+              </div>
+              <div className="mt-1 text-xs leading-5 text-slate-500">
+                Leave this blank if the employee should keep the existing password.
               </div>
             </div>
             {error ? (

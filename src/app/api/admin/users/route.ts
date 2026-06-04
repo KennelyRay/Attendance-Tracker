@@ -145,13 +145,14 @@ export async function PUT(request: NextRequest) {
     const unauthorized = await requireAdmin();
     if (unauthorized) return unauthorized;
 
-    const { userId, name, email, company, position, startDate } = await request.json();
+    const { userId, name, email, company, position, startDate, password } = await request.json();
     const employeeId = Number(userId);
     const cleanName = typeof name === 'string' ? name.trim() : '';
     const cleanEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
     const cleanCompany = typeof company === 'string' ? company.trim() : '';
     const cleanPosition = typeof position === 'string' ? position.trim() : '';
     const cleanStartDate = parseStartDate(startDate);
+    const cleanPassword = typeof password === 'string' ? password : '';
 
     if (!Number.isInteger(employeeId)) {
       return NextResponse.json({ error: 'Invalid user id' }, { status: 400 });
@@ -164,16 +165,29 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    if (cleanPassword && cleanPassword.length < 6) {
+      return NextResponse.json(
+        { error: 'Password must be at least 6 characters' },
+        { status: 400 }
+      );
+    }
+
     const pool = getPool();
     await ensureUserAccessColumns(pool);
+    const hashedPassword = cleanPassword ? await bcrypt.hash(cleanPassword, 10) : null;
     const result = await pool.query(
       `
         UPDATE users
-        SET name = $2, email = $3, company = $4, position = $5, start_date = $6
+        SET name = $2,
+            email = $3,
+            company = $4,
+            position = $5,
+            start_date = $6,
+            password = COALESCE($7, password)
         WHERE id = $1 AND is_admin = false
         RETURNING id, name, email, company, position, start_date, is_banned, restricted_until, created_at
       `,
-      [employeeId, cleanName, cleanEmail, cleanCompany, cleanPosition, cleanStartDate]
+      [employeeId, cleanName, cleanEmail, cleanCompany, cleanPosition, cleanStartDate, hashedPassword]
     );
 
     if (result.rows.length === 0) {

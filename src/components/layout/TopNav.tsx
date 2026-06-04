@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { triggerGlobalNavigationLoader } from '@/components/layout/navigation-loader';
 import { Button } from '@/components/ui/Button';
 import type { SessionUser } from '@/lib/session';
+import { consumeAuthFlash, setAuthFlash } from '@/modules/auth/flash';
 import { fetchMyProfile } from '@/modules/employee/api';
 import type { EmployeePortalProfile } from '@/modules/employee/types';
 
@@ -23,6 +24,7 @@ export function TopNav({
   const isEmployee = !user.isAdmin;
   const isLeavePolicyPage = pathname === '/employee/leave-policy';
   const [employeeProfile, setEmployeeProfile] = useState<EmployeePortalProfile | null>(null);
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isEmployee) {
@@ -62,6 +64,27 @@ export function TopNav({
     };
   }, [isEmployee]);
 
+  useEffect(() => {
+    const flash = consumeAuthFlash();
+    if (flash?.type !== 'login-success') {
+      return;
+    }
+
+    setAuthNotice(
+      user.isAdmin
+        ? 'Login successful. Admin controls are ready.'
+        : 'Login successful. Your employee workspace is ready.'
+    );
+
+    const timeoutId = window.setTimeout(() => {
+      setAuthNotice(null);
+    }, 4000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [user.isAdmin]);
+
   const displayUser = useMemo(
     () => ({
       ...user,
@@ -75,6 +98,7 @@ export function TopNav({
 
   const onLogout = async () => {
     await fetch('/api/logout', { method: 'POST' });
+    setAuthFlash({ type: 'logout-success' });
     router.push('/login');
   };
 
@@ -154,11 +178,20 @@ export function TopNav({
             </Button>
           ) : null}
           <Button className="shrink-0 px-2.5 sm:px-3" variant="danger" size="sm" onClick={onLogout}>
-            <span className="sm:hidden">Exit</span>
-            <span className="hidden sm:inline">Logout</span>
+            Logout
           </Button>
         </div>
       </div>
+      {authNotice ? (
+        <div
+          className={[
+            'border-t border-emerald-400/10 bg-emerald-500/8 px-3 py-2.5 text-sm text-emerald-300',
+            fullWidth ? 'sm:px-4 lg:px-6 xl:px-8' : 'sm:px-6 lg:px-8',
+          ].join(' ')}
+        >
+          <div className={fullWidth ? 'w-full' : 'mx-auto max-w-7xl'}>{authNotice}</div>
+        </div>
+      ) : null}
     </header>
   );
 }

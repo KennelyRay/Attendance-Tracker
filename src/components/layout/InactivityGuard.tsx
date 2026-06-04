@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
+import { setAuthFlash } from '@/modules/auth/flash';
 
 const WARNING_AFTER_MS = 10 * 60 * 1000;
 const LOGOUT_DELAY_MS = 10 * 1000;
@@ -39,6 +40,7 @@ export function InactivityGuard() {
     try {
       await fetch('/api/logout', { method: 'POST' });
     } finally {
+      setAuthFlash({ type: 'session-expired' });
       router.replace('/login');
       router.refresh();
     }

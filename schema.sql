@@ -71,6 +71,19 @@ CREATE TABLE IF NOT EXISTS leave_requests (
   CONSTRAINT leave_requests_status CHECK (status IN ('pending', 'approved', 'rejected'))
 );
 
+CREATE TABLE IF NOT EXISTS leave_request_attachments (
+  id SERIAL PRIMARY KEY,
+  leave_request_id INTEGER NOT NULL REFERENCES leave_requests(id) ON DELETE CASCADE,
+  file_name VARCHAR(255) NOT NULL,
+  mime_type VARCHAR(120) NOT NULL,
+  file_size INTEGER NOT NULL CHECK (file_size > 0),
+  file_data BYTEA NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_leave_request_attachments_request
+  ON leave_request_attachments(leave_request_id, created_at ASC, id ASC);
+
 CREATE TABLE IF NOT EXISTS employee_violations (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

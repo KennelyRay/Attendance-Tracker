@@ -55,10 +55,20 @@ export async function createLeaveRequest(input: CreateLeaveRequestInput): Promis
   request: LeaveRequest;
   balance: LeaveBalance;
 }> {
+  const formData = new FormData();
+  formData.set('leaveType', input.leaveType);
+  formData.set('startDate', input.startDate);
+  formData.set('endDate', input.endDate);
+  formData.set('reason', input.reason);
+  formData.set('deductFromPaidBalance', String(Boolean(input.deductFromPaidBalance)));
+
+  for (const attachment of input.attachments ?? []) {
+    formData.append('attachments', attachment);
+  }
+
   const response = await fetch('/api/employee/leave-requests', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
+    body: formData,
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {

@@ -21,6 +21,8 @@ import type {
 const LEAVE_COOLDOWN_MS = 13 * 7 * 24 * 60 * 60 * 1000;
 const MAX_TIMEOUT_MS = 2_147_483_647;
 const LEAVE_REQUESTS_PER_PAGE = 3;
+const MAX_LEAVE_ATTACHMENT_COUNT = 3;
+const MAX_LEAVE_ATTACHMENT_MB = 5;
 
 function statusClass(status: LeaveRequestStatus) {
   switch (status) {
@@ -52,6 +54,8 @@ export function LeaveManagementPanel({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [fileInputKey, setFileInputKey] = useState(0);
   const [deductFromPaidBalance, setDeductFromPaidBalance] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -155,6 +159,7 @@ export function LeaveManagementPanel({
       endDate,
       reason,
       deductFromPaidBalance,
+      attachments: selectedFiles,
     });
   };
 
@@ -170,6 +175,8 @@ export function LeaveManagementPanel({
       setStartDate('');
       setEndDate('');
       setReason('');
+      setSelectedFiles([]);
+      setFileInputKey((current) => current + 1);
       setDeductFromPaidBalance(false);
       setLeaveType('paid-leave');
       setPendingSubmission(null);
@@ -179,6 +186,26 @@ export function LeaveManagementPanel({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const onAttachmentChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextFiles = Array.from(event.target.files ?? []);
+
+    if (nextFiles.length > MAX_LEAVE_ATTACHMENT_COUNT) {
+      setError(`You can upload up to ${MAX_LEAVE_ATTACHMENT_COUNT} supporting documents.`);
+      event.target.value = '';
+      return;
+    }
+
+    const oversizedFile = nextFiles.find((file) => file.size > MAX_LEAVE_ATTACHMENT_MB * 1024 * 1024);
+    if (oversizedFile) {
+      setError(`Each supporting document must be ${MAX_LEAVE_ATTACHMENT_MB} MB or smaller.`);
+      event.target.value = '';
+      return;
+    }
+
+    setError(null);
+    setSelectedFiles(nextFiles);
   };
 
   return (
@@ -290,6 +317,38 @@ export function LeaveManagementPanel({
                     placeholder="Add the reason and any note the admin should review."
                   />
                 </div>
+              </div>
+
+              <div>
+                <div className="text-sm font-medium text-slate-300">Supporting Documents</div>
+                <div className="mt-1">
+                  <input
+                    key={fileInputKey}
+                    type="file"
+                    multiple
+                    accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                    onChange={onAttachmentChange}
+                    className="block w-full rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-2.5 text-sm text-slate-100 file:mr-3 file:rounded-lg file:border-0 file:bg-sky-500/15 file:px-3 file:py-2 file:text-sm file:font-medium file:text-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-400/70"
+                  />
+                </div>
+                <div className="mt-2 text-xs leading-5 text-slate-500">
+                  Upload up to {MAX_LEAVE_ATTACHMENT_COUNT} files. Accepted types: PDF, JPG, PNG.
+                  Max size per file: {MAX_LEAVE_ATTACHMENT_MB} MB.
+                </div>
+                {selectedFiles.length > 0 ? (
+                  <div className="mt-3 rounded-xl bg-slate-900/80 px-4 py-3 ring-1 ring-inset ring-slate-800">
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      Selected Files
+                    </div>
+                    <div className="mt-2 space-y-2">
+                      {selectedFiles.map((file) => (
+                        <div key={`${file.name}-${file.size}`} className="text-sm text-slate-300">
+                          {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               {error ? (
@@ -413,6 +472,12 @@ export function LeaveManagementPanel({
                       <span className="inline-flex items-center rounded-full bg-slate-900/80 px-2.5 py-1 ring-1 ring-inset ring-slate-800">
                         {request.deduct_from_paid_balance ? 'Paid balance used' : 'No balance deduction'}
                       </span>
+                      {request.attachments.length > 0 ? (
+                        <span className="inline-flex items-center rounded-full bg-slate-900/80 px-2.5 py-1 ring-1 ring-inset ring-slate-800">
+                          {request.attachments.length} attachment
+                          {request.attachments.length === 1 ? '' : 's'}
+                        </span>
+                      ) : null}
                     </div>
                     <div className="mt-4 text-xs font-medium uppercase tracking-wide text-sky-300/80">
                       Click to view summary
@@ -517,6 +582,34 @@ export function LeaveManagementPanel({
               <div className="mt-2 text-sm leading-6 text-slate-300">{selectedRequest.reason}</div>
             </div>
 
+            <div className="mt-4 rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                Supporting Documents
+              </div>
+              {selectedRequest.attachments.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  {selectedRequest.attachments.map((attachment) => (
+                    <a
+                      key={attachment.id}
+                      href={attachment.download_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-between rounded-xl bg-slate-950/70 px-4 py-3 text-sm text-slate-300 ring-1 ring-inset ring-slate-800 transition-colors hover:bg-slate-900/90"
+                    >
+                      <span className="truncate pr-3">{attachment.file_name}</span>
+                      <span className="whitespace-nowrap text-xs text-slate-400">
+                        {(attachment.file_size / 1024).toFixed(0)} KB
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-2 text-sm leading-6 text-slate-400">
+                  No supporting documents were attached to this request.
+                </div>
+              )}
+            </div>
+
             {selectedRequest.admin_notes ? (
               <div className="mt-4 rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
@@ -563,6 +656,12 @@ export function LeaveManagementPanel({
               </div>
               <div className="mt-2 text-sm text-slate-300">
                 <span className="font-medium text-slate-100">Reason:</span> {pendingSubmission.reason}
+              </div>
+              <div className="mt-2 text-sm text-slate-300">
+                <span className="font-medium text-slate-100">Supporting Documents:</span>{' '}
+                {pendingSubmission.attachments && pendingSubmission.attachments.length > 0
+                  ? pendingSubmission.attachments.map((file) => file.name).join(', ')
+                  : 'No files attached'}
               </div>
             </div>
             <div className="mt-6 flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end sm:gap-3">

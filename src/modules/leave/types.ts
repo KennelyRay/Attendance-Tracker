@@ -37,6 +37,15 @@ export type LeaveBalance = {
   startDate: string;
 };
 
+export type LeaveRequestAttachment = {
+  id: number;
+  file_name: string;
+  mime_type: string;
+  file_size: number;
+  created_at: string;
+  download_url: string;
+};
+
 export type LeaveRequest = {
   id: number;
   user_id: number;
@@ -51,6 +60,7 @@ export type LeaveRequest = {
   reviewed_by: number | null;
   reviewed_at: string | null;
   created_at: string;
+  attachments: LeaveRequestAttachment[];
 };
 
 export type AdminLeaveRequest = LeaveRequest & {
@@ -69,6 +79,7 @@ export type CreateLeaveRequestInput = {
   endDate: string;
   reason: string;
   deductFromPaidBalance?: boolean;
+  attachments?: File[];
 };
 
 export type ReviewLeaveRequestInput = {

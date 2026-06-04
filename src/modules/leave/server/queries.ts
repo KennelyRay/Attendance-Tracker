@@ -6,6 +6,7 @@ import type {
   CreateLeaveRequestInput,
   LeaveBalance,
   LeaveRequest,
+  LeaveRequestAttachment,
   ReviewLeaveRequestInput,
 } from '@/modules/leave/types';
 import {
@@ -18,6 +19,94 @@ import {
 } from '@/modules/leave/utils';
 
 const LEAVE_COOLDOWN_MS = 13 * 7 * 24 * 60 * 60 * 1000;
+
+type LeaveRequestRow = Omit<LeaveRequest, 'attachments'>;
+
+type LeaveRequestAttachmentUpload = {
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  fileData: Buffer;
+};
+
+type LeaveRequestAttachmentRow = {
+  id: number;
+  leave_request_id: number;
+  file_name: string;
+  mime_type: string;
+  file_size: number;
+  created_at: string;
+};
+
+const LEAVE_REQUEST_RETURNING_COLUMNS = `
+  id,
+  user_id,
+  leave_type,
+  start_date,
+  end_date,
+  total_days,
+  reason,
+  deduct_from_paid_balance,
+  status,
+  admin_notes,
+  reviewed_by,
+  reviewed_at,
+  created_at
+`;
+
+function buildLeaveRequestAttachment(row: LeaveRequestAttachmentRow): LeaveRequestAttachment {
+  return {
+    id: row.id,
+    file_name: row.file_name,
+    mime_type: row.mime_type,
+    file_size: row.file_size,
+    created_at: row.created_at,
+    download_url: `/api/leave-attachments/${row.id}`,
+  };
+}
+
+async function listLeaveRequestAttachmentsByRequestIds(requestIds: number[]) {
+  if (requestIds.length === 0) {
+    return new Map<number, LeaveRequestAttachment[]>();
+  }
+
+  const pool = getPool();
+  await ensureLeaveSystemSchema(pool);
+  const result = await pool.query(
+    `
+      SELECT
+        id,
+        leave_request_id,
+        file_name,
+        mime_type,
+        file_size,
+        created_at
+      FROM leave_request_attachments
+      WHERE leave_request_id = ANY($1::int[])
+      ORDER BY created_at ASC, id ASC
+    `,
+    [requestIds]
+  );
+
+  const attachmentsByRequestId = new Map<number, LeaveRequestAttachment[]>();
+
+  for (const row of result.rows as LeaveRequestAttachmentRow[]) {
+    const requestAttachments = attachmentsByRequestId.get(row.leave_request_id) ?? [];
+    requestAttachments.push(buildLeaveRequestAttachment(row));
+    attachmentsByRequestId.set(row.leave_request_id, requestAttachments);
+  }
+
+  return attachmentsByRequestId;
+}
+
+async function addLeaveRequestAttachments<T extends { id: number }>(rows: T[]) {
+  const attachmentsByRequestId = await listLeaveRequestAttachmentsByRequestIds(rows.map((row) => row.id));
+
+  return rows.map((row) => ({
+    ...row,
+    attachments: attachmentsByRequestId.get(row.id) ?? [],
+  }));
+}
 
 async function releaseExpiredPaidLeaveDeductions(userId?: number) {
   const pool = getPool();
@@ -110,19 +199,7 @@ export async function listLeaveRequestsForUser(userId: number): Promise<LeaveReq
   const result = await pool.query(
     `
       SELECT
-        id,
-        user_id,
-        leave_type,
-        start_date,
-        end_date,
-        total_days,
-        reason,
-        deduct_from_paid_balance,
-        status,
-        admin_notes,
-        reviewed_by,
-        reviewed_at,
-        created_at
+        ${LEAVE_REQUEST_RETURNING_COLUMNS}
       FROM leave_requests
       WHERE user_id = $1
       ORDER BY created_at DESC, start_date DESC
@@ -130,7 +207,7 @@ export async function listLeaveRequestsForUser(userId: number): Promise<LeaveReq
     [userId]
   );
 
-  return result.rows as LeaveRequest[];
+  return addLeaveRequestAttachments(result.rows as LeaveRequestRow[]) as Promise<LeaveRequest[]>;
 }
 
 export async function listLeaveRequestsForAdmin(): Promise<AdminLeaveRequest[]> {
@@ -140,19 +217,11 @@ export async function listLeaveRequestsForAdmin(): Promise<AdminLeaveRequest[]> 
   const result = await pool.query(
     `
       SELECT
-        lr.id,
-        lr.user_id,
-        lr.leave_type,
-        lr.start_date,
-        lr.end_date,
-        lr.total_days,
-        lr.reason,
-        lr.deduct_from_paid_balance,
-        lr.status,
-        lr.admin_notes,
-        lr.reviewed_by,
-        lr.reviewed_at,
-        lr.created_at,
+        ${LEAVE_REQUEST_RETURNING_COLUMNS.split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((line) => `lr.${line}`)
+          .join(',\n        ')},
         u.name AS user_name,
         u.email AS user_email,
         u.company AS user_company,
@@ -174,8 +243,10 @@ export async function listLeaveRequestsForAdmin(): Promise<AdminLeaveRequest[]> 
     Omit<AdminLeaveRequest, 'user_leave_remaining' | 'user_leave_entitlement'>
   >;
 
+  const rowsWithAttachments = await addLeaveRequestAttachments(rows);
+
   return Promise.all(
-    rows.map(async (row) => {
+    rowsWithAttachments.map(async (row) => {
       const balance = await getLeaveBalanceForUser(row.user_id);
       return {
         ...row,
@@ -245,7 +316,11 @@ function validateLeaveInput(input: CreateLeaveRequestInput) {
   }
 }
 
-export async function createLeaveRequestForUser(userId: number, input: CreateLeaveRequestInput) {
+export async function createLeaveRequestForUser(
+  userId: number,
+  input: CreateLeaveRequestInput,
+  attachments: LeaveRequestAttachmentUpload[] = []
+) {
   validateLeaveInput(input);
   await releaseExpiredPaidLeaveDeductions(userId);
 
@@ -302,46 +377,86 @@ export async function createLeaveRequestForUser(userId: number, input: CreateLea
     }
   }
 
-  const result = await pool.query(
-    `
-      INSERT INTO leave_requests (
-        user_id,
-        leave_type,
-        start_date,
-        end_date,
-        total_days,
-        reason,
-        deduct_from_paid_balance,
-        status
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
-      RETURNING
-        id,
-        user_id,
-        leave_type,
-        start_date,
-        end_date,
-        total_days,
-        reason,
-        deduct_from_paid_balance,
-        status,
-        admin_notes,
-        reviewed_by,
-        reviewed_at,
-        created_at
-    `,
-    [
-      userId,
-      input.leaveType,
-      input.startDate,
-      input.endDate,
-      totalDays,
-      input.reason.trim(),
-      deductFromPaidBalance,
-    ]
-  );
+  const client = await pool.connect();
 
-  return result.rows[0] as LeaveRequest;
+  try {
+    await client.query('BEGIN');
+
+    const result = await client.query(
+      `
+        INSERT INTO leave_requests (
+          user_id,
+          leave_type,
+          start_date,
+          end_date,
+          total_days,
+          reason,
+          deduct_from_paid_balance,
+          status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
+        RETURNING
+          ${LEAVE_REQUEST_RETURNING_COLUMNS}
+      `,
+      [
+        userId,
+        input.leaveType,
+        input.startDate,
+        input.endDate,
+        totalDays,
+        input.reason.trim(),
+        deductFromPaidBalance,
+      ]
+    );
+
+    const createdRequest = result.rows[0] as LeaveRequestRow;
+    const createdAttachments: LeaveRequestAttachment[] = [];
+
+    for (const attachment of attachments) {
+      const attachmentResult = await client.query(
+        `
+          INSERT INTO leave_request_attachments (
+            leave_request_id,
+            file_name,
+            mime_type,
+            file_size,
+            file_data
+          )
+          VALUES ($1, $2, $3, $4, $5)
+          RETURNING
+            id,
+            leave_request_id,
+            file_name,
+            mime_type,
+            file_size,
+            created_at
+        `,
+        [
+          createdRequest.id,
+          attachment.fileName,
+          attachment.mimeType,
+          attachment.fileSize,
+          attachment.fileData,
+        ]
+      );
+
+      createdAttachments.push(
+        buildLeaveRequestAttachment(attachmentResult.rows[0] as LeaveRequestAttachmentRow)
+      );
+    }
+
+    await client.query('COMMIT');
+
+    return {
+      ...createdRequest,
+      attachments: createdAttachments,
+    } as LeaveRequest;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 async function markApprovedLeaveInAttendance(
@@ -414,14 +529,14 @@ export async function reviewLeaveRequest(adminId: number, input: ReviewLeaveRequ
 
   const result = await pool.query(
     `
-      SELECT *
+      SELECT ${LEAVE_REQUEST_RETURNING_COLUMNS}
       FROM leave_requests
       WHERE id = $1
     `,
     [requestId]
   );
 
-  const request = result.rows[0] as LeaveRequest | undefined;
+  const request = result.rows[0] as LeaveRequestRow | undefined;
 
   if (!request) {
     throw new Error('Leave request not found');
@@ -449,24 +564,14 @@ export async function reviewLeaveRequest(adminId: number, input: ReviewLeaveRequ
         reviewed_at = CURRENT_TIMESTAMP
       WHERE id = $1
       RETURNING
-        id,
-        user_id,
-        leave_type,
-        start_date,
-        end_date,
-        total_days,
-        reason,
-        deduct_from_paid_balance,
-        status,
-        admin_notes,
-        reviewed_by,
-        reviewed_at,
-        created_at
+        ${LEAVE_REQUEST_RETURNING_COLUMNS}
     `,
     [requestId, nextStatus, input.adminNotes?.trim() || null, adminId]
   );
 
-  const updatedRequest = updateResult.rows[0] as LeaveRequest;
+  const [updatedRequest] = await addLeaveRequestAttachments([
+    updateResult.rows[0] as LeaveRequestRow,
+  ]);
 
   if (input.action === 'approve') {
     await markApprovedLeaveInAttendance(

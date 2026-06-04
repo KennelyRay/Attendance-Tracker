@@ -322,6 +322,34 @@ export function LeaveRequestsPanel({
                       <div className="mt-1 text-sm leading-6 text-slate-400">{request.reason}</div>
                     </div>
 
+                    <div className="mt-3">
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        Supporting Documents
+                      </div>
+                      {request.attachments.length > 0 ? (
+                        <div className="mt-2 space-y-2">
+                          {request.attachments.map((attachment) => (
+                            <a
+                              key={attachment.id}
+                              href={attachment.download_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center justify-between rounded-xl bg-slate-950/70 px-4 py-3 text-sm text-slate-300 ring-1 ring-inset ring-slate-800 transition-colors hover:bg-slate-900/90"
+                            >
+                              <span className="truncate pr-3">{attachment.file_name}</span>
+                              <span className="whitespace-nowrap text-xs text-slate-400">
+                                {(attachment.file_size / 1024).toFixed(0)} KB
+                              </span>
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="mt-1 text-sm text-slate-400">
+                          No supporting documents uploaded.
+                        </div>
+                      )}
+                    </div>
+
                     {request.status === 'pending' ? (
                       <div className="mt-3">
                         <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">

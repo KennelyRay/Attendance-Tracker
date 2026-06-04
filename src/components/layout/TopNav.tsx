@@ -99,7 +99,7 @@ export function TopNav({
     <header className="sticky top-0 z-10 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl">
       <div
         className={[
-          'flex flex-col gap-2 px-3 py-2.5 sm:h-16 sm:flex-row sm:items-center sm:justify-between sm:py-0',
+          'flex flex-col gap-2 px-3 py-2 sm:h-16 sm:flex-row sm:items-center sm:justify-between sm:py-0',
           fullWidth ? 'w-full sm:px-4 lg:px-6 xl:px-8' : 'mx-auto max-w-7xl sm:px-6 lg:px-8',
         ].join(' ')}
       >
@@ -114,11 +114,15 @@ export function TopNav({
             />
           </div>
           <div className="min-w-0">
-            <div className="truncate text-[13px] font-semibold text-slate-100 sm:text-sm">{title}</div>
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="truncate text-[13px] font-semibold text-slate-100 sm:text-sm">{title}</div>
+              <span className="hidden rounded-full bg-slate-900/90 px-2 py-0.5 text-[10px] font-medium text-slate-400 ring-1 ring-inset ring-slate-700/80 min-[400px]:inline-flex">
+                {user.isAdmin ? 'Admin' : 'Employee'}
+              </span>
+            </div>
             <div className="truncate text-[11px] text-slate-400 sm:text-xs">
-              {displayUser.name} · {user.isAdmin ? 'Admin' : 'Employee'}
+              {displayUser.name}
               {isEmployee && displayUser.company ? ` · ${displayUser.company}` : ''}
-              {isEmployee && displayUser.position ? ` · ${displayUser.position}` : ''}
             </div>
           </div>
         </div>
@@ -131,9 +135,9 @@ export function TopNav({
               <div className="truncate text-[11px] font-medium text-slate-300 sm:text-xs">
                 {displayUser.email}
               </div>
-              {isEmployee && displayUser.company ? (
+              {isEmployee && displayUser.position ? (
                 <div className="truncate text-[10px] text-slate-500 sm:text-[11px]">
-                  {displayUser.company}
+                  {displayUser.position}
                 </div>
               ) : null}
             </div>
@@ -145,11 +149,13 @@ export function TopNav({
               size="sm"
               onClick={onPolicyNavigate}
             >
-              {isLeavePolicyPage ? 'Dashboard' : 'Leave Policy'}
+              <span className="sm:hidden">{isLeavePolicyPage ? 'Home' : 'Policy'}</span>
+              <span className="hidden sm:inline">{isLeavePolicyPage ? 'Dashboard' : 'Leave Policy'}</span>
             </Button>
           ) : null}
           <Button className="shrink-0 px-2.5 sm:px-3" variant="danger" size="sm" onClick={onLogout}>
-            Logout
+            <span className="sm:hidden">Exit</span>
+            <span className="hidden sm:inline">Logout</span>
           </Button>
         </div>
       </div>

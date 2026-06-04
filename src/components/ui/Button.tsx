@@ -21,7 +21,7 @@ const variantClass: Record<Variant, string> = {
 
 const sizeClass: Record<Size, string> = {
   sm: 'h-9 px-3 text-sm',
-  md: 'h-10 px-4 text-sm',
+  md: 'h-11 px-4 text-sm sm:h-10',
 };
 
 export function Button({
@@ -36,7 +36,9 @@ export function Button({
       type={type}
       className={[
         'inline-flex items-center justify-center gap-2 rounded-xl font-medium',
-        'transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
+        'transform-gpu transition-[transform,background-color,color,box-shadow,opacity] duration-150 ease-out',
+        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
+        'active:scale-[0.98]',
         'disabled:pointer-events-none disabled:opacity-50',
         variantClass[variant],
         sizeClass[size],

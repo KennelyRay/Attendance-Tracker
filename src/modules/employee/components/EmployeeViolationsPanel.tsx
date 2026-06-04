@@ -45,13 +45,48 @@ export function EmployeeViolationsPanel({
   onRefresh: () => Promise<void>;
 }) {
   const [page, setPage] = useState(1);
+  const [severityFilter, setSeverityFilter] = useState<'all' | ViolationSeverity>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | ViolationCaseStatus>('all');
+  const [expandedViolationIds, setExpandedViolationIds] = useState<number[]>([]);
 
-  const totalPages = Math.max(1, Math.ceil(violations.length / PAGE_SIZE));
+  const filteredViolations = useMemo(
+    () =>
+      violations.filter((violation) => {
+        if (severityFilter !== 'all' && violation.severity !== severityFilter) {
+          return false;
+        }
+
+        if (statusFilter !== 'all' && violation.case_status !== statusFilter) {
+          return false;
+        }
+
+        return true;
+      }),
+    [severityFilter, statusFilter, violations]
+  );
+  const summary = useMemo(
+    () => ({
+      open: violations.filter((violation) => violation.case_status === 'open').length,
+      underReview: violations.filter((violation) => violation.case_status === 'under-review').length,
+      resolved: violations.filter((violation) => violation.case_status === 'resolved').length,
+      high: violations.filter((violation) => violation.severity === 'high').length,
+    }),
+    [violations]
+  );
+  const totalPages = Math.max(1, Math.ceil(filteredViolations.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const paginatedViolations = useMemo(
-    () => violations.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
-    [currentPage, violations]
+    () => filteredViolations.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [currentPage, filteredViolations]
   );
+
+  const toggleExpanded = (violationId: number) => {
+    setExpandedViolationIds((current) =>
+      current.includes(violationId)
+        ? current.filter((id) => id !== violationId)
+        : [...current, violationId]
+    );
+  };
 
   return (
     <Card>
@@ -76,8 +111,47 @@ export function EmployeeViolationsPanel({
             title="No violations on record"
             description="Any recorded violations assigned to your account will appear here."
           />
+        ) : isLoading && violations.length === 0 ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="app-skeleton h-20 rounded-2xl ring-1 ring-inset ring-slate-800" />
+              <div className="app-skeleton h-20 rounded-2xl ring-1 ring-inset ring-slate-800" />
+              <div className="app-skeleton h-20 rounded-2xl ring-1 ring-inset ring-slate-800" />
+              <div className="app-skeleton h-20 rounded-2xl ring-1 ring-inset ring-slate-800" />
+            </div>
+            <div className="app-skeleton h-11 rounded-xl ring-1 ring-inset ring-slate-800" />
+            <div className="app-skeleton h-36 rounded-2xl ring-1 ring-inset ring-slate-800" />
+            <div className="app-skeleton h-36 rounded-2xl ring-1 ring-inset ring-slate-800" />
+          </div>
         ) : (
           <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-2xl bg-slate-900/80 px-4 py-3.5 ring-1 ring-inset ring-slate-800">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  Open
+                </div>
+                <div className="mt-2 text-xl font-semibold text-slate-50">{summary.open}</div>
+              </div>
+              <div className="rounded-2xl bg-slate-900/80 px-4 py-3.5 ring-1 ring-inset ring-slate-800">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-amber-300">
+                  Under Review
+                </div>
+                <div className="mt-2 text-xl font-semibold text-slate-50">{summary.underReview}</div>
+              </div>
+              <div className="rounded-2xl bg-slate-900/80 px-4 py-3.5 ring-1 ring-inset ring-slate-800">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-300">
+                  Resolved
+                </div>
+                <div className="mt-2 text-xl font-semibold text-slate-50">{summary.resolved}</div>
+              </div>
+              <div className="rounded-2xl bg-slate-900/80 px-4 py-3.5 ring-1 ring-inset ring-slate-800">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-rose-300">
+                  High Severity
+                </div>
+                <div className="mt-2 text-xl font-semibold text-slate-50">{summary.high}</div>
+              </div>
+            </div>
+
             <div className="flex flex-wrap gap-2">
               <span className="inline-flex items-center rounded-full bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-300 ring-1 ring-inset ring-cyan-400/20">
                 {employeeProfile?.company || 'Unassigned company'}
@@ -86,70 +160,153 @@ export function EmployeeViolationsPanel({
                 {employeeProfile?.position || 'No position set'}
               </span>
             </div>
+            <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex min-w-max gap-2">
+                {([
+                  ['all', 'All'],
+                  ['open', 'Open'],
+                  ['under-review', 'Under Review'],
+                  ['resolved', 'Resolved'],
+                ] as const).map(([value, label]) => {
+                  const isActive = statusFilter === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => {
+                        setStatusFilter(value);
+                        setPage(1);
+                      }}
+                      className={[
+                        'inline-flex items-center rounded-full border px-3 py-2 text-sm font-medium transition-all ring-1 ring-inset',
+                        isActive
+                          ? 'border-sky-400/25 bg-sky-500/12 text-slate-50 ring-sky-400/20'
+                          : 'border-slate-800/80 bg-slate-900/70 text-slate-300 ring-white/5',
+                      ].join(' ')}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+                {([
+                  ['all', 'All Severity'],
+                  ['low', 'Low'],
+                  ['medium', 'Medium'],
+                  ['high', 'High'],
+                ] as const).map(([value, label]) => {
+                  const isActive = severityFilter === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => {
+                        setSeverityFilter(value);
+                        setPage(1);
+                      }}
+                      className={[
+                        'inline-flex items-center rounded-full border px-3 py-2 text-sm font-medium transition-all ring-1 ring-inset',
+                        isActive
+                          ? 'border-sky-400/25 bg-sky-500/12 text-slate-50 ring-sky-400/20'
+                          : 'border-slate-800/80 bg-slate-900/70 text-slate-300 ring-white/5',
+                      ].join(' ')}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-slate-400">
-                Showing {paginatedViolations.length} of {violations.length} recorded cases
+                Showing {paginatedViolations.length} of {filteredViolations.length} matching cases
               </div>
               <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
                 Page {currentPage} of {totalPages}
               </div>
             </div>
 
-            <div className="space-y-3">
+            {filteredViolations.length === 0 ? (
+              <div className="rounded-xl bg-slate-900/80 px-4 py-8 text-center text-sm text-slate-400 ring-1 ring-inset ring-slate-800">
+                No violations match the current filters.
+              </div>
+            ) : (
+              <div className="space-y-3">
               {paginatedViolations.map((violation) => (
                 <div
                   key={violation.id}
                   className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 ring-1 ring-inset ring-white/5"
                 >
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="text-sm font-semibold text-slate-100 sm:text-base">
-                          {violation.violation_type}
+                  {(() => {
+                    const isExpanded = expandedViolationIds.includes(violation.id);
+                    return (
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <div className="text-sm font-semibold text-slate-100 sm:text-base">
+                              {violation.violation_type}
+                            </div>
+                            <span className="inline-flex rounded-full bg-slate-950/80 px-2.5 py-1 text-[11px] font-medium text-slate-300 ring-1 ring-inset ring-slate-800">
+                              {new Date(violation.incident_date).toLocaleDateString()}
+                            </span>
+                            {violation.company ? (
+                              <span className="inline-flex rounded-full bg-slate-950/80 px-2.5 py-1 text-[11px] font-medium text-slate-300 ring-1 ring-inset ring-slate-800">
+                                {violation.company}
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="mt-3 text-sm leading-6 text-slate-400 line-clamp-3">
+                            {violation.description}
+                          </div>
+                          <div className="mt-3">
+                            <Button variant="ghost" size="sm" onClick={() => toggleExpanded(violation.id)}>
+                              {isExpanded ? 'Hide Details' : 'View Details'}
+                            </Button>
+                          </div>
+                          {isExpanded ? (
+                            <>
+                              <div className="mt-3 rounded-xl bg-slate-950/70 px-3 py-2.5 text-sm text-slate-300 ring-1 ring-inset ring-slate-800">
+                                <span className="font-medium text-slate-100">Description:</span>{' '}
+                                {violation.description}
+                              </div>
+                              {violation.action_taken ? (
+                                <div className="mt-3 rounded-xl bg-slate-950/70 px-3 py-2.5 text-sm text-slate-300 ring-1 ring-inset ring-slate-800">
+                                  <span className="font-medium text-slate-100">Action Taken:</span>{' '}
+                                  {violation.action_taken}
+                                </div>
+                              ) : null}
+                            </>
+                          ) : null}
                         </div>
-                        <span className="inline-flex rounded-full bg-slate-950/80 px-2.5 py-1 text-[11px] font-medium text-slate-300 ring-1 ring-inset ring-slate-800">
-                          {new Date(violation.incident_date).toLocaleDateString()}
-                        </span>
-                        {violation.company ? (
+                        <div className="flex flex-wrap gap-2 lg:max-w-[220px] lg:justify-end">
                           <span className="inline-flex rounded-full bg-slate-950/80 px-2.5 py-1 text-[11px] font-medium text-slate-300 ring-1 ring-inset ring-slate-800">
-                            {violation.company}
+                            {employeeProfile?.company || violation.company || 'Assigned company'}
                           </span>
-                        ) : null}
-                      </div>
-                      <div className="mt-3 text-sm leading-6 text-slate-400">
-                        {violation.description}
-                      </div>
-                      {violation.action_taken ? (
-                        <div className="mt-3 rounded-xl bg-slate-950/70 px-3 py-2.5 text-sm text-slate-300 ring-1 ring-inset ring-slate-800">
-                          <span className="font-medium text-slate-100">Action Taken:</span>{' '}
-                          {violation.action_taken}
+                          <span
+                            className={[
+                              'inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize',
+                              severityClass(violation.severity),
+                            ].join(' ')}
+                          >
+                            {violation.severity}
+                          </span>
+                          <span
+                            className={[
+                              'inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize',
+                              statusClass(violation.case_status),
+                            ].join(' ')}
+                          >
+                            {violation.case_status.replace('-', ' ')}
+                          </span>
                         </div>
-                      ) : null}
-                    </div>
-                    <div className="flex flex-wrap gap-2 lg:max-w-[220px] lg:justify-end">
-                      <span
-                        className={[
-                          'inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize',
-                          severityClass(violation.severity),
-                        ].join(' ')}
-                      >
-                        {violation.severity}
-                      </span>
-                      <span
-                        className={[
-                          'inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize',
-                          statusClass(violation.case_status),
-                        ].join(' ')}
-                      >
-                        {violation.case_status.replace('-', ' ')}
-                      </span>
-                    </div>
-                  </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               ))}
-            </div>
+              </div>
+            )}
 
-            {totalPages > 1 ? (
+            {filteredViolations.length > PAGE_SIZE ? (
               <div className="flex flex-col gap-3 border-t border-slate-800/80 pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm text-slate-400">
                   Newer violation cases appear first.

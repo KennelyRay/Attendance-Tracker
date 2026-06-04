@@ -419,6 +419,16 @@ export function EmployeeDashboardClient({
                       </div>
                     ))}
                   </div>
+                  {isFirstTimeEmployee ? (
+                    <div className="mt-4 rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 ring-1 ring-inset ring-white/5">
+                      <div className="text-sm font-semibold text-slate-50">What To Do First</div>
+                      <div className="mt-3 space-y-2 text-sm leading-6 text-slate-400">
+                        <div>1. Open `Leave` to understand your current balance and request options.</div>
+                        <div>2. Open `History` to verify this month’s attendance records.</div>
+                        <div>3. Use `Policy` in the header if you need a quick rule check before filing leave.</div>
+                      </div>
+                    </div>
+                  ) : null}
                   <div className="mt-4 grid grid-cols-1 gap-3">
                     <button
                       type="button"
@@ -447,7 +457,7 @@ export function EmployeeDashboardClient({
               <Card>
                 <CardHeader
                   title="Attendance Breakdown"
-                  subtitle="Compact progress view designed for smaller screens."
+                  subtitle="Compact trend bars designed for smaller screens."
                 />
                 <CardBody>
                   <div className="space-y-4">
@@ -478,6 +488,9 @@ export function EmployeeDashboardClient({
                         </div>
                       </div>
                     ))}
+                  </div>
+                  <div className="mt-4 rounded-2xl bg-slate-950/65 px-4 py-3 text-xs leading-5 text-slate-500 ring-1 ring-inset ring-slate-800">
+                    Small screens show the simplified trend view instead of the heavier desktop charts.
                   </div>
                 </CardBody>
               </Card>
@@ -687,6 +700,10 @@ export function EmployeeDashboardClient({
   };
 
   const mobileNavViews: EmployeeView[] = ['dashboard', 'leave', 'violations', 'attendance'];
+  const isFirstTimeEmployee =
+    initialLeaveRequests.length === 0 &&
+    initialViolations.length === 0 &&
+    initialRecords.length === 0;
 
   return (
     <>
@@ -726,6 +743,20 @@ export function EmployeeDashboardClient({
         <div className="min-w-0 xl:px-6 xl:py-6">
           <div className="space-y-6">
             <div className="xl:hidden">
+              {isFirstTimeEmployee ? (
+                <div className="mb-4 rounded-2xl border border-sky-400/15 bg-sky-500/8 px-4 py-4 ring-1 ring-inset ring-sky-400/10">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-sky-300">
+                    Quick Start
+                  </div>
+                  <div className="mt-2 text-sm font-medium text-slate-100">
+                    Start with leave, attendance, or policy review.
+                  </div>
+                  <div className="mt-2 text-sm leading-6 text-slate-400">
+                    This is your mobile shortcut area. Use the tabs below to check your leave balance,
+                    review attendance, and see any admin updates as soon as they appear.
+                  </div>
+                </div>
+              ) : null}
               <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="flex min-w-max gap-2">
                   {mobileNavViews.map((view) => {
@@ -792,7 +823,9 @@ export function EmployeeDashboardClient({
               </button>
             </div>
 
-            {renderActiveView()}
+            <div key={activeView} className="app-surface-enter">
+              {renderActiveView()}
+            </div>
           </div>
         </div>
       </div>

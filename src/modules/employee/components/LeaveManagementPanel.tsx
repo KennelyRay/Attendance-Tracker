@@ -68,6 +68,7 @@ export function LeaveManagementPanel({
   const [previewAttachment, setPreviewAttachment] = useState<LeaveAttachmentPreview | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [requestPage, setRequestPage] = useState(1);
+  const [requestStatusFilter, setRequestStatusFilter] = useState<'all' | LeaveRequestStatus>('all');
   const [now, setNow] = useState(() => Date.now());
   const selectedPolicy = useMemo(() => getLeavePolicy(leaveType), [leaveType]);
   const loadLeaveData = useCallback(async () => {
@@ -90,12 +91,27 @@ export function LeaveManagementPanel({
 
     return futureCooldownEndTimes.length > 0 ? new Date(futureCooldownEndTimes[0]) : null;
   }, [now, requests]);
-  const totalRequestPages = Math.max(1, Math.ceil(requests.length / LEAVE_REQUESTS_PER_PAGE));
+  const groupedRequests = useMemo(
+    () => ({
+      pending: requests.filter((request) => request.status === 'pending').length,
+      approved: requests.filter((request) => request.status === 'approved').length,
+      rejected: requests.filter((request) => request.status === 'rejected').length,
+    }),
+    [requests]
+  );
+  const filteredRequests = useMemo(
+    () =>
+      requestStatusFilter === 'all'
+        ? requests
+        : requests.filter((request) => request.status === requestStatusFilter),
+    [requestStatusFilter, requests]
+  );
+  const totalRequestPages = Math.max(1, Math.ceil(filteredRequests.length / LEAVE_REQUESTS_PER_PAGE));
   const safeRequestPage = Math.min(requestPage, totalRequestPages);
   const paginatedRequests = useMemo(() => {
     const startIndex = (safeRequestPage - 1) * LEAVE_REQUESTS_PER_PAGE;
-    return requests.slice(startIndex, startIndex + LEAVE_REQUESTS_PER_PAGE);
-  }, [requests, safeRequestPage]);
+    return filteredRequests.slice(startIndex, startIndex + LEAVE_REQUESTS_PER_PAGE);
+  }, [filteredRequests, safeRequestPage]);
 
   useEffect(() => {
     let cancelled = false;
@@ -221,6 +237,10 @@ export function LeaveManagementPanel({
     setSelectedFiles(nextFiles);
   };
 
+  const removeSelectedFile = (indexToRemove: number) => {
+    setSelectedFiles((current) => current.filter((_, index) => index !== indexToRemove));
+  };
+
   const closePreview = useCallback(() => {
     setPreviewAttachment((current) => {
       if (current?.previewUrl.startsWith('blob:')) {
@@ -267,7 +287,8 @@ export function LeaveManagementPanel({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.75fr)]">
-        <Card>
+        <div className="order-2 xl:order-1">
+          <Card>
           <CardHeader
             title="Apply For Leave"
             subtitle="Choose a leave type from the policy guide and send it for approval."
@@ -397,18 +418,31 @@ export function LeaveManagementPanel({
                       Selected Files
                     </div>
                     <div className="mt-2 space-y-2">
-                      {selectedFiles.map((file) => (
-                        <button
+                      {selectedFiles.map((file, index) => (
+                        <div
                           key={`${file.name}-${file.size}`}
-                          type="button"
-                          onClick={() => openLocalAttachmentPreview(file)}
-                          className="flex w-full items-center justify-between rounded-xl bg-slate-950/70 px-4 py-3 text-sm text-slate-300 ring-1 ring-inset ring-slate-800 transition-colors hover:bg-slate-900/90"
+                          className="rounded-xl bg-slate-950/70 px-4 py-3 text-sm text-slate-300 ring-1 ring-inset ring-slate-800"
                         >
-                          <span className="truncate pr-3 text-left">{file.name}</span>
-                          <span className="whitespace-nowrap text-xs text-slate-400">
-                            Preview
-                          </span>
-                        </button>
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="truncate pr-3 text-left">{file.name}</span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openLocalAttachmentPreview(file)}
+                                className="rounded-lg bg-slate-900/90 px-2.5 py-1 text-xs text-slate-300 ring-1 ring-inset ring-slate-700"
+                              >
+                                Preview
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeSelectedFile(index)}
+                                className="rounded-lg bg-rose-500/10 px-2.5 py-1 text-xs text-rose-300 ring-1 ring-inset ring-rose-400/20"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -421,16 +455,23 @@ export function LeaveManagementPanel({
                 </div>
               ) : null}
 
-              <div className="flex justify-end">
-                <Button className="w-full sm:w-auto" type="submit" disabled={isSubmitting}>
-                  Review Leave Request
-                </Button>
+              <div className="app-mobile-sticky-action -mx-1 rounded-2xl bg-slate-950/90 p-3 ring-1 ring-inset ring-white/5 backdrop-blur-md sm:mx-0 sm:bg-transparent sm:p-0 sm:ring-0 sm:backdrop-blur-0">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                  <div className="text-xs leading-5 text-slate-500 sm:hidden">
+                    Review your request details before submitting it for admin approval.
+                  </div>
+                  <Button className="w-full sm:w-auto" type="submit" disabled={isSubmitting}>
+                    Review Leave Request
+                  </Button>
+                </div>
               </div>
             </form>
           </CardBody>
         </Card>
+        </div>
 
-        <Card>
+        <div className="order-1 xl:order-2">
+          <Card>
           <CardHeader
             title="Leave Balance"
             subtitle="A compact summary of your paid leave entitlement and service-based growth."
@@ -475,6 +516,33 @@ export function LeaveManagementPanel({
                 </div>
               </div>
 
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-2xl bg-slate-900/80 px-4 py-3.5 ring-1 ring-inset ring-slate-800">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-amber-300">
+                    Pending
+                  </div>
+                  <div className="mt-2 text-xl font-semibold text-slate-50">
+                    {groupedRequests.pending}
+                  </div>
+                </div>
+                <div className="rounded-2xl bg-slate-900/80 px-4 py-3.5 ring-1 ring-inset ring-slate-800">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-300">
+                    Approved
+                  </div>
+                  <div className="mt-2 text-xl font-semibold text-slate-50">
+                    {groupedRequests.approved}
+                  </div>
+                </div>
+                <div className="rounded-2xl bg-slate-900/80 px-4 py-3.5 ring-1 ring-inset ring-slate-800">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-rose-300">
+                    Rejected
+                  </div>
+                  <div className="mt-2 text-xl font-semibold text-slate-50">
+                    {groupedRequests.rejected}
+                  </div>
+                </div>
+              </div>
+
               <div className="rounded-2xl bg-slate-900/80 px-4 py-3.5 ring-1 ring-inset ring-slate-800">
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                   Leave Policy Note
@@ -488,6 +556,7 @@ export function LeaveManagementPanel({
             </div>
           </CardBody>
         </Card>
+        </div>
       </div>
 
       <Card>
@@ -503,6 +572,37 @@ export function LeaveManagementPanel({
             />
           ) : (
             <div className="space-y-4">
+              <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="flex min-w-max gap-2">
+                  {([
+                    ['all', 'All'],
+                    ['pending', 'Pending'],
+                    ['approved', 'Approved'],
+                    ['rejected', 'Rejected'],
+                  ] as const).map(([value, label]) => {
+                    const isActive = requestStatusFilter === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => {
+                          setRequestStatusFilter(value);
+                          setRequestPage(1);
+                        }}
+                        className={[
+                          'inline-flex items-center rounded-full border px-3 py-2 text-sm font-medium transition-all ring-1 ring-inset',
+                          isActive
+                            ? 'border-sky-400/25 bg-sky-500/12 text-slate-50 ring-sky-400/20'
+                            : 'border-slate-800/80 bg-slate-900/70 text-slate-300 ring-white/5',
+                        ].join(' ')}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {paginatedRequests.map((request) => {
                 const policy = getLeavePolicy(request.leave_type);
 
@@ -543,15 +643,25 @@ export function LeaveManagementPanel({
                         </span>
                       ) : null}
                     </div>
-                    <div className="mt-4 text-xs font-medium uppercase tracking-wide text-sky-300/80">
-                      Click to view summary
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                      <div className="text-xs font-medium uppercase tracking-wide text-sky-300/80">
+                        Tap to view full summary
+                      </div>
+                      <span className="inline-flex items-center rounded-full bg-slate-950/80 px-2 py-1 text-[11px] text-slate-400 ring-1 ring-inset ring-slate-800">
+                        Quick View
+                      </span>
                     </div>
                   </button>
                 );
               })}
             </div>
           )}
-          {requests.length > LEAVE_REQUESTS_PER_PAGE ? (
+          {filteredRequests.length === 0 && requests.length > 0 ? (
+            <div className="mt-4 rounded-xl bg-slate-900/80 px-4 py-8 text-center text-sm text-slate-400 ring-1 ring-inset ring-slate-800">
+              No leave requests match the current status filter.
+            </div>
+          ) : null}
+          {filteredRequests.length > LEAVE_REQUESTS_PER_PAGE ? (
             <div className="mt-5 flex flex-col gap-3 border-t border-slate-800/80 pt-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-slate-400">
                 Page {safeRequestPage} of {totalRequestPages}

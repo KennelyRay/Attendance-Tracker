@@ -127,8 +127,8 @@ function ConfirmationModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
+    <div className="app-overlay-scroll bg-slate-950/70 backdrop-blur-sm">
+      <div className="app-overlay-panel max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
         <div className="text-lg font-semibold text-slate-100">{title}</div>
         <div className="mt-2 text-sm leading-6 text-slate-400">{description}</div>
         {children ? <div className="mt-4">{children}</div> : null}
@@ -159,8 +159,8 @@ function FeedbackModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
+    <div className="app-overlay-scroll bg-slate-950/70 backdrop-blur-sm">
+      <div className="app-overlay-panel max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
         <div className="text-lg font-semibold text-slate-100">{title}</div>
         <div className="mt-2 text-sm leading-6 text-slate-400">{description}</div>
         <div className="mt-6 flex justify-end">

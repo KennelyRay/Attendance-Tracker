@@ -162,6 +162,19 @@ export function EmployeeDashboardClient({
   }, []);
 
   useEffect(() => {
+    if (!isMobileSidebarOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMobileSidebarOpen]);
+
+  useEffect(() => {
     let cancelled = false;
 
     const loadProfile = async () => {
@@ -473,7 +486,7 @@ export function EmployeeDashboardClient({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       {dashboardSignals.map((signal) => (
                         <div
                           key={signal.label}
@@ -509,17 +522,25 @@ export function EmployeeDashboardClient({
   return (
     <>
       {isMobileSidebarOpen ? (
-        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm xl:hidden">
-          <div className="h-full w-[min(21rem,85vw)]">
-            <EmployeeSidebar
-              activeView={activeView}
-              mode="mobile"
-              onCloseMobile={() => setIsMobileSidebarOpen(false)}
-              onSelect={(view) => {
-                setActiveView(view);
-                setIsMobileSidebarOpen(false);
-              }}
-            />
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 backdrop-blur-sm xl:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        >
+          <div className="min-h-full w-full p-3 sm:p-4">
+            <div
+              className="max-h-full w-[min(21rem,85vw)] overflow-y-auto"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <EmployeeSidebar
+                activeView={activeView}
+                mode="mobile"
+                onCloseMobile={() => setIsMobileSidebarOpen(false)}
+                onSelect={(view) => {
+                  setActiveView(view);
+                  setIsMobileSidebarOpen(false);
+                }}
+              />
+            </div>
           </div>
         </div>
       ) : null}

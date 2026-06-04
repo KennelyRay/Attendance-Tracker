@@ -58,6 +58,7 @@ const leaveAwareViews: AdminView[] = [
 const violationAwareViews: AdminView[] = [
   'dashboard',
   'reports-charts',
+  'smart-insights',
   'new-violation',
   'all-violation-cases',
 ];
@@ -376,6 +377,19 @@ export function AdminDashboardClient({
     };
   }, [activeView]);
 
+  useEffect(() => {
+    if (!isMobileSidebarOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMobileSidebarOpen]);
+
   const openView = async (view: AdminView) => {
     setActiveView(view);
     setIsMobileSidebarOpen(false);
@@ -528,9 +542,12 @@ export function AdminDashboardClient({
   return (
     <>
       {isMobileSidebarOpen ? (
-        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm xl:hidden">
-          <div className="h-full max-w-[20rem] p-3 sm:p-4">
-            <div className="max-h-full overflow-y-auto">
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 backdrop-blur-sm xl:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        >
+          <div className="min-h-full w-full p-3 sm:p-4">
+            <div className="max-h-full max-w-[20rem] overflow-y-auto" onClick={(event) => event.stopPropagation()}>
               <AdminSidebar
                 mode="mobile"
                 activeView={activeView}
@@ -576,7 +593,16 @@ export function AdminDashboardClient({
                 >
                   Open Navigation
                 </Button>
-                {activeView === 'leave-requests' ? (
+                {activeView === 'smart-insights' ? (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      void Promise.allSettled([loadLeaveRequests(), loadViolationCases()]);
+                    }}
+                  >
+                    Refresh Insights Data
+                  </Button>
+                ) : activeView === 'leave-requests' ? (
                   <Button variant="secondary" onClick={() => void loadLeaveRequests()}>
                     Refresh Leave Queue
                   </Button>
@@ -626,7 +652,9 @@ export function AdminDashboardClient({
             <AdminInsightsPanel
               employees={employees}
               leaveRequests={leaveRequests}
+              violations={violations}
               isLeaveDataLoading={isLeaveRequestsLoading}
+              isViolationDataLoading={isViolationsLoading}
               onOpenView={(view) => void openView(view)}
             />
           ) : activeView === 'employee-accounts' ? (

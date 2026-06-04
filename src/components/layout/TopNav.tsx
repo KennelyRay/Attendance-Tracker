@@ -122,8 +122,8 @@ export function TopNav({
             </div>
           </div>
         </div>
-        <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end sm:gap-3">
-          <div className="flex min-w-0 items-center gap-2 rounded-full bg-slate-900/90 px-2 py-1 ring-1 ring-inset ring-slate-700/80 sm:flex">
+        <div className="flex w-full flex-wrap items-center justify-between gap-2 sm:w-auto sm:flex-nowrap sm:justify-end sm:gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-full bg-slate-900/90 px-2 py-1 ring-1 ring-inset ring-slate-700/80 sm:max-w-none sm:flex-none">
             <div className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-sky-400 to-cyan-300 text-xs font-semibold text-slate-950">
               {initials || 'U'}
             </div>

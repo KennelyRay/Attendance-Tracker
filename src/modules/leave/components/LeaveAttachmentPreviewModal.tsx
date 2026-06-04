@@ -24,8 +24,8 @@ export function LeaveAttachmentPreviewModal({
   const canInlinePreview = isInlinePreviewable(attachment.mimeType);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/80 px-4 backdrop-blur-sm">
-      <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-950/95 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
+    <div className="app-overlay-scroll z-[60] bg-slate-950/80 backdrop-blur-sm">
+      <div className="app-overlay-panel flex max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-950/95 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
         <div className="flex flex-col gap-3 border-b border-slate-800/80 px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="truncate text-lg font-semibold text-slate-100">{attachment.title}</div>

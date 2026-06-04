@@ -582,8 +582,8 @@ export function LeaveManagementPanel({
       </Card>
 
       {selectedRequest ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
+        <div className="app-overlay-scroll bg-slate-950/70 backdrop-blur-sm">
+          <div className="app-overlay-panel max-w-2xl rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <div className="text-lg font-semibold text-slate-100">
@@ -694,8 +694,8 @@ export function LeaveManagementPanel({
       ) : null}
 
       {pendingSubmission ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
+        <div className="app-overlay-scroll bg-slate-950/70 backdrop-blur-sm">
+          <div className="app-overlay-panel max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
             <div className="text-lg font-semibold text-slate-100">Confirm Leave Request</div>
             <div className="mt-2 text-sm leading-6 text-slate-400">
               Please confirm the details before sending your leave request for approval.
@@ -753,8 +753,8 @@ export function LeaveManagementPanel({
       ) : null}
 
       {successMessage ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
+        <div className="app-overlay-scroll bg-slate-950/70 backdrop-blur-sm">
+          <div className="app-overlay-panel max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
             <div className="text-lg font-semibold text-slate-100">Leave Request Sent</div>
             <div className="mt-2 text-sm leading-6 text-slate-400">{successMessage}</div>
             <div className="mt-6 flex justify-end">

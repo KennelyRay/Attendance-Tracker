@@ -132,8 +132,8 @@ export function InactivityGuard() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl border border-sky-400/15 bg-slate-950/95 p-4 shadow-[0_28px_80px_rgba(2,8,23,0.65)] ring-1 ring-inset ring-white/5 sm:p-6">
+    <div className="app-overlay-scroll bg-slate-950/75 backdrop-blur-sm">
+      <div className="app-overlay-panel max-w-md rounded-3xl border border-sky-400/15 bg-slate-950/95 p-4 shadow-[0_28px_80px_rgba(2,8,23,0.65)] ring-1 ring-inset ring-white/5 sm:p-6">
         <div className="inline-flex items-center rounded-full bg-amber-500/12 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-300 ring-1 ring-inset ring-amber-400/20">
           Inactivity Warning
         </div>

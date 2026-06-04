@@ -11,6 +11,10 @@ function sanitizeDownloadName(fileName: string) {
   return fileName.replace(/[^\w.\-() ]+/g, '_');
 }
 
+function canPreviewInline(mimeType: string) {
+  return mimeType === 'application/pdf' || mimeType.startsWith('image/');
+}
+
 type RouteContext = {
   params: Promise<{
     attachmentId: string;
@@ -19,6 +23,7 @@ type RouteContext = {
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
   const requestId = getRequestId(request);
+  const shouldPreview = request.nextUrl.searchParams.get('preview') === '1';
 
   try {
     const session = await getSessionData();
@@ -70,12 +75,16 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     }
 
     const safeFileName = sanitizeDownloadName(attachment.file_name);
+    const contentDisposition =
+      shouldPreview && canPreviewInline(attachment.mime_type)
+        ? `inline; filename="${safeFileName}"`
+        : `attachment; filename="${safeFileName}"`;
 
     return new NextResponse(new Uint8Array(attachment.file_data), {
       status: 200,
       headers: {
         'Content-Type': attachment.mime_type || 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${safeFileName}"`,
+        'Content-Disposition': contentDisposition,
         'Cache-Control': 'private, no-store',
         'X-Content-Type-Options': 'nosniff',
       },

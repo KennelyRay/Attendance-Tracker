@@ -5,6 +5,10 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { AdminLeaveRequest, ReviewLeaveRequestInput } from '@/modules/leave/types';
+import {
+  LeaveAttachmentPreviewModal,
+  type LeaveAttachmentPreview,
+} from '@/modules/leave/components/LeaveAttachmentPreviewModal';
 import { getLeavePolicy } from '@/modules/leave/policy';
 
 const REQUESTS_PER_PAGE = 5;
@@ -35,8 +39,11 @@ export function LeaveRequestsPanel({
 }) {
   const [busyRequestId, setBusyRequestId] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [pendingApproveRequest, setPendingApproveRequest] = useState<AdminLeaveRequest | null>(null);
+  const [approveNote, setApproveNote] = useState('');
   const [pendingRejectRequest, setPendingRejectRequest] = useState<AdminLeaveRequest | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [previewAttachment, setPreviewAttachment] = useState<LeaveAttachmentPreview | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
 
@@ -85,7 +92,11 @@ export function LeaveRequestsPanel({
     currentPage * REQUESTS_PER_PAGE
   );
 
-  const review = async (requestId: number, action: ReviewLeaveRequestInput['action']) => {
+  const review = async (
+    requestId: number,
+    action: ReviewLeaveRequestInput['action'],
+    adminNotes?: string
+  ) => {
     setActionError(null);
     setBusyRequestId(requestId);
 
@@ -93,9 +104,28 @@ export function LeaveRequestsPanel({
       await onReview({
         requestId,
         action,
+        adminNotes,
       });
     } catch (reviewError) {
       setActionError(reviewError instanceof Error ? reviewError.message : 'Failed to review leave request');
+    } finally {
+      setBusyRequestId(null);
+    }
+  };
+
+  const approve = async () => {
+    if (!pendingApproveRequest) return;
+
+    const trimmedNote = approveNote.trim();
+    if (!trimmedNote) {
+      setActionError('Please add an admin note before approving the leave request');
+      return;
+    }
+
+    try {
+      await review(pendingApproveRequest.id, 'approve', trimmedNote);
+      setPendingApproveRequest(null);
+      setApproveNote('');
     } finally {
       setBusyRequestId(null);
     }
@@ -126,6 +156,16 @@ export function LeaveRequestsPanel({
     } finally {
       setBusyRequestId(null);
     }
+  };
+
+  const openAttachmentPreview = (attachment: AdminLeaveRequest['attachments'][number]) => {
+    setPreviewAttachment({
+      title: attachment.file_name,
+      mimeType: attachment.mime_type,
+      previewUrl: `${attachment.download_url}?preview=1`,
+      downloadUrl: attachment.download_url,
+      sizeLabel: `${(attachment.file_size / 1024).toFixed(0)} KB`,
+    });
   };
 
   if (error) {
@@ -329,18 +369,17 @@ export function LeaveRequestsPanel({
                       {request.attachments.length > 0 ? (
                         <div className="mt-2 space-y-2">
                           {request.attachments.map((attachment) => (
-                            <a
+                            <button
                               key={attachment.id}
-                              href={attachment.download_url}
-                              target="_blank"
-                              rel="noreferrer"
+                              type="button"
+                              onClick={() => openAttachmentPreview(attachment)}
                               className="flex items-center justify-between rounded-xl bg-slate-950/70 px-4 py-3 text-sm text-slate-300 ring-1 ring-inset ring-slate-800 transition-colors hover:bg-slate-900/90"
                             >
-                              <span className="truncate pr-3">{attachment.file_name}</span>
+                              <span className="truncate pr-3 text-left">{attachment.file_name}</span>
                               <span className="whitespace-nowrap text-xs text-slate-400">
-                                {(attachment.file_size / 1024).toFixed(0)} KB
+                                Preview
                               </span>
-                            </a>
+                            </button>
                           ))}
                         </div>
                       ) : (
@@ -368,7 +407,11 @@ export function LeaveRequestsPanel({
                           <Button
                             className="w-full sm:w-auto"
                             disabled={isBusy}
-                            onClick={() => review(request.id, 'approve')}
+                            onClick={() => {
+                              setActionError(null);
+                              setPendingApproveRequest(request);
+                              setApproveNote(request.admin_notes ?? '');
+                            }}
                           >
                             {isBusy ? 'Please wait...' : 'Approve'}
                           </Button>
@@ -471,6 +514,70 @@ export function LeaveRequestsPanel({
             </div>
           </div>
         </div>
+      ) : null}
+
+      {pendingApproveRequest ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
+            <div className="text-lg font-semibold text-slate-100">Approve Leave Request</div>
+            <div className="mt-2 text-sm leading-6 text-slate-400">
+              Add an admin note before approving {pendingApproveRequest.user_name}&apos;s leave
+              request.
+            </div>
+            <div className="mt-4 rounded-xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300 ring-1 ring-inset ring-slate-800">
+              <div>
+                <span className="font-medium text-slate-100">Leave Type:</span>{' '}
+                {getLeavePolicy(pendingApproveRequest.leave_type).label}
+              </div>
+              <div className="mt-2">
+                <span className="font-medium text-slate-100">Date Range:</span>{' '}
+                {new Date(pendingApproveRequest.start_date).toLocaleDateString()} to{' '}
+                {new Date(pendingApproveRequest.end_date).toLocaleDateString()}
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="text-sm font-medium text-slate-300">Admin Note</div>
+              <div className="mt-1">
+                <textarea
+                  value={approveNote}
+                  onChange={(event) => setApproveNote(event.target.value)}
+                  rows={4}
+                  className="w-full rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-2.5 text-sm text-slate-100 shadow-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/70"
+                  placeholder="Add context for the approval, reminders, or next steps."
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end sm:gap-3">
+              <Button
+                className="w-full sm:w-auto"
+                variant="secondary"
+                onClick={() => {
+                  if (busyRequestId !== pendingApproveRequest.id) {
+                    setPendingApproveRequest(null);
+                    setApproveNote('');
+                  }
+                }}
+                disabled={busyRequestId === pendingApproveRequest.id}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="w-full sm:w-auto"
+                onClick={approve}
+                disabled={busyRequestId === pendingApproveRequest.id}
+              >
+                {busyRequestId === pendingApproveRequest.id ? 'Please wait...' : 'Approve Request'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {previewAttachment ? (
+        <LeaveAttachmentPreviewModal
+          attachment={previewAttachment}
+          onClose={() => setPreviewAttachment(null)}
+        />
       ) : null}
     </div>
   );

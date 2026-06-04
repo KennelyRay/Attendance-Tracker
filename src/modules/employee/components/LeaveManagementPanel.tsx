@@ -7,6 +7,10 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { createLeaveRequest, fetchMyLeaveData } from '@/modules/employee/api';
+import {
+  LeaveAttachmentPreviewModal,
+  type LeaveAttachmentPreview,
+} from '@/modules/leave/components/LeaveAttachmentPreviewModal';
 import { leavePolicies, getLeavePolicy } from '@/modules/leave/policy';
 import { formatDateOnly } from '@/modules/leave/utils';
 import type { EmployeePortalProfile } from '@/modules/employee/types';
@@ -61,6 +65,7 @@ export function LeaveManagementPanel({
   const [error, setError] = useState<string | null>(null);
   const [pendingSubmission, setPendingSubmission] = useState<CreateLeaveRequestInput | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
+  const [previewAttachment, setPreviewAttachment] = useState<LeaveAttachmentPreview | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [requestPage, setRequestPage] = useState(1);
   const [now, setNow] = useState(() => Date.now());
@@ -129,6 +134,14 @@ export function LeaveManagementPanel({
       window.clearInterval(intervalId);
     };
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (previewAttachment?.previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewAttachment.previewUrl);
+      }
+    };
+  }, [previewAttachment]);
 
   useEffect(() => {
     if (!nextBalanceRefreshAt) {
@@ -206,6 +219,49 @@ export function LeaveManagementPanel({
 
     setError(null);
     setSelectedFiles(nextFiles);
+  };
+
+  const closePreview = useCallback(() => {
+    setPreviewAttachment((current) => {
+      if (current?.previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(current.previewUrl);
+      }
+
+      return null;
+    });
+  }, []);
+
+  const openStoredAttachmentPreview = (attachment: LeaveRequest['attachments'][number]) => {
+    setPreviewAttachment((current) => {
+      if (current?.previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(current.previewUrl);
+      }
+
+      return {
+        title: attachment.file_name,
+        mimeType: attachment.mime_type,
+        previewUrl: `${attachment.download_url}?preview=1`,
+        downloadUrl: attachment.download_url,
+        sizeLabel: `${(attachment.file_size / 1024).toFixed(0)} KB`,
+      };
+    });
+  };
+
+  const openLocalAttachmentPreview = (file: File) => {
+    const objectUrl = URL.createObjectURL(file);
+
+    setPreviewAttachment((current) => {
+      if (current?.previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(current.previewUrl);
+      }
+
+      return {
+        title: file.name,
+        mimeType: file.type || 'application/octet-stream',
+        previewUrl: objectUrl,
+        sizeLabel: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+      };
+    });
   };
 
   return (
@@ -342,9 +398,17 @@ export function LeaveManagementPanel({
                     </div>
                     <div className="mt-2 space-y-2">
                       {selectedFiles.map((file) => (
-                        <div key={`${file.name}-${file.size}`} className="text-sm text-slate-300">
-                          {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
-                        </div>
+                        <button
+                          key={`${file.name}-${file.size}`}
+                          type="button"
+                          onClick={() => openLocalAttachmentPreview(file)}
+                          className="flex w-full items-center justify-between rounded-xl bg-slate-950/70 px-4 py-3 text-sm text-slate-300 ring-1 ring-inset ring-slate-800 transition-colors hover:bg-slate-900/90"
+                        >
+                          <span className="truncate pr-3 text-left">{file.name}</span>
+                          <span className="whitespace-nowrap text-xs text-slate-400">
+                            Preview
+                          </span>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -589,18 +653,17 @@ export function LeaveManagementPanel({
               {selectedRequest.attachments.length > 0 ? (
                 <div className="mt-3 space-y-2">
                   {selectedRequest.attachments.map((attachment) => (
-                    <a
+                    <button
                       key={attachment.id}
-                      href={attachment.download_url}
-                      target="_blank"
-                      rel="noreferrer"
+                      type="button"
+                      onClick={() => openStoredAttachmentPreview(attachment)}
                       className="flex items-center justify-between rounded-xl bg-slate-950/70 px-4 py-3 text-sm text-slate-300 ring-1 ring-inset ring-slate-800 transition-colors hover:bg-slate-900/90"
                     >
-                      <span className="truncate pr-3">{attachment.file_name}</span>
+                      <span className="truncate pr-3 text-left">{attachment.file_name}</span>
                       <span className="whitespace-nowrap text-xs text-slate-400">
-                        {(attachment.file_size / 1024).toFixed(0)} KB
+                        Preview
                       </span>
-                    </a>
+                    </button>
                   ))}
                 </div>
               ) : (
@@ -701,6 +764,10 @@ export function LeaveManagementPanel({
             </div>
           </div>
         </div>
+      ) : null}
+
+      {previewAttachment ? (
+        <LeaveAttachmentPreviewModal attachment={previewAttachment} onClose={closePreview} />
       ) : null}
     </div>
   );

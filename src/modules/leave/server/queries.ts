@@ -38,6 +38,11 @@ type LeaveRequestAttachmentRow = {
   created_at: string;
 };
 
+type LeaveRequestPaidBalanceRow = Pick<
+  LeaveRequestRow,
+  'leave_type' | 'deduct_from_paid_balance' | 'status' | 'reviewed_at' | 'created_at' | 'total_days'
+>;
+
 const LEAVE_REQUEST_RETURNING_COLUMNS = `
   id,
   user_id,
@@ -68,6 +73,41 @@ function buildLeaveRequestAttachment(row: LeaveRequestAttachmentRow): LeaveReque
     file_size: row.file_size,
     created_at: row.created_at,
     download_url: `/api/leave-attachments/${row.id}`,
+  };
+}
+
+function leaveRequestUsesPaidBalance(
+  leaveType: LeaveRequest['leave_type'],
+  deductFromPaidBalance: boolean
+) {
+  return getLeavePolicy(leaveType).requiresPaidBalance || deductFromPaidBalance;
+}
+
+function isLeaveRequestPaidBalanceActive(
+  request: LeaveRequestPaidBalanceRow,
+  referenceDate = Date.now()
+) {
+  if (request.status !== 'approved') {
+    return false;
+  }
+
+  if (!leaveRequestUsesPaidBalance(request.leave_type, request.deduct_from_paid_balance)) {
+    return false;
+  }
+
+  const approvedAt = new Date(request.reviewed_at ?? request.created_at).getTime();
+  return approvedAt + LEAVE_COOLDOWN_MS > referenceDate;
+}
+
+function normalizeLeaveRequestPaidBalanceFlag<
+  T extends { leave_type: LeaveRequest['leave_type']; deduct_from_paid_balance: boolean }
+>(request: T): T {
+  return {
+    ...request,
+    deduct_from_paid_balance: leaveRequestUsesPaidBalance(
+      request.leave_type,
+      request.deduct_from_paid_balance
+    ),
   };
 }
 
@@ -115,28 +155,8 @@ async function addLeaveRequestAttachments<T extends { id: number }>(rows: T[]) {
 }
 
 async function releaseExpiredPaidLeaveDeductions(userId?: number) {
-  const pool = getPool();
-  await ensureLeaveSystemSchema(pool);
-
-  const params: Array<number> = [LEAVE_COOLDOWN_MS];
-  const userFilter = typeof userId === 'number' ? 'AND user_id = $2' : '';
-
-  if (typeof userId === 'number') {
-    params.push(userId);
-  }
-
-  await pool.query(
-    `
-      UPDATE leave_requests
-      SET deduct_from_paid_balance = FALSE
-      WHERE status = 'approved'
-        AND deduct_from_paid_balance = TRUE
-        ${userFilter}
-        AND COALESCE(reviewed_at, created_at)
-          <= CURRENT_TIMESTAMP - (($1 || ' milliseconds')::interval)
-    `,
-    params
-  );
+  void userId;
+  // Keep the original request intent in the database and compute cooldown expiry at read time.
 }
 
 async function getUserStartDate(userId: number) {
@@ -152,29 +172,28 @@ export async function getPaidLeaveUsedDaysForYear(userId: number, year: number) 
   await ensureLeaveSystemSchema(pool);
   const result = await pool.query(
     `
-      SELECT total_days, COALESCE(reviewed_at, created_at) AS approved_at
+      SELECT
+        leave_type,
+        total_days,
+        deduct_from_paid_balance,
+        status,
+        reviewed_at,
+        created_at
       FROM leave_requests
       WHERE user_id = $1
         AND status = 'approved'
-        AND deduct_from_paid_balance = true
         AND EXTRACT(YEAR FROM start_date) = $2
     `,
     [userId, year]
   );
 
-  const now = Date.now();
-
-  return (result.rows as Array<{ total_days: number | string; approved_at: string }>).reduce(
-    (total, row) => {
-      const cooldownEndsAt = new Date(row.approved_at).getTime() + LEAVE_COOLDOWN_MS;
-      if (cooldownEndsAt > now) {
-        return total + Number(row.total_days);
-      }
-
+  return (result.rows as Array<LeaveRequestPaidBalanceRow>).reduce((total, row) => {
+    if (!isLeaveRequestPaidBalanceActive(row)) {
       return total;
-    },
-    0
-  );
+    }
+
+    return total + Number(row.total_days);
+  }, 0);
 }
 
 export async function getLeaveBalanceForUser(userId: number): Promise<LeaveBalance> {
@@ -213,7 +232,9 @@ export async function listLeaveRequestsForUser(userId: number): Promise<LeaveReq
     [userId]
   );
 
-  return addLeaveRequestAttachments(result.rows as LeaveRequestRow[]) as Promise<LeaveRequest[]>;
+  return addLeaveRequestAttachments(
+    (result.rows as LeaveRequestRow[]).map((row) => normalizeLeaveRequestPaidBalanceFlag(row))
+  ) as Promise<LeaveRequest[]>;
 }
 
 export async function listLeaveRequestsForAdmin(): Promise<AdminLeaveRequest[]> {
@@ -241,9 +262,9 @@ export async function listLeaveRequestsForAdmin(): Promise<AdminLeaveRequest[]> 
     `
   );
 
-  const rows = result.rows as Array<
+  const rows = (result.rows as Array<
     Omit<AdminLeaveRequest, 'user_leave_remaining' | 'user_leave_entitlement'>
-  >;
+  >).map((row) => normalizeLeaveRequestPaidBalanceFlag(row));
 
   const rowsWithAttachments = await addLeaveRequestAttachments(rows);
 
@@ -548,7 +569,7 @@ export async function reviewLeaveRequest(adminId: number, input: ReviewLeaveRequ
     throw new Error('Only pending leave requests can be reviewed');
   }
 
-  if (input.action === 'approve' && request.deduct_from_paid_balance) {
+  if (input.action === 'approve' && leaveRequestUsesPaidBalance(request.leave_type, request.deduct_from_paid_balance)) {
     const balance = await getLeaveBalanceForUser(request.user_id);
     if (request.total_days > balance.remaining) {
       throw new Error('The employee no longer has enough paid leave balance for this request');
@@ -572,7 +593,7 @@ export async function reviewLeaveRequest(adminId: number, input: ReviewLeaveRequ
   );
 
   const [updatedRequest] = await addLeaveRequestAttachments([
-    updateResult.rows[0] as LeaveRequestRow,
+    normalizeLeaveRequestPaidBalanceFlag(updateResult.rows[0] as LeaveRequestRow),
   ]);
 
   if (input.action === 'approve') {

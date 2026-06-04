@@ -38,12 +38,13 @@ export async function POST(request: NextRequest) {
     const violation = await createViolationCase(auth.userId, body);
     return NextResponse.json({ violation }, { status: 201 });
   } catch (error) {
+    console.error('Create violation error:', error);
+
     if (error instanceof Error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid violation payload' }, { status: 400 });
     }
 
-    console.error('Create violation error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Unable to create violation' }, { status: 500 });
   }
 }
 
@@ -56,11 +57,12 @@ export async function PATCH(request: NextRequest) {
     const violation = await updateViolationCase(auth.userId, body);
     return NextResponse.json({ violation });
   } catch (error) {
+    console.error('Update violation error:', error);
+
     if (error instanceof Error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid violation payload' }, { status: 400 });
     }
 
-    console.error('Update violation error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Unable to update violation' }, { status: 500 });
   }
 }

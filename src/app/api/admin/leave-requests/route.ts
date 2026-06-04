@@ -42,11 +42,12 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ request: leaveRequest });
   } catch (error) {
+    console.error('Review leave request error:', error);
+
     if (error instanceof Error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
-    console.error('Review leave request error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Unable to process leave review' }, { status: 500 });
   }
 }

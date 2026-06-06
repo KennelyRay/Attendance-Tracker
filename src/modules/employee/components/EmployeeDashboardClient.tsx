@@ -757,29 +757,6 @@ export function EmployeeDashboardClient({
                   </div>
                 </div>
               ) : null}
-              <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <div className="flex min-w-max gap-2">
-                  {mobileNavViews.map((view) => {
-                    const isActive = activeView === view;
-                    return (
-                      <button
-                        key={view}
-                        type="button"
-                        onClick={() => setActiveView(view)}
-                        className={[
-                          'inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition-all ring-1 ring-inset',
-                          isActive
-                            ? 'border-sky-400/25 bg-sky-500/12 text-slate-50 ring-sky-400/20'
-                            : 'border-slate-800/80 bg-slate-900/70 text-slate-300 ring-white/5',
-                        ].join(' ')}
-                      >
-                        <EmployeeMobileNavIcon view={view} />
-                        {employeeViewLabel(view)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
             </div>
 
             <div className="flex flex-col gap-3 border-b border-slate-800/80 pb-5 sm:flex-row sm:items-center sm:justify-between">

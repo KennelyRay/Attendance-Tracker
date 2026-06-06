@@ -672,33 +672,6 @@ export function AdminDashboardClient({
         </div>
 
         <div className="space-y-6 xl:px-8">
-          <div className="xl:hidden">
-            <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <div className="flex min-w-max gap-2">
-                {adminNavigationGroups.flatMap((group) =>
-                  group.items.map((item) => {
-                    const isActive = activeView === item.view;
-                    return (
-                      <button
-                        key={item.view}
-                        type="button"
-                        onClick={() => void openView(item.view)}
-                        className={[
-                          'inline-flex items-center rounded-full border px-3 py-2 text-sm font-medium transition-all ring-1 ring-inset',
-                          isActive
-                            ? 'border-sky-400/25 bg-sky-500/12 text-slate-50 ring-sky-400/20'
-                            : 'border-slate-800/80 bg-slate-900/70 text-slate-300 ring-white/5',
-                        ].join(' ')}
-                      >
-                        {item.label}
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          </div>
-
           <CardHeader
             title={adminViewLabel(activeView)}
             subtitle={viewDescriptions[activeView]}

@@ -100,8 +100,8 @@ export function LoginForm() {
             <div className="text-sm font-semibold uppercase tracking-[0.3em] text-sky-300/75">
               Workforce Portal
             </div>
-            <h1 className="mt-4 text-5xl font-semibold tracking-tight text-slate-50">
-              HRIS
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-50 xl:text-[2.9rem]">
+              Human Resources Information System
             </h1>
             <p className="mt-5 max-w-md text-base leading-7 text-slate-300">
               Manage attendance, absences, and leave records in one streamlined workspace built

@@ -101,7 +101,7 @@ export function LoginForm() {
               Workforce Portal
             </div>
             <h1 className="mt-4 text-5xl font-semibold tracking-tight text-slate-50">
-              Attendance Tracker
+              HRIS
             </h1>
             <p className="mt-5 max-w-md text-base leading-7 text-slate-300">
               Manage attendance, absences, and leave records in one streamlined workspace built
@@ -144,7 +144,7 @@ export function LoginForm() {
             <div className="flex items-center justify-center border-b border-slate-800/80 px-4 py-4 sm:px-5 sm:py-6">
               <Image
                 src="/ATIconFInal.png"
-                alt="Attendance Tracker logo"
+                alt="HRIS logo"
                 width={84}
                 height={84}
                 priority

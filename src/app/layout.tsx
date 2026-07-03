@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Attendance Tracker",
+  title: "HRIS",
   description: "Track leave, absences, and attendance.",
   icons: {
     icon: "/ATIconFInal.png",

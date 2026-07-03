@@ -131,7 +131,7 @@ export function TopNav({
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900/80 ring-1 ring-inset ring-sky-400/15 shadow-[0_10px_24px_rgba(34,211,238,0.18)] sm:h-9 sm:w-9">
             <Image
               src="/ATIconFInal.png"
-              alt="Attendance Tracker logo"
+              alt="HRIS logo"
               width={32}
               height={32}
               className="h-7 w-7 object-contain sm:h-8 sm:w-8"

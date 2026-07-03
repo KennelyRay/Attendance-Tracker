@@ -10,9 +10,46 @@ import type { LeaveType } from '@/modules/leave/types';
 const MAX_LEAVE_ATTACHMENT_COUNT = 3;
 const MAX_LEAVE_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const ALLOWED_LEAVE_ATTACHMENT_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
+const SAFE_LEAVE_VALIDATION_MESSAGES = new Set([
+  'Please select a valid leave type',
+  'Please provide valid start and end dates',
+  'End date must be on or after the start date',
+  'Please provide a reason for the leave request',
+  'The selected range must include at least one weekday',
+  'You already have a pending or approved leave request in this date range',
+  'This leave type does not use the paid leave balance',
+  'This request exceeds the available paid leave balance',
+  'Supporting documents must be PDF, JPG, or PNG files',
+  'Each supporting document must be 5 MB or smaller',
+  'Each supporting document must include a file name',
+]);
 
 function isFileEntry(value: FormDataEntryValue | null): value is File {
   return value instanceof File;
+}
+
+function toSafeLeaveRequestErrorMessage(error: Error) {
+  if (SAFE_LEAVE_VALIDATION_MESSAGES.has(error.message)) {
+    return error.message;
+  }
+
+  if (/^You can upload up to \d+ supporting documents$/.test(error.message)) {
+    return error.message;
+  }
+
+  if (/ only allows up to \d+ day\(s\) per request$/.test(error.message)) {
+    return error.message;
+  }
+
+  if (/ requires at least \d+ months of service$/.test(error.message)) {
+    return error.message;
+  }
+
+  if (/ exceeds the allowed yearly limit$/.test(error.message)) {
+    return error.message;
+  }
+
+  return null;
 }
 
 async function parseCreateLeaveRequestPayload(request: NextRequest) {
@@ -103,7 +140,10 @@ export async function POST(request: NextRequest) {
     console.error('Create employee leave request error:', error);
 
     if (error instanceof Error) {
-      return NextResponse.json({ error: 'Invalid leave request' }, { status: 400 });
+      return NextResponse.json(
+        { error: toSafeLeaveRequestErrorMessage(error) ?? 'Invalid leave request' },
+        { status: 400 }
+      );
     }
 
     return NextResponse.json({ error: 'Unable to create leave request' }, { status: 500 });

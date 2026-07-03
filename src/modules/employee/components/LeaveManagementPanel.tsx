@@ -12,7 +12,7 @@ import {
   type LeaveAttachmentPreview,
 } from '@/modules/leave/components/LeaveAttachmentPreviewModal';
 import { leavePolicies, getLeavePolicy } from '@/modules/leave/policy';
-import { formatDateOnly } from '@/modules/leave/utils';
+import { countBusinessDays, formatDateOnly } from '@/modules/leave/utils';
 import type { EmployeePortalProfile } from '@/modules/employee/types';
 import type {
   CreateLeaveRequestInput,
@@ -181,6 +181,33 @@ export function LeaveManagementPanel({
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
+
+    if (!startDate || !endDate) {
+      setError('Please provide valid start and end dates.');
+      return;
+    }
+
+    if (startDate > endDate) {
+      setError('End date must be on or after the start date.');
+      return;
+    }
+
+    if (!reason.trim()) {
+      setError('Please provide a reason for the leave request.');
+      return;
+    }
+
+    const requestedBusinessDays = countBusinessDays(startDate, endDate);
+    if (requestedBusinessDays <= 0) {
+      setError('The selected range must include at least one weekday.');
+      return;
+    }
+
+    const usesPaidBalance = selectedPolicy.requiresPaidBalance || deductFromPaidBalance;
+    if (usesPaidBalance && requestedBusinessDays > balance.remaining) {
+      setError('This request exceeds the available paid leave balance.');
+      return;
+    }
 
     setPendingSubmission({
       leaveType,

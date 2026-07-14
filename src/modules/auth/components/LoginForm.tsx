@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardBody } from '@/components/ui/Card';
@@ -141,15 +140,13 @@ export function LoginForm() {
                   </div>
                 </div>
               ) : null}
-            <div className="flex items-center justify-center border-b border-slate-800/80 px-4 py-4 sm:px-5 sm:py-6">
-              <Image
-                src="/hris-logo.png"
-                alt="HRIS logo"
-                width={84}
-                height={84}
-                priority
-                className="h-16 w-16 object-contain drop-shadow-[0_0_28px_rgba(56,189,248,0.38)] sm:h-20 sm:w-20"
-              />
+            <div className="flex flex-col items-center justify-center gap-1.5 border-b border-slate-800/80 px-4 py-5 sm:px-5 sm:py-7">
+              <span className="-mr-[0.28em] bg-gradient-to-r from-sky-300 via-cyan-200 to-sky-400 bg-clip-text text-4xl font-bold tracking-[0.28em] text-transparent drop-shadow-[0_0_28px_rgba(56,189,248,0.45)] sm:text-5xl">
+                HRIS
+              </span>
+              <span className="text-[10px] font-medium uppercase tracking-[0.32em] text-slate-400 sm:text-[11px]">
+                Human Resource Information System
+              </span>
             </div>
             <CardBody>
               <form onSubmit={submit} className="space-y-3">

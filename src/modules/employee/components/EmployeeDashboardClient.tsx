@@ -1,8 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { triggerGlobalNavigationLoader } from '@/components/layout/navigation-loader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
@@ -112,7 +110,6 @@ export function EmployeeDashboardClient({
   initialLeaveRequests: LeaveRequest[];
   initialViolations: EmployeeViolationRecord[];
 }) {
-  const router = useRouter();
   const [month, setMonth] = useState(initialMonth);
   const [year, setYear] = useState(initialYear);
   const [records, setRecords] = useState<EmployeeAttendanceRecord[]>(initialRecords);
@@ -689,16 +686,6 @@ export function EmployeeDashboardClient({
     }
   };
 
-  const navigateToLeavePolicy = () => {
-    triggerGlobalNavigationLoader({
-      title: 'Loading leave policy',
-      description: 'Preparing the latest leave guidance for a smoother read.',
-    });
-    window.requestAnimationFrame(() => {
-      router.push('/employee/leave-policy');
-    });
-  };
-
   const mobileNavViews: EmployeeView[] = ['dashboard', 'leave', 'violations', 'attendance'];
   const isFirstTimeEmployee =
     initialLeaveRequests.length === 0 &&
@@ -791,13 +778,6 @@ export function EmployeeDashboardClient({
                   </div>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={navigateToLeavePolicy}
-                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-sky-500 to-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-[0_14px_32px_rgba(34,211,238,0.28)] ring-1 ring-inset ring-white/25 transition-all hover:from-sky-400 hover:to-cyan-300 hover:shadow-[0_18px_36px_rgba(34,211,238,0.34)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
-              >
-                View Leave Policy
-              </button>
             </div>
 
             <div key={activeView} className="app-surface-enter">

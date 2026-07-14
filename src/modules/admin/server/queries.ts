@@ -7,6 +7,7 @@ import type {
   AppealViolationInput,
   CreateViolationInput,
   EmployeeViolationRecord,
+  ResolveViolationAppealInput,
   Employee,
   UpdateViolationInput,
 } from '@/modules/admin/types';
@@ -69,7 +70,9 @@ export async function listViolationCases(): Promise<AdminViolationRecord[]> {
         admin_user.name AS created_by_name,
         ev.created_at,
         ev.appeal_message,
-        ev.appealed_at
+        ev.appealed_at,
+        ev.appeal_verdict,
+        ev.appeal_resolved_at
       FROM employee_violations ev
       JOIN users u ON u.id = ev.user_id
       LEFT JOIN users admin_user ON admin_user.id = ev.created_by
@@ -183,7 +186,9 @@ export async function createViolationCase(
         admin_user.name AS created_by_name,
         ev.created_at,
         ev.appeal_message,
-        ev.appealed_at
+        ev.appealed_at,
+        ev.appeal_verdict,
+        ev.appeal_resolved_at
       FROM employee_violations ev
       JOIN users u ON u.id = ev.user_id
       LEFT JOIN users admin_user ON admin_user.id = ev.created_by
@@ -285,7 +290,9 @@ export async function updateViolationCase(
         COALESCE(admin_user.name, editor_user.name) AS created_by_name,
         ev.created_at,
         ev.appeal_message,
-        ev.appealed_at
+        ev.appealed_at,
+        ev.appeal_verdict,
+        ev.appeal_resolved_at
       FROM employee_violations ev
       JOIN users u ON u.id = ev.user_id
       LEFT JOIN users admin_user ON admin_user.id = ev.created_by
@@ -320,7 +327,9 @@ export async function listViolationsForUser(
         action_taken,
         created_at,
         appeal_message,
-        appealed_at
+        appealed_at,
+        appeal_verdict,
+        appeal_resolved_at
       FROM employee_violations
       WHERE user_id = $1
       ORDER BY incident_date DESC, created_at DESC, id DESC
@@ -377,7 +386,9 @@ export async function appealViolationForUser(
         action_taken,
         created_at,
         appeal_message,
-        appealed_at
+        appealed_at,
+        appeal_verdict,
+        appeal_resolved_at
     `,
     [violationId, userId, cleanMessage]
   );
@@ -410,4 +421,101 @@ export async function appealViolationForUser(
     ...updated,
     incident_date: normalizeDateOnly(updated.incident_date),
   } as EmployeeViolationRecord;
+}
+
+export async function resolveViolationAppeal(
+  adminId: number,
+  input: ResolveViolationAppealInput
+): Promise<AdminViolationRecord> {
+  const pool = getPool();
+  await ensureViolationSystemSchema(pool);
+
+  const violationId = Number(input.violationId);
+  const cleanVerdict = input.verdict?.trim();
+
+  if (!Number.isInteger(violationId)) {
+    throw new Error('Invalid violation case');
+  }
+
+  if (!cleanVerdict) {
+    throw new Error('Please provide a final verdict for this appeal');
+  }
+
+  if (cleanVerdict.length > 2000) {
+    throw new Error('Final verdict must be 2000 characters or fewer');
+  }
+
+  const updateResult = await pool.query(
+    `
+      UPDATE employee_violations
+      SET
+        case_status = 'resolved',
+        appeal_verdict = $2,
+        appeal_resolved_by = $3,
+        appeal_resolved_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+        AND appeal_message IS NOT NULL
+        AND appeal_verdict IS NULL
+      RETURNING id
+    `,
+    [violationId, cleanVerdict, adminId]
+  );
+
+  if (updateResult.rows.length === 0) {
+    const existing = await pool.query(
+      `
+        SELECT appeal_message, appeal_verdict
+        FROM employee_violations
+        WHERE id = $1
+        LIMIT 1
+      `,
+      [violationId]
+    );
+
+    if (existing.rows.length === 0) {
+      throw new Error('Violation case not found');
+    }
+
+    if (!existing.rows[0].appeal_message) {
+      throw new Error('Only appealed cases can be resolved with a verdict');
+    }
+
+    throw new Error('This appeal has already received a final verdict');
+  }
+
+  const result = await pool.query(
+    `
+      SELECT
+        ev.id,
+        ev.user_id,
+        u.name AS user_name,
+        u.email AS user_email,
+        u.position AS user_position,
+        ev.violation_type,
+        ev.company,
+        ev.severity,
+        ev.case_status,
+        ev.incident_date,
+        ev.description,
+        ev.action_taken,
+        ev.created_by,
+        admin_user.name AS created_by_name,
+        ev.created_at,
+        ev.appeal_message,
+        ev.appealed_at,
+        ev.appeal_verdict,
+        ev.appeal_resolved_at
+      FROM employee_violations ev
+      JOIN users u ON u.id = ev.user_id
+      LEFT JOIN users admin_user ON admin_user.id = ev.created_by
+      WHERE ev.id = $1
+      LIMIT 1
+    `,
+    [violationId]
+  );
+
+  return {
+    ...result.rows[0],
+    incident_date: normalizeDateOnly(result.rows[0]?.incident_date),
+  } as AdminViolationRecord;
 }

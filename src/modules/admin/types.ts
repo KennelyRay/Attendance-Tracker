@@ -78,6 +78,8 @@ export type AdminViolationRecord = {
   created_at: string;
   appeal_message: string | null;
   appealed_at: string | null;
+  appeal_verdict: string | null;
+  appeal_resolved_at: string | null;
 };
 
 export type EmployeeViolationRecord = {
@@ -92,11 +94,18 @@ export type EmployeeViolationRecord = {
   created_at: string;
   appeal_message: string | null;
   appealed_at: string | null;
+  appeal_verdict: string | null;
+  appeal_resolved_at: string | null;
 };
 
 export type AppealViolationInput = {
   violationId: number;
   message: string;
+};
+
+export type ResolveViolationAppealInput = {
+  violationId: number;
+  verdict: string;
 };
 
 export type CreateViolationInput = {

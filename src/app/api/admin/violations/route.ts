@@ -3,6 +3,7 @@ import { getSessionData } from '@/lib/session';
 import {
   createViolationCase,
   listViolationCases,
+  resolveViolationAppeal,
   updateViolationCase,
 } from '@/modules/admin/server/queries';
 
@@ -54,13 +55,22 @@ export async function PATCH(request: NextRequest) {
     if (auth.error) return auth.error;
 
     const body = await request.json();
+
+    if (body?.action === 'resolve-appeal') {
+      const violation = await resolveViolationAppeal(auth.userId, {
+        violationId: Number(body?.violationId),
+        verdict: String(body?.verdict ?? ''),
+      });
+      return NextResponse.json({ violation });
+    }
+
     const violation = await updateViolationCase(auth.userId, body);
     return NextResponse.json({ violation });
   } catch (error) {
     console.error('Update violation error:', error);
 
     if (error instanceof Error) {
-      return NextResponse.json({ error: 'Invalid violation payload' }, { status: 400 });
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     return NextResponse.json({ error: 'Unable to update violation' }, { status: 500 });

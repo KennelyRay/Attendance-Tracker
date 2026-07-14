@@ -35,7 +35,10 @@ export async function ensureViolationSystemSchema(pool: Pool) {
 
     ALTER TABLE employee_violations
       ADD COLUMN IF NOT EXISTS appeal_message TEXT NULL,
-      ADD COLUMN IF NOT EXISTS appealed_at TIMESTAMP NULL;
+      ADD COLUMN IF NOT EXISTS appealed_at TIMESTAMP NULL,
+      ADD COLUMN IF NOT EXISTS appeal_verdict TEXT NULL,
+      ADD COLUMN IF NOT EXISTS appeal_resolved_by INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
+      ADD COLUMN IF NOT EXISTS appeal_resolved_at TIMESTAMP NULL;
   `);
 
   ensured = true;

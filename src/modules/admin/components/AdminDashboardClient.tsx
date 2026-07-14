@@ -12,6 +12,7 @@ import {
   fetchEmployees,
   fetchLeaveRequests,
   fetchViolationCases,
+  resolveViolationAppeal,
   reviewEmployeeLeaveRequest,
   updateEmployeeAccount,
   updateEmployeeAccess,
@@ -41,6 +42,7 @@ import type {
   AdminViolationRecord,
   CreateViolationInput,
   CreateEmployeeInput,
+  ResolveViolationAppealInput,
   UpdateEmployeeAccountInput,
   UpdateEmployeeAccessInput,
   UpdateViolationInput,
@@ -384,6 +386,13 @@ export function AdminDashboardClient({
 
   const onUpdateViolation = async (input: UpdateViolationInput) => {
     const updatedViolation = await updateViolationCase(input);
+    setViolations((current) =>
+      current.map((violation) => (violation.id === updatedViolation.id ? updatedViolation : violation))
+    );
+  };
+
+  const onResolveViolationAppeal = async (input: ResolveViolationAppealInput) => {
+    const updatedViolation = await resolveViolationAppeal(input);
     setViolations((current) =>
       current.map((violation) => (violation.id === updatedViolation.id ? updatedViolation : violation))
     );
@@ -772,6 +781,7 @@ export function AdminDashboardClient({
               error={violationsError}
               onRefresh={loadViolationCases}
               onUpdate={onUpdateViolation}
+              onResolveAppeal={onResolveViolationAppeal}
             />
           ) : (
             <AdminPlaceholderPanel

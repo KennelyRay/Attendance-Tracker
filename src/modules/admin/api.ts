@@ -2,6 +2,7 @@ import type {
   AdminAttendanceRecord,
   AdminViolationRecord,
   CreateViolationInput,
+  ResolveViolationAppealInput,
   UpdateViolationInput,
   CreateEmployeeInput,
   Employee,
@@ -157,6 +158,21 @@ export async function updateViolationCase(
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     throw new Error(data?.error || 'Failed to update violation case');
+  }
+  return data.violation as AdminViolationRecord;
+}
+
+export async function resolveViolationAppeal(
+  input: ResolveViolationAppealInput
+): Promise<AdminViolationRecord> {
+  const response = await fetch('/api/admin/violations', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'resolve-appeal', ...input }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || 'Failed to resolve appeal');
   }
   return data.violation as AdminViolationRecord;
 }

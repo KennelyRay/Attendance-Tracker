@@ -9,10 +9,15 @@ import { Select } from '@/components/ui/Select';
 import { Table, TBody, TD, TH, THead } from '@/components/ui/Table';
 import type {
   AdminViolationRecord,
+  ResolveViolationAppealInput,
   UpdateViolationInput,
   ViolationCaseStatus,
   ViolationSeverity,
 } from '@/modules/admin/types';
+
+function violationHasOpenAppeal(violation: AdminViolationRecord) {
+  return Boolean(violation.appeal_message) && !violation.appeal_verdict;
+}
 
 const PAGE_SIZE = 5;
 const severityOptions: ViolationSeverity[] = ['low', 'medium', 'high'];
@@ -162,24 +167,110 @@ function EditViolationModal({
   );
 }
 
+function ResolveAppealModal({
+  violation,
+  isSubmitting,
+  error,
+  onClose,
+  onResolve,
+}: {
+  violation: AdminViolationRecord | null;
+  isSubmitting: boolean;
+  error: string | null;
+  onClose: () => void;
+  onResolve: (input: ResolveViolationAppealInput) => Promise<void>;
+}) {
+  const [verdict, setVerdict] = useState('');
+
+  if (!violation) {
+    return null;
+  }
+
+  return (
+    <div className="app-overlay-scroll bg-slate-950/70 backdrop-blur-sm">
+      <div className="app-overlay-panel max-w-2xl rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
+        <div className="text-lg font-semibold text-slate-100">Resolve Appealed Case</div>
+        <div className="mt-2 text-sm leading-6 text-slate-400">
+          Issue a final verdict on the appeal from {violation.user_name} ({companyLabel(violation.company)}).
+          Saving will mark this case as resolved.
+        </div>
+        {error ? (
+          <div className="mt-4 rounded-xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300 ring-1 ring-inset ring-rose-400/20">
+            {error}
+          </div>
+        ) : null}
+
+        <div className="mt-4 rounded-xl bg-slate-900/80 px-4 py-3 ring-1 ring-inset ring-slate-800">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Case</div>
+          <div className="mt-1 text-sm font-medium text-slate-100">{violation.violation_type}</div>
+          <div className="mt-1 text-sm leading-6 text-slate-400">{violation.description}</div>
+        </div>
+
+        <div className="mt-3 rounded-xl bg-sky-500/10 px-4 py-3 ring-1 ring-inset ring-sky-400/20">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-sky-300">
+            Employee Appeal
+            {violation.appealed_at
+              ? ` · ${new Date(violation.appealed_at).toLocaleDateString()}`
+              : ''}
+          </div>
+          <div className="mt-1 text-sm leading-6 text-sky-100/90">{violation.appeal_message}</div>
+        </div>
+
+        <div className="mt-4">
+          <div className="mb-2 text-sm font-medium text-slate-300">Final Verdict</div>
+          <textarea
+            value={verdict}
+            onChange={(event) => setVerdict(event.target.value)}
+            rows={4}
+            maxLength={2000}
+            placeholder="Explain the final decision on this case and its appeal..."
+            className="w-full rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-2.5 text-sm text-slate-100 shadow-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/70"
+          />
+        </div>
+
+        <div className="mt-6 flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end sm:gap-3">
+          <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() =>
+              void onResolve({
+                violationId: violation.id,
+                verdict: verdict.trim(),
+              })
+            }
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Resolving...' : 'Resolve Case'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ViolationCasesPanel({
   violations,
   isLoading,
   error,
   onRefresh,
   onUpdate,
+  onResolveAppeal,
 }: {
   violations: AdminViolationRecord[];
   isLoading: boolean;
   error: string | null;
   onRefresh: () => Promise<void>;
   onUpdate: (input: UpdateViolationInput) => Promise<void>;
+  onResolveAppeal: (input: ResolveViolationAppealInput) => Promise<void>;
 }) {
   const [query, setQuery] = useState('');
   const [severityFilter, setSeverityFilter] = useState<'all' | ViolationSeverity>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | ViolationCaseStatus>('all');
   const [page, setPage] = useState(1);
   const [editingViolation, setEditingViolation] = useState<AdminViolationRecord | null>(null);
+  const [resolvingViolation, setResolvingViolation] = useState<AdminViolationRecord | null>(null);
+  const [resolveError, setResolveError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyViolationId, setBusyViolationId] = useState<number | null>(null);
   const [expandedViolationIds, setExpandedViolationIds] = useState<number[]>([]);
@@ -213,6 +304,7 @@ export function ViolationCasesPanel({
         violation.incident_date,
         violation.created_by_name || '',
         violation.appeal_message || '',
+        violation.appeal_verdict || '',
       ];
 
       return searchableFields.some((value) => value.toLowerCase().includes(normalizedQuery));
@@ -242,6 +334,23 @@ export function ViolationCasesPanel({
     } catch (updateError) {
       setActionError(
         updateError instanceof Error ? updateError.message : 'Failed to update violation case'
+      );
+    } finally {
+      setBusyViolationId(null);
+    }
+  };
+
+  const saveResolveAppeal = async (input: ResolveViolationAppealInput) => {
+    setResolveError(null);
+    setBusyViolationId(input.violationId);
+    try {
+      await onResolveAppeal(input);
+      setResolvingViolation(null);
+    } catch (resolveAppealError) {
+      setResolveError(
+        resolveAppealError instanceof Error
+          ? resolveAppealError.message
+          : 'Failed to resolve appeal'
       );
     } finally {
       setBusyViolationId(null);
@@ -363,17 +472,31 @@ export function ViolationCasesPanel({
                             {violation.user_email}
                           </div>
                         </div>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => {
-                            setActionError(null);
-                            setEditingViolation(violation);
-                          }}
-                          disabled={busyViolationId === violation.id}
-                        >
-                          {busyViolationId === violation.id ? 'Saving...' : 'Edit'}
-                        </Button>
+                        <div className="flex shrink-0 flex-col gap-2">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                              setActionError(null);
+                              setEditingViolation(violation);
+                            }}
+                            disabled={busyViolationId === violation.id}
+                          >
+                            {busyViolationId === violation.id ? 'Saving...' : 'Edit'}
+                          </Button>
+                          {violationHasOpenAppeal(violation) ? (
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setResolveError(null);
+                                setResolvingViolation(violation);
+                              }}
+                              disabled={busyViolationId === violation.id}
+                            >
+                              Resolve
+                            </Button>
+                          ) : null}
+                        </div>
                       </div>
 
                       <div className="flex flex-wrap gap-2">
@@ -425,6 +548,20 @@ export function ViolationCasesPanel({
                           </div>
                           <div className="mt-2 text-sm leading-6 text-sky-100/90">
                             {violation.appeal_message}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {violation.appeal_verdict ? (
+                        <div className="rounded-xl bg-emerald-500/10 px-3 py-3 ring-1 ring-inset ring-emerald-400/20">
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-300">
+                            Final Verdict
+                            {violation.appeal_resolved_at
+                              ? ` · ${new Date(violation.appeal_resolved_at).toLocaleDateString()}`
+                              : ''}
+                          </div>
+                          <div className="mt-2 text-sm leading-6 text-emerald-100/90">
+                            {violation.appeal_verdict}
                           </div>
                         </div>
                       ) : null}
@@ -536,6 +673,18 @@ export function ViolationCasesPanel({
                               {violation.appeal_message}
                             </div>
                           ) : null}
+                          {violation.appeal_verdict ? (
+                            <div className="mt-2 max-w-md rounded-lg bg-emerald-500/10 px-2.5 py-2 text-xs leading-5 text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
+                              <span className="font-semibold text-emerald-300">
+                                Final verdict
+                                {violation.appeal_resolved_at
+                                  ? ` (${new Date(violation.appeal_resolved_at).toLocaleDateString()})`
+                                  : ''}
+                                :
+                              </span>{' '}
+                              {violation.appeal_verdict}
+                            </div>
+                          ) : null}
                         </TD>
                         <TD>
                           <span className="inline-flex items-center rounded-full bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-300 ring-1 ring-inset ring-cyan-400/20">
@@ -577,16 +726,29 @@ export function ViolationCasesPanel({
                           </div>
                         </TD>
                         <TD>
-                          <Button
-                            variant="secondary"
-                            onClick={() => {
-                              setActionError(null);
-                              setEditingViolation(violation);
-                            }}
-                            disabled={busyViolationId === violation.id}
-                          >
-                            {busyViolationId === violation.id ? 'Saving...' : 'Edit'}
-                          </Button>
+                          <div className="flex flex-col gap-2">
+                            <Button
+                              variant="secondary"
+                              onClick={() => {
+                                setActionError(null);
+                                setEditingViolation(violation);
+                              }}
+                              disabled={busyViolationId === violation.id}
+                            >
+                              {busyViolationId === violation.id ? 'Saving...' : 'Edit'}
+                            </Button>
+                            {violationHasOpenAppeal(violation) ? (
+                              <Button
+                                onClick={() => {
+                                  setResolveError(null);
+                                  setResolvingViolation(violation);
+                                }}
+                                disabled={busyViolationId === violation.id}
+                              >
+                                Resolve
+                              </Button>
+                            ) : null}
+                          </div>
                         </TD>
                       </tr>
                     ))}
@@ -632,6 +794,18 @@ export function ViolationCasesPanel({
           setEditingViolation(null);
         }}
         onSave={saveEdit}
+      />
+
+      <ResolveAppealModal
+        key={`resolve-${resolvingViolation?.id ?? 0}`}
+        violation={resolvingViolation}
+        isSubmitting={busyViolationId === resolvingViolation?.id}
+        error={resolveError}
+        onClose={() => {
+          setResolveError(null);
+          setResolvingViolation(null);
+        }}
+        onResolve={saveResolveAppeal}
       />
     </>
   );

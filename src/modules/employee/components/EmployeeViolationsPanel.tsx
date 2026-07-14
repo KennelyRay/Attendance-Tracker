@@ -355,6 +355,18 @@ export function EmployeeViolationsPanel({
                               {violation.appeal_message}
                             </div>
                           ) : null}
+                          {violation.appeal_verdict ? (
+                            <div className="mt-3 rounded-xl bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
+                              <span className="font-medium text-emerald-100">
+                                Final verdict
+                                {violation.appeal_resolved_at
+                                  ? ` on ${new Date(violation.appeal_resolved_at).toLocaleDateString()}`
+                                  : ''}
+                                :
+                              </span>{' '}
+                              {violation.appeal_verdict}
+                            </div>
+                          ) : null}
                           {isExpanded ? (
                             <>
                               <div className="mt-3 rounded-xl bg-slate-950/70 px-3 py-2.5 text-sm text-slate-300 ring-1 ring-inset ring-slate-800">

@@ -20,6 +20,8 @@ import {
 
 const LEAVE_COOLDOWN_MS = 13 * 7 * 24 * 60 * 60 * 1000;
 
+const OVERDUE_LEAVE_REJECTION_NOTE = 'Passed the Leave date';
+
 type LeaveRequestRow = Omit<LeaveRequest, 'attachments'>;
 
 type LeaveRequestAttachmentUpload = {
@@ -154,6 +156,31 @@ async function addLeaveRequestAttachments<T extends { id: number }>(rows: T[]) {
   }));
 }
 
+function getTodayDateOnly() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
+// Requests still pending once their start date arrives are rejected automatically.
+async function rejectOverdueLeaveRequests() {
+  const pool = getPool();
+  await ensureLeaveSystemSchema(pool);
+  await pool.query(
+    `
+      UPDATE leave_requests
+      SET
+        status = 'rejected',
+        admin_notes = $2,
+        reviewed_at = CURRENT_TIMESTAMP
+      WHERE status = 'pending'
+        AND start_date <= $1::date
+    `,
+    [getTodayDateOnly(), OVERDUE_LEAVE_REJECTION_NOTE]
+  );
+}
+
 async function releaseExpiredPaidLeaveDeductions(userId?: number) {
   void userId;
   // Keep the original request intent in the database and compute cooldown expiry at read time.
@@ -218,6 +245,7 @@ export async function getLeaveBalanceForUser(userId: number): Promise<LeaveBalan
 }
 
 export async function listLeaveRequestsForUser(userId: number): Promise<LeaveRequest[]> {
+  await rejectOverdueLeaveRequests();
   await releaseExpiredPaidLeaveDeductions(userId);
   const pool = getPool();
   await ensureLeaveSystemSchema(pool);
@@ -238,6 +266,7 @@ export async function listLeaveRequestsForUser(userId: number): Promise<LeaveReq
 }
 
 export async function listLeaveRequestsForAdmin(): Promise<AdminLeaveRequest[]> {
+  await rejectOverdueLeaveRequests();
   await releaseExpiredPaidLeaveDeductions();
   const pool = getPool();
   await ensureLeaveSystemSchema(pool);
@@ -345,6 +374,7 @@ export async function createLeaveRequestForUser(
   attachments: LeaveRequestAttachmentUpload[] = []
 ) {
   validateLeaveInput(input);
+  await rejectOverdueLeaveRequests();
   await releaseExpiredPaidLeaveDeductions(userId);
 
   const pool = getPool();
@@ -540,6 +570,7 @@ async function markApprovedLeaveInAttendance(
 }
 
 export async function reviewLeaveRequest(adminId: number, input: ReviewLeaveRequestInput) {
+  await rejectOverdueLeaveRequests();
   await releaseExpiredPaidLeaveDeductions();
   const requestId = Number(input.requestId);
 

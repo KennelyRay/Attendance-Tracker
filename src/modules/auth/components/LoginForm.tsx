@@ -143,7 +143,7 @@ export function LoginForm() {
               ) : null}
             <div className="flex items-center justify-center border-b border-slate-800/80 px-4 py-4 sm:px-5 sm:py-6">
               <Image
-                src="/ATIconFInal.png"
+                src="/hris-logo.png"
                 alt="HRIS logo"
                 width={84}
                 height={84}

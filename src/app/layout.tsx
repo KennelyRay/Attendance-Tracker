@@ -18,9 +18,9 @@ export const metadata: Metadata = {
   title: "HRIS",
   description: "Track leave, absences, and attendance.",
   icons: {
-    icon: "/ATIconFInal.png",
-    shortcut: "/ATIconFInal.png",
-    apple: "/ATIconFInal.png",
+    icon: "/hris-logo.png",
+    shortcut: "/hris-logo.png",
+    apple: "/apple-icon.png",
   },
 };
 

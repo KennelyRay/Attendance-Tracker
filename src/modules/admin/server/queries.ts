@@ -4,6 +4,7 @@ import { ensureViolationSystemSchema } from '@/lib/violation-system';
 import type {
   AdminAttendanceRecord,
   AdminViolationRecord,
+  AppealViolationInput,
   CreateViolationInput,
   EmployeeViolationRecord,
   Employee,
@@ -66,7 +67,9 @@ export async function listViolationCases(): Promise<AdminViolationRecord[]> {
         ev.action_taken,
         ev.created_by,
         admin_user.name AS created_by_name,
-        ev.created_at
+        ev.created_at,
+        ev.appeal_message,
+        ev.appealed_at
       FROM employee_violations ev
       JOIN users u ON u.id = ev.user_id
       LEFT JOIN users admin_user ON admin_user.id = ev.created_by
@@ -178,7 +181,9 @@ export async function createViolationCase(
         ev.action_taken,
         ev.created_by,
         admin_user.name AS created_by_name,
-        ev.created_at
+        ev.created_at,
+        ev.appeal_message,
+        ev.appealed_at
       FROM employee_violations ev
       JOIN users u ON u.id = ev.user_id
       LEFT JOIN users admin_user ON admin_user.id = ev.created_by
@@ -278,7 +283,9 @@ export async function updateViolationCase(
         ev.action_taken,
         ev.created_by,
         COALESCE(admin_user.name, editor_user.name) AS created_by_name,
-        ev.created_at
+        ev.created_at,
+        ev.appeal_message,
+        ev.appealed_at
       FROM employee_violations ev
       JOIN users u ON u.id = ev.user_id
       LEFT JOIN users admin_user ON admin_user.id = ev.created_by
@@ -311,7 +318,9 @@ export async function listViolationsForUser(
         incident_date,
         description,
         action_taken,
-        created_at
+        created_at,
+        appeal_message,
+        appealed_at
       FROM employee_violations
       WHERE user_id = $1
       ORDER BY incident_date DESC, created_at DESC, id DESC
@@ -323,4 +332,82 @@ export async function listViolationsForUser(
     ...row,
     incident_date: normalizeDateOnly(row.incident_date),
   })) as EmployeeViolationRecord[];
+}
+
+export async function appealViolationForUser(
+  userId: number,
+  input: AppealViolationInput
+): Promise<EmployeeViolationRecord> {
+  const pool = getPool();
+  await ensureViolationSystemSchema(pool);
+
+  const violationId = Number(input.violationId);
+  const cleanMessage = input.message?.trim();
+
+  if (!Number.isInteger(violationId)) {
+    throw new Error('Invalid violation case');
+  }
+
+  if (!cleanMessage) {
+    throw new Error('Please explain why you are appealing this violation');
+  }
+
+  if (cleanMessage.length > 2000) {
+    throw new Error('Appeal message must be 2000 characters or fewer');
+  }
+
+  const result = await pool.query(
+    `
+      UPDATE employee_violations
+      SET
+        appeal_message = $3,
+        appealed_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+        AND user_id = $2
+        AND case_status IN ('open', 'under-review')
+        AND appeal_message IS NULL
+      RETURNING
+        id,
+        violation_type,
+        company,
+        severity,
+        case_status,
+        incident_date,
+        description,
+        action_taken,
+        created_at,
+        appeal_message,
+        appealed_at
+    `,
+    [violationId, userId, cleanMessage]
+  );
+
+  const updated = result.rows[0] as EmployeeViolationRecord | undefined;
+
+  if (!updated) {
+    const existing = await pool.query(
+      `
+        SELECT case_status, appeal_message
+        FROM employee_violations
+        WHERE id = $1 AND user_id = $2
+        LIMIT 1
+      `,
+      [violationId, userId]
+    );
+
+    if (existing.rows.length === 0) {
+      throw new Error('Violation case not found');
+    }
+
+    if (existing.rows[0].appeal_message) {
+      throw new Error('This violation has already been appealed');
+    }
+
+    throw new Error('Only open or under-review cases can be appealed');
+  }
+
+  return {
+    ...updated,
+    incident_date: normalizeDateOnly(updated.incident_date),
+  } as EmployeeViolationRecord;
 }

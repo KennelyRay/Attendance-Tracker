@@ -90,3 +90,20 @@ export async function fetchMyViolations(): Promise<EmployeeViolationRecord[]> {
 
   return data.violations as EmployeeViolationRecord[];
 }
+
+export async function appealMyViolation(
+  violationId: number,
+  message: string
+): Promise<EmployeeViolationRecord> {
+  const response = await fetch('/api/employee/violations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ violationId, message }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || 'Failed to submit appeal');
+  }
+
+  return data.violation as EmployeeViolationRecord;
+}

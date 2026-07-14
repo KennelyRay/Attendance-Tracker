@@ -32,6 +32,10 @@ export async function ensureViolationSystemSchema(pool: Pool) {
 
     CREATE INDEX IF NOT EXISTS idx_employee_violations_created
       ON employee_violations(incident_date DESC, created_at DESC);
+
+    ALTER TABLE employee_violations
+      ADD COLUMN IF NOT EXISTS appeal_message TEXT NULL,
+      ADD COLUMN IF NOT EXISTS appealed_at TIMESTAMP NULL;
   `);
 
   ensured = true;

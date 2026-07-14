@@ -76,6 +76,8 @@ export type AdminViolationRecord = {
   created_by: number | null;
   created_by_name: string | null;
   created_at: string;
+  appeal_message: string | null;
+  appealed_at: string | null;
 };
 
 export type EmployeeViolationRecord = {
@@ -88,6 +90,13 @@ export type EmployeeViolationRecord = {
   description: string;
   action_taken: string | null;
   created_at: string;
+  appeal_message: string | null;
+  appealed_at: string | null;
+};
+
+export type AppealViolationInput = {
+  violationId: number;
+  message: string;
 };
 
 export type CreateViolationInput = {

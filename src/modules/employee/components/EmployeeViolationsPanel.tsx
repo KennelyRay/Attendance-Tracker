@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { appealMyViolation } from '@/modules/employee/api';
 import type { EmployeePortalProfile, EmployeeViolationRecord } from '@/modules/employee/types';
 import type { ViolationCaseStatus, ViolationSeverity } from '@/modules/admin/types';
 
@@ -31,6 +32,13 @@ function statusClass(status: ViolationCaseStatus) {
   }
 }
 
+function canAppealViolation(violation: EmployeeViolationRecord) {
+  return (
+    !violation.appeal_message &&
+    (violation.case_status === 'open' || violation.case_status === 'under-review')
+  );
+}
+
 export function EmployeeViolationsPanel({
   employeeProfile,
   violations,
@@ -48,6 +56,10 @@ export function EmployeeViolationsPanel({
   const [severityFilter, setSeverityFilter] = useState<'all' | ViolationSeverity>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | ViolationCaseStatus>('all');
   const [expandedViolationIds, setExpandedViolationIds] = useState<number[]>([]);
+  const [appealingViolationId, setAppealingViolationId] = useState<number | null>(null);
+  const [appealMessage, setAppealMessage] = useState('');
+  const [appealError, setAppealError] = useState<string | null>(null);
+  const [isSubmittingAppeal, setIsSubmittingAppeal] = useState(false);
 
   const filteredViolations = useMemo(
     () =>
@@ -86,6 +98,41 @@ export function EmployeeViolationsPanel({
         ? current.filter((id) => id !== violationId)
         : [...current, violationId]
     );
+  };
+
+  const openAppealForm = (violationId: number) => {
+    setAppealError(null);
+    setAppealMessage('');
+    setAppealingViolationId(violationId);
+  };
+
+  const closeAppealForm = () => {
+    setAppealError(null);
+    setAppealMessage('');
+    setAppealingViolationId(null);
+  };
+
+  const submitAppeal = async (violationId: number) => {
+    const message = appealMessage.trim();
+
+    if (!message) {
+      setAppealError('Please explain why you are appealing this violation.');
+      return;
+    }
+
+    setIsSubmittingAppeal(true);
+    setAppealError(null);
+    try {
+      await appealMyViolation(violationId, message);
+      closeAppealForm();
+      await onRefresh();
+    } catch (submitError) {
+      setAppealError(
+        submitError instanceof Error ? submitError.message : 'Failed to submit appeal'
+      );
+    } finally {
+      setIsSubmittingAppeal(false);
+    }
   };
 
   return (
@@ -257,11 +304,57 @@ export function EmployeeViolationsPanel({
                           <div className="mt-3 text-sm leading-6 text-slate-400 line-clamp-3">
                             {violation.description}
                           </div>
-                          <div className="mt-3">
+                          <div className="mt-3 flex flex-wrap gap-2">
                             <Button variant="ghost" size="sm" onClick={() => toggleExpanded(violation.id)}>
                               {isExpanded ? 'Hide Details' : 'View Details'}
                             </Button>
+                            {canAppealViolation(violation) && appealingViolationId !== violation.id ? (
+                              <Button variant="secondary" size="sm" onClick={() => openAppealForm(violation.id)}>
+                                Appeal
+                              </Button>
+                            ) : null}
                           </div>
+                          {appealingViolationId === violation.id ? (
+                            <div className="mt-3 rounded-xl bg-slate-950/70 px-3 py-3 ring-1 ring-inset ring-slate-800">
+                              <div className="text-sm font-medium text-slate-100">Appeal this violation</div>
+                              <div className="mt-1 text-xs leading-5 text-slate-400">
+                                Explain why this case should be reconsidered. Your appeal will be sent to the admins for review.
+                              </div>
+                              <textarea
+                                value={appealMessage}
+                                onChange={(event) => setAppealMessage(event.target.value)}
+                                rows={3}
+                                maxLength={2000}
+                                placeholder="I would like to appeal this violation because..."
+                                className="mt-3 w-full rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-2.5 text-sm text-slate-100 shadow-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/70"
+                              />
+                              {appealError ? (
+                                <div className="mt-2 rounded-xl bg-rose-500/10 px-3 py-2 text-sm text-rose-300 ring-1 ring-inset ring-rose-400/20">
+                                  {appealError}
+                                </div>
+                              ) : null}
+                              <div className="mt-3 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                                <Button variant="secondary" size="sm" onClick={closeAppealForm} disabled={isSubmittingAppeal}>
+                                  Cancel
+                                </Button>
+                                <Button size="sm" onClick={() => void submitAppeal(violation.id)} disabled={isSubmittingAppeal}>
+                                  {isSubmittingAppeal ? 'Submitting...' : 'Submit Appeal'}
+                                </Button>
+                              </div>
+                            </div>
+                          ) : null}
+                          {violation.appeal_message ? (
+                            <div className="mt-3 rounded-xl bg-sky-500/10 px-3 py-2.5 text-sm text-sky-200 ring-1 ring-inset ring-sky-400/20">
+                              <span className="font-medium text-sky-100">
+                                Appeal submitted
+                                {violation.appealed_at
+                                  ? ` on ${new Date(violation.appealed_at).toLocaleDateString()}`
+                                  : ''}
+                                :
+                              </span>{' '}
+                              {violation.appeal_message}
+                            </div>
+                          ) : null}
                           {isExpanded ? (
                             <>
                               <div className="mt-3 rounded-xl bg-slate-950/70 px-3 py-2.5 text-sm text-slate-300 ring-1 ring-inset ring-slate-800">
@@ -297,6 +390,11 @@ export function EmployeeViolationsPanel({
                           >
                             {violation.case_status.replace('-', ' ')}
                           </span>
+                          {violation.appeal_message ? (
+                            <span className="inline-flex rounded-full bg-sky-500/12 px-2.5 py-1 text-[11px] font-semibold text-sky-300 ring-1 ring-inset ring-sky-400/20">
+                              Appealed
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     );

@@ -212,6 +212,7 @@ export function ViolationCasesPanel({
         violation.action_taken || '',
         violation.incident_date,
         violation.created_by_name || '',
+        violation.appeal_message || '',
       ];
 
       return searchableFields.some((value) => value.toLowerCase().includes(normalizedQuery));
@@ -398,6 +399,11 @@ export function ViolationCasesPanel({
                         >
                           {violation.case_status.replace('-', ' ')}
                         </span>
+                        {violation.appeal_message ? (
+                          <span className="inline-flex rounded-full bg-sky-500/12 px-2.5 py-1 text-[11px] font-semibold text-sky-300 ring-1 ring-inset ring-sky-400/20">
+                            Appealed
+                          </span>
+                        ) : null}
                       </div>
 
                       <div className="rounded-xl bg-slate-950/70 px-3 py-3 ring-1 ring-inset ring-slate-800">
@@ -408,6 +414,20 @@ export function ViolationCasesPanel({
                           {violation.description}
                         </div>
                       </div>
+
+                      {violation.appeal_message ? (
+                        <div className="rounded-xl bg-sky-500/10 px-3 py-3 ring-1 ring-inset ring-sky-400/20">
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-sky-300">
+                            Employee Appeal
+                            {violation.appealed_at
+                              ? ` · ${new Date(violation.appealed_at).toLocaleDateString()}`
+                              : ''}
+                          </div>
+                          <div className="mt-2 text-sm leading-6 text-sky-100/90">
+                            {violation.appeal_message}
+                          </div>
+                        </div>
+                      ) : null}
 
                       <div className="grid grid-cols-2 gap-3 text-xs text-slate-400">
                         <div className="rounded-xl bg-slate-950/55 px-3 py-2.5 ring-1 ring-inset ring-slate-800">
@@ -504,6 +524,18 @@ export function ViolationCasesPanel({
                               Action: {violation.action_taken}
                             </div>
                           ) : null}
+                          {violation.appeal_message ? (
+                            <div className="mt-2 max-w-md rounded-lg bg-sky-500/10 px-2.5 py-2 text-xs leading-5 text-sky-200 ring-1 ring-inset ring-sky-400/20">
+                              <span className="font-semibold text-sky-300">
+                                Appeal
+                                {violation.appealed_at
+                                  ? ` (${new Date(violation.appealed_at).toLocaleDateString()})`
+                                  : ''}
+                                :
+                              </span>{' '}
+                              {violation.appeal_message}
+                            </div>
+                          ) : null}
                         </TD>
                         <TD>
                           <span className="inline-flex items-center rounded-full bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-300 ring-1 ring-inset ring-cyan-400/20">
@@ -529,6 +561,13 @@ export function ViolationCasesPanel({
                           >
                             {violation.case_status.replace('-', ' ')}
                           </span>
+                          {violation.appeal_message ? (
+                            <div className="mt-1.5">
+                              <span className="inline-flex rounded-full bg-sky-500/12 px-2.5 py-1 text-[11px] font-semibold text-sky-300 ring-1 ring-inset ring-sky-400/20">
+                                Appealed
+                              </span>
+                            </div>
+                          ) : null}
                         </TD>
                         <TD>{new Date(violation.incident_date).toLocaleDateString()}</TD>
                         <TD>

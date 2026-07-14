@@ -1,0 +1,41 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="60" y1="20" x2="470" y2="500" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#53CBFA"/>
+      <stop offset="0.5" stop-color="#0EA5E9"/>
+      <stop offset="1" stop-color="#0B62A4"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="256" y1="0" x2="256" y2="240" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="front" x1="205" y1="130" x2="205" y2="440" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#D9EEFD"/>
+    </linearGradient>
+    <!-- knocks a gap out of the back person around the front silhouette -->
+    <mask id="cut" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#FFFFFF"/>
+      <g fill="#000000" stroke="#000000" stroke-width="20" stroke-linejoin="round">
+        <circle cx="205" cy="196" r="64"/>
+        <path d="M75 418 L75 416 A130 130 0 0 1 335 416 L335 418 A22 22 0 0 1 313 440 L97 440 A22 22 0 0 1 75 418 Z"/>
+      </g>
+    </mask>
+  </defs>
+
+  <rect width="512" height="512" rx="120" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="120" fill="url(#sheen)"/>
+  <rect x="1.5" y="1.5" width="509" height="509" rx="118.5" stroke="#FFFFFF" stroke-opacity="0.14" stroke-width="3"/>
+
+  <!-- back person -->
+  <g fill="#D6EDFE" opacity="0.68" mask="url(#cut)">
+    <circle cx="350" cy="168" r="50"/>
+    <path d="M250 418 L250 346 A100 100 0 0 1 450 346 L450 418 A22 22 0 0 1 428 440 L272 440 A22 22 0 0 1 250 418 Z"/>
+  </g>
+
+  <!-- front person -->
+  <g fill="url(#front)">
+    <circle cx="205" cy="196" r="64"/>
+    <path d="M75 418 L75 416 A130 130 0 0 1 335 416 L335 418 A22 22 0 0 1 313 440 L97 440 A22 22 0 0 1 75 418 Z"/>
+  </g>
+</svg>

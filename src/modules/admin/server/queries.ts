@@ -15,18 +15,39 @@ import { normalizeDateOnly } from '@/modules/leave/utils';
 
 export async function listEmployees(): Promise<Employee[]> {
   const pool = getPool();
-  await ensureUserAccessColumns(pool);
+  await ensureViolationSystemSchema(pool);
   const result = await pool.query(
     `
-      SELECT id, name, email, company, position, start_date, is_banned, restricted_until, created_at
-      FROM users
-      WHERE is_admin = false
-      ORDER BY name
+      SELECT
+        u.id,
+        u.name,
+        u.email,
+        u.company,
+        u.position,
+        u.start_date,
+        u.is_banned,
+        u.restricted_until,
+        u.created_at,
+        COALESCE(v.total, 0)::int AS violation_count,
+        COALESCE(v.open, 0)::int AS open_violation_count
+      FROM users u
+      LEFT JOIN (
+        SELECT
+          user_id,
+          COUNT(*) AS total,
+          COUNT(*) FILTER (WHERE case_status <> 'resolved') AS open
+        FROM employee_violations
+        GROUP BY user_id
+      ) v ON v.user_id = u.id
+      WHERE u.is_admin = false
+      ORDER BY u.name
     `
   );
   return result.rows.map((row) => ({
     ...row,
     start_date: normalizeDateOnly(row.start_date),
+    violation_count: Number(row.violation_count ?? 0),
+    open_violation_count: Number(row.open_violation_count ?? 0),
   })) as Employee[];
 }
 

@@ -10,6 +10,8 @@ export type Employee = {
   is_banned: boolean;
   restricted_until: string | null;
   created_at: string;
+  violation_count: number;
+  open_violation_count: number;
 };
 
 export type AdminAttendanceRecord = {

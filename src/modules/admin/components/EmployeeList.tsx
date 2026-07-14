@@ -5,8 +5,12 @@ import { Button } from '@/components/ui/Button';
 import type { Employee } from '@/modules/admin/types';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 
 const PAGE_SIZE = 9;
+const UNASSIGNED = '__unassigned__';
+
+type ViolationFilter = 'all' | 'with-violations' | 'open-cases' | 'no-violations';
 
 export function EmployeeList({
   employees,
@@ -20,12 +24,73 @@ export function EmployeeList({
   isLoading: boolean;
 }) {
   const [query, setQuery] = useState('');
+  const [companyFilter, setCompanyFilter] = useState('all');
+  const [positionFilter, setPositionFilter] = useState('all');
+  const [violationFilter, setViolationFilter] = useState<ViolationFilter>('all');
   const [page, setPage] = useState(1);
+
+  const companies = useMemo(
+    () =>
+      Array.from(
+        new Set(employees.map((employee) => employee.company?.trim()).filter(Boolean) as string[])
+      ).sort((a, b) => a.localeCompare(b)),
+    [employees]
+  );
+
+  const positions = useMemo(
+    () =>
+      Array.from(
+        new Set(employees.map((employee) => employee.position?.trim()).filter(Boolean) as string[])
+      ).sort((a, b) => a.localeCompare(b)),
+    [employees]
+  );
+
+  const hasActiveFilters =
+    query.trim() !== '' ||
+    companyFilter !== 'all' ||
+    positionFilter !== 'all' ||
+    violationFilter !== 'all';
+
+  const resetFilters = () => {
+    setQuery('');
+    setCompanyFilter('all');
+    setPositionFilter('all');
+    setViolationFilter('all');
+    setPage(1);
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return employees;
+
     return employees.filter((e) => {
+      if (companyFilter !== 'all') {
+        const company = e.company?.trim() || '';
+        if (companyFilter === UNASSIGNED ? company !== '' : company !== companyFilter) {
+          return false;
+        }
+      }
+
+      if (positionFilter !== 'all') {
+        const position = e.position?.trim() || '';
+        if (positionFilter === UNASSIGNED ? position !== '' : position !== positionFilter) {
+          return false;
+        }
+      }
+
+      if (violationFilter === 'with-violations' && !(e.violation_count > 0)) {
+        return false;
+      }
+
+      if (violationFilter === 'open-cases' && !(e.open_violation_count > 0)) {
+        return false;
+      }
+
+      if (violationFilter === 'no-violations' && e.violation_count > 0) {
+        return false;
+      }
+
+      if (!q) return true;
+
       return (
         e.name.toLowerCase().includes(q) ||
         e.email.toLowerCase().includes(q) ||
@@ -33,7 +98,7 @@ export function EmployeeList({
         (e.position ?? '').toLowerCase().includes(q)
       );
     });
-  }, [employees, query]);
+  }, [companyFilter, employees, positionFilter, query, violationFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -47,12 +112,17 @@ export function EmployeeList({
     <Card>
       <CardHeader
         title="Employees"
-        subtitle={`${employees.length} total`}
+        subtitle={
+          hasActiveFilters ? `${filtered.length} of ${employees.length} shown` : `${employees.length} total`
+        }
         right={
           <div className="w-full sm:w-44">
             <Input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPage(1);
+              }}
               placeholder="Search name, email, company..."
               aria-label="Search employees"
             />
@@ -68,6 +138,60 @@ export function EmployeeList({
           </div>
         ) : (
           <div className="space-y-2">
+            <div className="grid grid-cols-1 gap-2 pb-1 min-[400px]:grid-cols-2 xl:grid-cols-3">
+              <Select
+                value={companyFilter}
+                onChange={(event) => {
+                  setCompanyFilter(event.target.value);
+                  setPage(1);
+                }}
+                aria-label="Filter by company"
+              >
+                <option value="all">All companies</option>
+                {companies.map((company) => (
+                  <option key={company} value={company}>
+                    {company}
+                  </option>
+                ))}
+                <option value={UNASSIGNED}>Unassigned company</option>
+              </Select>
+              <Select
+                value={positionFilter}
+                onChange={(event) => {
+                  setPositionFilter(event.target.value);
+                  setPage(1);
+                }}
+                aria-label="Filter by position"
+              >
+                <option value="all">All positions</option>
+                {positions.map((position) => (
+                  <option key={position} value={position}>
+                    {position}
+                  </option>
+                ))}
+                <option value={UNASSIGNED}>No position set</option>
+              </Select>
+              <Select
+                value={violationFilter}
+                onChange={(event) => {
+                  setViolationFilter(event.target.value as ViolationFilter);
+                  setPage(1);
+                }}
+                aria-label="Filter by violations"
+              >
+                <option value="all">All violations</option>
+                <option value="with-violations">With violations</option>
+                <option value="open-cases">With open cases</option>
+                <option value="no-violations">No violations</option>
+              </Select>
+            </div>
+            {hasActiveFilters ? (
+              <div className="flex justify-end pb-1">
+                <Button variant="ghost" size="sm" onClick={resetFilters}>
+                  Reset Filters
+                </Button>
+              </div>
+            ) : null}
             {pagedEmployees.map((employee) => {
               const isSelected = selectedEmployeeId === employee.id;
               return (
@@ -93,8 +217,21 @@ export function EmployeeList({
                         {employee.company || 'Unassigned company'}
                       </div>
                     </div>
-                    <div className="self-start rounded-full bg-slate-800/90 px-2.5 py-1 text-[10px] font-medium text-sky-300 ring-1 ring-inset ring-slate-700 sm:text-[11px]">
-                      {employee.position || 'No position'}
+                    <div className="flex flex-wrap gap-1.5 sm:flex-col sm:items-end">
+                      <div className="self-start rounded-full bg-slate-800/90 px-2.5 py-1 text-[10px] font-medium text-sky-300 ring-1 ring-inset ring-slate-700 sm:self-auto sm:text-[11px]">
+                        {employee.position || 'No position'}
+                      </div>
+                      {employee.open_violation_count > 0 ? (
+                        <div className="self-start rounded-full bg-rose-500/12 px-2.5 py-1 text-[10px] font-semibold text-rose-300 ring-1 ring-inset ring-rose-400/20 sm:self-auto sm:text-[11px]">
+                          {employee.open_violation_count} open case
+                          {employee.open_violation_count === 1 ? '' : 's'}
+                        </div>
+                      ) : employee.violation_count > 0 ? (
+                        <div className="self-start rounded-full bg-slate-800/90 px-2.5 py-1 text-[10px] font-medium text-slate-300 ring-1 ring-inset ring-slate-700 sm:self-auto sm:text-[11px]">
+                          {employee.violation_count} violation
+                          {employee.violation_count === 1 ? '' : 's'}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </button>
@@ -102,7 +239,7 @@ export function EmployeeList({
             })}
             {filtered.length === 0 ? (
               <div className="rounded-xl bg-slate-900/80 px-3 py-4 text-sm text-slate-400 ring-1 ring-inset ring-slate-800">
-                No employees match your search.
+                No employees match the current filters.
               </div>
             ) : null}
             {filtered.length > 0 ? (

@@ -20,7 +20,9 @@ import {
 
 const LEAVE_COOLDOWN_MS = 13 * 7 * 24 * 60 * 60 * 1000;
 
-const OVERDUE_LEAVE_REJECTION_NOTE = 'Passed the Leave date';
+const LEAVE_REVIEW_WINDOW_HOURS = 72;
+
+const OVERDUE_LEAVE_REJECTION_NOTE = `Not reviewed within ${LEAVE_REVIEW_WINDOW_HOURS} hours`;
 
 type LeaveRequestRow = Omit<LeaveRequest, 'attachments'>;
 
@@ -156,14 +158,7 @@ async function addLeaveRequestAttachments<T extends { id: number }>(rows: T[]) {
   }));
 }
 
-function getTodayDateOnly() {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${now.getFullYear()}-${month}-${day}`;
-}
-
-// Requests still pending once their start date arrives are rejected automatically.
+// Requests left pending for the full review window are rejected automatically.
 async function rejectOverdueLeaveRequests() {
   const pool = getPool();
   await ensureLeaveSystemSchema(pool);
@@ -175,9 +170,9 @@ async function rejectOverdueLeaveRequests() {
         admin_notes = $2,
         reviewed_at = CURRENT_TIMESTAMP
       WHERE status = 'pending'
-        AND start_date <= $1::date
+        AND created_at <= CURRENT_TIMESTAMP - make_interval(hours => $1)
     `,
-    [getTodayDateOnly(), OVERDUE_LEAVE_REJECTION_NOTE]
+    [LEAVE_REVIEW_WINDOW_HOURS, OVERDUE_LEAVE_REJECTION_NOTE]
   );
 }
 

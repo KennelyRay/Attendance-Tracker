@@ -15,6 +15,7 @@ import type {
   LeaveRequest,
   ReviewLeaveRequestInput,
 } from '@/modules/leave/types';
+import type { AuditLogFilters, AuditLogPage } from '@/modules/audit/types';
 
 export async function fetchEmployees(): Promise<Employee[]> {
   const response = await fetch('/api/admin/users', { cache: 'no-store' });
@@ -175,4 +176,33 @@ export async function resolveViolationAppeal(
     throw new Error(data?.error || 'Failed to resolve appeal');
   }
   return data.violation as AdminViolationRecord;
+}
+
+export async function fetchAuditLog(filters: AuditLogFilters = {}): Promise<AuditLogPage> {
+  const params = new URLSearchParams();
+
+  if (filters.category && filters.category !== 'all') {
+    params.set('category', filters.category);
+  }
+  if (filters.search?.trim()) {
+    params.set('search', filters.search.trim());
+  }
+  if (filters.page) {
+    params.set('page', String(filters.page));
+  }
+  if (filters.pageSize) {
+    params.set('pageSize', String(filters.pageSize));
+  }
+
+  const query = params.toString();
+  const response = await fetch(`/api/admin/audit-log${query ? `?${query}` : ''}`, {
+    cache: 'no-store',
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data?.error || 'Failed to load the audit trail');
+  }
+
+  return data as AuditLogPage;
 }

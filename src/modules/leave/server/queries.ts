@@ -1,4 +1,5 @@
 import { getPool } from '@/lib/db';
+import { recordAuditEvent } from '@/lib/audit-log';
 import { ensureLeaveSystemSchema } from '@/lib/leave-system';
 import { getLeavePolicy } from '@/modules/leave/policy';
 import type {
@@ -162,7 +163,7 @@ async function addLeaveRequestAttachments<T extends { id: number }>(rows: T[]) {
 async function rejectOverdueLeaveRequests() {
   const pool = getPool();
   await ensureLeaveSystemSchema(pool);
-  await pool.query(
+  const overdueResult = await pool.query(
     `
       UPDATE leave_requests
       SET
@@ -171,9 +172,30 @@ async function rejectOverdueLeaveRequests() {
         reviewed_at = CURRENT_TIMESTAMP
       WHERE status = 'pending'
         AND created_at <= CURRENT_TIMESTAMP - make_interval(hours => $1)
+      RETURNING id, user_id, leave_type, start_date, end_date, total_days
     `,
     [LEAVE_REVIEW_WINDOW_HOURS, OVERDUE_LEAVE_REJECTION_NOTE]
   );
+
+  // No acting admin here - these are closed by the review-window rule, not a person.
+  for (const row of overdueResult.rows) {
+    await recordAuditEvent({
+      actorId: null,
+      actorName: 'System',
+      category: 'leave',
+      action: 'leave.auto-rejected',
+      targetUserId: row.user_id,
+      entityId: row.id,
+      summary: `Auto-rejected a ${getLeavePolicy(row.leave_type).label} request left unreviewed for ${LEAVE_REVIEW_WINDOW_HOURS} hours`,
+      details: {
+        leaveType: row.leave_type,
+        startDate: normalizeDateOnly(row.start_date),
+        endDate: normalizeDateOnly(row.end_date),
+        totalDays: row.total_days,
+        reviewWindowHours: LEAVE_REVIEW_WINDOW_HOURS,
+      },
+    });
+  }
 }
 
 async function releaseExpiredPaidLeaveDeductions(userId?: number) {
@@ -631,6 +653,25 @@ export async function reviewLeaveRequest(adminId: number, input: ReviewLeaveRequ
       adminId
     );
   }
+
+  const policyLabel = getLeavePolicy(request.leave_type).label;
+
+  await recordAuditEvent({
+    actorId: adminId,
+    category: 'leave',
+    action: nextStatus === 'approved' ? 'leave.approved' : 'leave.rejected',
+    targetUserId: request.user_id,
+    entityId: requestId,
+    summary: `${nextStatus === 'approved' ? 'Approved' : 'Rejected'} a ${request.total_days}-day ${policyLabel} request`,
+    details: {
+      leaveType: request.leave_type,
+      startDate: normalizeDateOnly(request.start_date),
+      endDate: normalizeDateOnly(request.end_date),
+      totalDays: request.total_days,
+      deductFromPaidBalance: request.deduct_from_paid_balance,
+      adminNotes: input.adminNotes?.trim() || null,
+    },
+  });
 
   return updatedRequest;
 }

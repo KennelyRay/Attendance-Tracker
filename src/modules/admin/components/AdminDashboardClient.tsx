@@ -28,7 +28,7 @@ import {
 } from '@/modules/admin/components/AdminSidebar';
 import { AdminOverviewPanel } from '@/modules/admin/components/AdminOverviewPanel';
 import { AdminInsightsPanel } from '@/modules/admin/components/AdminInsightsPanel';
-import { AdminPlaceholderPanel } from '@/modules/admin/components/AdminPlaceholderPanel';
+import { AuditTrailPanel } from '@/modules/admin/components/AuditTrailPanel';
 import { LeaveRequestsPanel } from '@/modules/admin/components/LeaveRequestsPanel';
 import { NewViolationPanel } from '@/modules/admin/components/NewViolationPanel';
 import { ViolationCasesPanel } from '@/modules/admin/components/ViolationCasesPanel';
@@ -784,16 +784,7 @@ export function AdminDashboardClient({
               onResolveAppeal={onResolveViolationAppeal}
             />
           ) : (
-            <AdminPlaceholderPanel
-              title="Audit Trail"
-              subtitle="Track important admin-side system activity over time."
-              description="This section is reserved for a future audit trail feed that will record major actions such as attendance edits, leave decisions, account updates, and security-related changes."
-              highlights={[
-                'Log account edits, restrictions, bans, and restores.',
-                'Record attendance updates and leave review decisions.',
-                'Support timestamped activity history for transparency.',
-              ]}
-            />
+            <AuditTrailPanel />
           )}
         </div>
       </div>

@@ -102,6 +102,36 @@ CREATE TABLE IF NOT EXISTS employee_violations (
   )
 );
 
+CREATE TABLE IF NOT EXISTS audit_log (
+  id SERIAL PRIMARY KEY,
+  actor_id INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
+  actor_name VARCHAR(255) NOT NULL,
+  actor_email VARCHAR(255) NULL,
+  category VARCHAR(32) NOT NULL,
+  action VARCHAR(64) NOT NULL,
+  target_user_id INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
+  target_user_name VARCHAR(255) NULL,
+  entity_id INTEGER NULL,
+  summary TEXT NOT NULL,
+  details JSONB NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT audit_log_category CHECK (
+    category IN ('account', 'attendance', 'leave', 'violation')
+  )
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_log_created
+  ON audit_log(created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_audit_log_category_created
+  ON audit_log(category, created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_audit_log_target_created
+  ON audit_log(target_user_id, created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_audit_log_actor_created
+  ON audit_log(actor_id, created_at DESC, id DESC);
+
 CREATE OR REPLACE VIEW attendance_records AS
   SELECT id, user_id, date, 'present'::text AS status, notes, created_by, created_at
   FROM attendance_present

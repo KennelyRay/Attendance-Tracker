@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
 import { getSessionData } from '@/lib/session';
 import { ensureUserAccessColumns } from '@/lib/user-access';
+import { recordAuditEvent } from '@/lib/audit-log';
 import { normalizeDateOnly } from '@/modules/leave/utils';
 
 function parseStartDate(value: unknown) {
@@ -35,10 +36,10 @@ async function requireAdmin() {
   const session = await getSessionData();
 
   if (!session.user || !session.user.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) } as const;
   }
 
-  return null;
+  return { actor: session.user } as const;
 }
 
 async function listEmployeeUsers() {
@@ -60,8 +61,8 @@ async function listEmployeeUsers() {
 
 export async function GET(request: NextRequest) {
   try {
-    const unauthorized = await requireAdmin();
-    if (unauthorized) return unauthorized;
+    const auth = await requireAdmin();
+    if ('error' in auth) return auth.error;
 
     const users = await listEmployeeUsers();
     return NextResponse.json({ users });
@@ -78,8 +79,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const unauthorized = await requireAdmin();
-    if (unauthorized) return unauthorized;
+    const auth = await requireAdmin();
+    if ('error' in auth) return auth.error;
 
     const { name, email, password, company, position, startDate } = await request.json();
     const cleanName = typeof name === 'string' ? name.trim() : '';
@@ -116,11 +117,31 @@ export async function POST(request: NextRequest) {
       [cleanName, cleanEmail, hashedPassword, cleanCompany, cleanPosition, cleanStartDate]
     );
 
+    const createdUser = result.rows[0];
+
+    await recordAuditEvent({
+      actorId: auth.actor.id,
+      actorName: auth.actor.name,
+      actorEmail: auth.actor.email,
+      category: 'account',
+      action: 'account.created',
+      targetUserId: createdUser.id,
+      targetUserName: createdUser.name,
+      entityId: createdUser.id,
+      summary: `Created employee account for ${createdUser.name}`,
+      details: {
+        email: createdUser.email,
+        company: cleanCompany,
+        position: cleanPosition,
+        startDate: cleanStartDate,
+      },
+    });
+
     return NextResponse.json(
       {
         user: {
-          ...result.rows[0],
-          start_date: normalizeDateOnly(result.rows[0]?.start_date),
+          ...createdUser,
+          start_date: normalizeDateOnly(createdUser.start_date),
         },
       },
       { status: 201 }
@@ -142,8 +163,8 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const unauthorized = await requireAdmin();
-    if (unauthorized) return unauthorized;
+    const auth = await requireAdmin();
+    if ('error' in auth) return auth.error;
 
     const { userId, name, email, company, position, startDate, password } = await request.json();
     const employeeId = Number(userId);
@@ -194,10 +215,33 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Employee account not found' }, { status: 404 });
     }
 
+    const updatedUser = result.rows[0];
+
+    await recordAuditEvent({
+      actorId: auth.actor.id,
+      actorName: auth.actor.name,
+      actorEmail: auth.actor.email,
+      category: 'account',
+      action: 'account.updated',
+      targetUserId: updatedUser.id,
+      targetUserName: updatedUser.name,
+      entityId: updatedUser.id,
+      summary: hashedPassword
+        ? `Updated ${updatedUser.name} and reset their password`
+        : `Updated profile details for ${updatedUser.name}`,
+      details: {
+        email: updatedUser.email,
+        company: cleanCompany,
+        position: cleanPosition,
+        startDate: cleanStartDate,
+        passwordReset: Boolean(hashedPassword),
+      },
+    });
+
     return NextResponse.json({
       user: {
-        ...result.rows[0],
-        start_date: normalizeDateOnly(result.rows[0]?.start_date),
+        ...updatedUser,
+        start_date: normalizeDateOnly(updatedUser.start_date),
       },
     });
   } catch (error) {
@@ -217,8 +261,8 @@ export async function PUT(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const unauthorized = await requireAdmin();
-    if (unauthorized) return unauthorized;
+    const auth = await requireAdmin();
+    if ('error' in auth) return auth.error;
 
     const { userId, action, durationHours } = await request.json();
     const employeeId = Number(userId);
@@ -276,10 +320,45 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Employee account not found' }, { status: 404 });
     }
 
+    const affectedUser = result.rows[0];
+    const accessAudit = {
+      ban: {
+        action: 'account.banned',
+        summary: `Banned ${affectedUser.name} from signing in`,
+      },
+      restrict: {
+        action: 'account.restricted',
+        summary: `Restricted ${affectedUser.name} for ${Number(durationHours)} hour(s)`,
+      },
+      restore: {
+        action: 'account.restored',
+        summary: `Restored sign-in access for ${affectedUser.name}`,
+      },
+    } as const;
+
+    const auditEntry = accessAudit[action as keyof typeof accessAudit];
+
+    await recordAuditEvent({
+      actorId: auth.actor.id,
+      actorName: auth.actor.name,
+      actorEmail: auth.actor.email,
+      category: 'account',
+      action: auditEntry.action,
+      targetUserId: affectedUser.id,
+      targetUserName: affectedUser.name,
+      entityId: affectedUser.id,
+      summary: auditEntry.summary,
+      details: {
+        restrictedUntil: affectedUser.restricted_until,
+        isBanned: affectedUser.is_banned,
+        ...(action === 'restrict' ? { durationHours: Number(durationHours) } : {}),
+      },
+    });
+
     return NextResponse.json({
       user: {
-        ...result.rows[0],
-        start_date: normalizeDateOnly(result.rows[0]?.start_date),
+        ...affectedUser,
+        start_date: normalizeDateOnly(affectedUser.start_date),
       },
     });
   } catch {
@@ -295,8 +374,8 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const unauthorized = await requireAdmin();
-    if (unauthorized) return unauthorized;
+    const auth = await requireAdmin();
+    if ('error' in auth) return auth.error;
 
     const { userId } = await request.json();
     const employeeId = Number(userId);
@@ -308,13 +387,29 @@ export async function DELETE(request: NextRequest) {
     const pool = getPool();
     await ensureUserAccessColumns(pool);
     const result = await pool.query(
-      'DELETE FROM users WHERE id = $1 AND is_admin = false RETURNING id',
+      'DELETE FROM users WHERE id = $1 AND is_admin = false RETURNING id, name, email',
       [employeeId]
     );
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Employee account not found' }, { status: 404 });
     }
+
+    const deletedUser = result.rows[0];
+
+    // The user row is gone, so the audit entry keeps its own copy of the name and email.
+    await recordAuditEvent({
+      actorId: auth.actor.id,
+      actorName: auth.actor.name,
+      actorEmail: auth.actor.email,
+      category: 'account',
+      action: 'account.deleted',
+      targetUserId: null,
+      targetUserName: deletedUser.name,
+      entityId: deletedUser.id,
+      summary: `Deleted employee account for ${deletedUser.name}`,
+      details: { email: deletedUser.email },
+    });
 
     return NextResponse.json({ ok: true });
   } catch {

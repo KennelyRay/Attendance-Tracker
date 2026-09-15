@@ -1,4 +1,5 @@
 import { getPool } from '@/lib/db';
+import { recordAuditEvent } from '@/lib/audit-log';
 import { ensureUserAccessColumns } from '@/lib/user-access';
 import { ensureViolationSystemSchema } from '@/lib/violation-system';
 import type {
@@ -219,10 +220,29 @@ export async function createViolationCase(
     [violationId]
   );
 
-  return {
+  const createdViolation = {
     ...createdViolationList.rows[0],
     incident_date: normalizeDateOnly(createdViolationList.rows[0]?.incident_date),
   } as AdminViolationRecord;
+
+  await recordAuditEvent({
+    actorId: adminId,
+    category: 'violation',
+    action: 'violation.created',
+    targetUserId: createdViolation.user_id,
+    targetUserName: createdViolation.user_name,
+    entityId: createdViolation.id,
+    summary: `Filed a ${createdViolation.severity}-severity ${createdViolation.violation_type} case against ${createdViolation.user_name}`,
+    details: {
+      violationType: createdViolation.violation_type,
+      severity: createdViolation.severity,
+      caseStatus: createdViolation.case_status,
+      incidentDate: createdViolation.incident_date,
+      actionTaken: createdViolation.action_taken,
+    },
+  });
+
+  return createdViolation;
 }
 
 export async function updateViolationCase(
@@ -324,10 +344,29 @@ export async function updateViolationCase(
     [violationId, adminId]
   );
 
-  return {
+  const updatedViolation = {
     ...result.rows[0],
     incident_date: normalizeDateOnly(result.rows[0]?.incident_date),
   } as AdminViolationRecord;
+
+  await recordAuditEvent({
+    actorId: adminId,
+    category: 'violation',
+    action: 'violation.updated',
+    targetUserId: updatedViolation.user_id,
+    targetUserName: updatedViolation.user_name,
+    entityId: updatedViolation.id,
+    summary: `Updated the ${updatedViolation.violation_type} case for ${updatedViolation.user_name} to ${updatedViolation.case_status}`,
+    details: {
+      violationType: updatedViolation.violation_type,
+      severity: updatedViolation.severity,
+      caseStatus: updatedViolation.case_status,
+      incidentDate: updatedViolation.incident_date,
+      actionTaken: updatedViolation.action_taken,
+    },
+  });
+
+  return updatedViolation;
 }
 
 export async function listViolationsForUser(
@@ -535,8 +574,26 @@ export async function resolveViolationAppeal(
     [violationId]
   );
 
-  return {
+  const resolvedViolation = {
     ...result.rows[0],
     incident_date: normalizeDateOnly(result.rows[0]?.incident_date),
   } as AdminViolationRecord;
+
+  await recordAuditEvent({
+    actorId: adminId,
+    category: 'violation',
+    action: 'violation.appeal-resolved',
+    targetUserId: resolvedViolation.user_id,
+    targetUserName: resolvedViolation.user_name,
+    entityId: resolvedViolation.id,
+    summary: `Resolved ${resolvedViolation.user_name}'s appeal on the ${resolvedViolation.violation_type} case`,
+    details: {
+      violationType: resolvedViolation.violation_type,
+      severity: resolvedViolation.severity,
+      caseStatus: resolvedViolation.case_status,
+      verdict: cleanVerdict,
+    },
+  });
+
+  return resolvedViolation;
 }

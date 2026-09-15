@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
 import { getSessionData } from '@/lib/session';
+import { recordAuditEvent } from '@/lib/audit-log';
 
 export async function GET(request: NextRequest) {
   try {
@@ -87,7 +88,19 @@ export async function POST(request: NextRequest) {
       notes ?? null,
       session.user.id,
     ]);
-    
+
+    await recordAuditEvent({
+      actorId: session.user.id,
+      actorName: session.user.name,
+      actorEmail: session.user.email,
+      category: 'attendance',
+      action: 'attendance.recorded',
+      targetUserId: Number(userId),
+      entityId: null,
+      summary: `Marked ${date} as ${status}`,
+      details: { date, status, notes: notes ?? null },
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Set attendance error:', error);

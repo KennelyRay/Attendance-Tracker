@@ -125,22 +125,28 @@ export function LeaveRequestsPanel({
   }, [requests, searchTerm, statusFilter]);
 
   // One instant for the whole list, so every countdown is measured against the same
-  // clock, refreshed each minute so the remaining time stays honest while the page sits open.
-  const [reviewClock, setReviewClock] = useState(() => new Date());
+  // clock, refreshed each minute so the remaining time stays honest while the page sits
+  // open. Null until after mount: the server cannot know the viewer's clock or timezone,
+  // and rendering a countdown from server time makes the two markups disagree.
+  const [reviewClock, setReviewClock] = useState<Date | null>(null);
 
   useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setReviewClock(new Date());
-    }, 60_000);
+    // Deferred rather than set synchronously, so the first value lands after
+    // hydration instead of during it.
+    const startId = window.setTimeout(() => setReviewClock(new Date()), 0);
+    const intervalId = window.setInterval(() => setReviewClock(new Date()), 60_000);
 
     return () => {
+      window.clearTimeout(startId);
       window.clearInterval(intervalId);
     };
   }, []);
 
   const urgentPending = useMemo(
     () =>
-      grouped.pending
+      !reviewClock
+        ? []
+        : grouped.pending
         .map((request) => ({ request, deadline: getReviewDeadline(request.created_at, reviewClock) }))
         .filter((entry) => isUrgentReview(entry.deadline.urgency))
         .sort((left, right) => left.deadline.hoursRemaining - right.deadline.hoursRemaining),
@@ -403,7 +409,7 @@ export function LeaveRequestsPanel({
               {paginatedRequests.map((request) => {
                 const policy = getLeavePolicy(request.leave_type);
                 const reviewDeadline =
-                  request.status === 'pending'
+                  request.status === 'pending' && reviewClock
                     ? getReviewDeadline(request.created_at, reviewClock)
                     : null;
                 const isBusy = busyRequestId === request.id;

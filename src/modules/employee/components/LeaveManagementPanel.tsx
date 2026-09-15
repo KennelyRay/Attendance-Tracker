@@ -73,6 +73,9 @@ export function LeaveManagementPanel({
   const [requestStatusFilter, setRequestStatusFilter] = useState<'all' | LeaveRequestStatus>('all');
   const [now, setNow] = useState(() => Date.now());
   const [holidayDates, setHolidayDates] = useState<ReadonlySet<string>>(() => new Set<string>());
+  // Null during SSR and the first client render. Time-relative UI depends on the
+  // viewer's clock, locale and timezone, none of which the server can know.
+  const [reviewClock, setReviewClock] = useState<Date | null>(null);
 
   const rangePreview = useMemo(() => {
     if (!startDate || !endDate || startDate > endDate) {
@@ -126,6 +129,18 @@ export function LeaveManagementPanel({
     const startIndex = (safeRequestPage - 1) * LEAVE_REQUESTS_PER_PAGE;
     return filteredRequests.slice(startIndex, startIndex + LEAVE_REQUESTS_PER_PAGE);
   }, [filteredRequests, safeRequestPage]);
+
+  useEffect(() => {
+    // Deferred rather than set synchronously, so the first value lands after
+    // hydration instead of during it.
+    const startId = window.setTimeout(() => setReviewClock(new Date()), 0);
+    const clockId = window.setInterval(() => setReviewClock(new Date()), 60_000);
+
+    return () => {
+      window.clearTimeout(startId);
+      window.clearInterval(clockId);
+    };
+  }, []);
 
   useEffect(() => {
     let isStale = false;
@@ -686,7 +701,9 @@ export function LeaveManagementPanel({
               {paginatedRequests.map((request) => {
                 const policy = getLeavePolicy(request.leave_type);
                 const reviewDeadline =
-                  request.status === 'pending' ? getReviewDeadline(request.created_at) : null;
+                  request.status === 'pending' && reviewClock
+                    ? getReviewDeadline(request.created_at, reviewClock)
+                    : null;
 
                 return (
                   <button

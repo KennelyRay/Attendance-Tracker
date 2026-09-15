@@ -708,25 +708,6 @@ export function EmployeeDashboardClient({
               ) : null}
             </div>
 
-            <div className="flex flex-col gap-3 border-b border-slate-800/80 pb-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3">
-                <div className="space-y-1">
-                  <div className="text-sm font-semibold text-slate-100">
-                    {employeeViewLabel(activeView)}
-                  </div>
-                  <div className="text-sm text-slate-400">
-                    {activeView === 'dashboard'
-                      ? 'Track attendance trends and the most useful signals for your account.'
-                      : activeView === 'leave'
-                        ? 'Apply for leave and review your request history in one place.'
-                        : activeView === 'violations'
-                          ? 'Review your recorded violation cases and their latest status.'
-                          : 'Browse your attendance history for the selected month and year.'}
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <div key={activeView} className="app-surface-enter">
               {renderActiveView()}
             </div>

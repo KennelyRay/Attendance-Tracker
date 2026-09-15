@@ -6,20 +6,21 @@
  * The rules are therefore:
  *
  *   - /api/ is never cached or intercepted. Ever.
- *   - Page navigations go to the network first, and fall back to an offline notice
- *     only when the network actually fails.
- *   - Only the app icons and the offline page are precached.
+ *   - Navigations are NOT intercepted. `/` redirects by role, and a navigation
+ *     answered from a service worker with a redirected response fails outright -
+ *     Chrome reports "The page couldn't load". Letting the browser handle its own
+ *     navigations removes that whole class of failure; an offline shell is not worth
+ *     standing between an employee and the app.
+ *   - Only the app icons are precached.
  *   - Anything else (Next.js assets, RSC payloads, documents) is left alone so the
  *     browser handles it exactly as it would without a service worker.
  *
  * Bump CACHE_VERSION to retire old caches on deploy.
  */
 
-const CACHE_VERSION = 'hris-v2';
-const OFFLINE_URL = '/offline.html';
+const CACHE_VERSION = 'hris-v3';
 
 const PRECACHE_URLS = [
-  OFFLINE_URL,
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/icon-maskable-192.png',
@@ -73,22 +74,8 @@ self.addEventListener('fetch', (event) => {
   // reaching the server untouched.
   if (url.pathname.startsWith('/api/')) return;
 
-  // Real page loads: network first, offline notice only on genuine failure.
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request).catch(async () => {
-        const cached = await caches.match(OFFLINE_URL);
-        return (
-          cached ??
-          new Response('You are offline.', {
-            status: 503,
-            headers: { 'Content-Type': 'text/plain' },
-          })
-        );
-      })
-    );
-    return;
-  }
+  // Navigations are handled by the browser. See the note at the top of this file.
+  if (request.mode === 'navigate') return;
 
   // Icons are immutable for the life of a cache version.
   if (url.pathname.startsWith('/icons/')) {

@@ -29,10 +29,11 @@ function parseTimestamp(value: string) {
 /**
  * How long is left before a pending request is auto-rejected.
  *
- * `now` is injectable so this stays testable and so a list of requests can be
- * measured against a single instant rather than a drifting clock.
+ * `now` is required rather than defaulted. A default of `new Date()` would run during
+ * render, which both breaks React's purity rule and makes server and client markup
+ * disagree - the caller must supply a clock it controls, set after mount.
  */
-export function getReviewDeadline(createdAt: string, now: Date = new Date()): ReviewDeadline {
+export function getReviewDeadline(createdAt: string, now: Date): ReviewDeadline {
   const filedAt = parseTimestamp(createdAt);
   const deadline = new Date(filedAt.getTime() + LEAVE_REVIEW_WINDOW_HOURS * 60 * 60 * 1000);
   const millisecondsLeft = deadline.getTime() - now.getTime();

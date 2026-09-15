@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
   createViolationCase,
@@ -20,12 +20,7 @@ import {
   upsertAttendance,
 } from '@/modules/admin/api';
 import { AccountManagementPanel } from '@/modules/admin/components/AccountManagementPanel';
-import {
-  AdminSidebar,
-  adminViewLabel,
-  adminNavigationGroups,
-  type AdminView,
-} from '@/modules/admin/components/AdminSidebar';
+import { AdminSidebar, type AdminView } from '@/modules/admin/components/AdminSidebar';
 import { AdminOverviewPanel } from '@/modules/admin/components/AdminOverviewPanel';
 import { AdminInsightsPanel } from '@/modules/admin/components/AdminInsightsPanel';
 import { AuditTrailPanel } from '@/modules/admin/components/AuditTrailPanel';
@@ -66,19 +61,6 @@ const violationAwareViews: AdminView[] = [
   'new-violation',
   'all-violation-cases',
 ];
-
-const viewDescriptions: Record<AdminView, string> = {
-  dashboard: 'Main statistics and workforce charts',
-  employees: 'Attendance updates and employee detail management',
-  'leave-requests': 'Review pending leave requests and completed decisions',
-  'holiday-calendar': 'Days excluded from leave counting',
-  'new-violation': 'Create a new employee violation case workspace',
-  'all-violation-cases': 'Review all existing violation cases and statuses',
-  'reports-charts': 'Deeper reports and management charts',
-  'smart-insights': 'Auto-generated operational guidance from current data',
-  'audit-trail': 'System activity timeline and administrative logs',
-  'employee-accounts': 'Account lifecycle, access controls, and edits',
-};
 
 function AdminMobilePrimaryIcon({
   item,
@@ -683,36 +665,32 @@ export function AdminDashboardClient({
         </div>
 
         <div className="space-y-6 xl:px-8">
-          <CardHeader
-            title={adminViewLabel(activeView)}
-            subtitle={viewDescriptions[activeView]}
-            right={
-              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                {activeView === 'smart-insights' ? (
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      void Promise.allSettled([loadLeaveRequests(), loadViolationCases()]);
-                    }}
-                  >
-                    Refresh Insights Data
-                  </Button>
-                ) : activeView === 'leave-requests' ? (
-                  <Button variant="secondary" onClick={() => void loadLeaveRequests()}>
-                    Refresh Leave Queue
-                  </Button>
-                ) : violationAwareViews.includes(activeView) ? (
-                  <Button variant="secondary" onClick={() => void loadViolationCases()}>
-                    Refresh Violations
-                  </Button>
-                ) : activeView === 'employees' ? (
-                  <Button variant="secondary" onClick={() => void reloadEmployees()}>
-                    Refresh Employees
-                  </Button>
-                ) : null}
-              </div>
-            }
-          />
+          {/* Per-view title and description removed - the sidebar and bottom bar
+              already show which view is open. Only the refresh action remains. */}
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
+            {activeView === 'smart-insights' ? (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  void Promise.allSettled([loadLeaveRequests(), loadViolationCases()]);
+                }}
+              >
+                Refresh Insights Data
+              </Button>
+            ) : activeView === 'leave-requests' ? (
+              <Button variant="secondary" onClick={() => void loadLeaveRequests()}>
+                Refresh Leave Queue
+              </Button>
+            ) : violationAwareViews.includes(activeView) ? (
+              <Button variant="secondary" onClick={() => void loadViolationCases()}>
+                Refresh Violations
+              </Button>
+            ) : activeView === 'employees' ? (
+              <Button variant="secondary" onClick={() => void reloadEmployees()}>
+                Refresh Employees
+              </Button>
+            ) : null}
+          </div>
 
           {activeView === 'dashboard' ? (
             <AdminOverviewPanel

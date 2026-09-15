@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { NotificationToggle } from '@/components/pwa/NotificationToggle';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Select } from '@/components/ui/Select';
@@ -282,6 +283,8 @@ export function LeaveRequestsPanel({
           </CardBody>
         </Card>
       </div>
+
+      <NotificationToggle />
 
       {urgentPending.length > 0 ? (
         <div className="rounded-2xl border border-rose-400/25 bg-rose-500/10 px-4 py-3.5 ring-1 ring-inset ring-rose-400/10">

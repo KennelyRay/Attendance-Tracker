@@ -18,9 +18,38 @@ if (!sessionSecret || sessionSecret.length < 32) {
   throw new Error('SESSION_SECRET must be set to a random string with at least 32 characters.');
 }
 
+/**
+ * How long a signed-in session stays valid, by role.
+ *
+ * Without these the cookie had no `maxAge`, making it a session cookie that died
+ * whenever the browser closed. On a phone - where the OS evicts backgrounded apps
+ * constantly - that meant signing in on almost every visit.
+ *
+ * Admins get a much shorter window than employees on purpose: an admin session can
+ * read every employee's records and ban accounts, while an employee session can only
+ * reach that employee's own data.
+ */
+export const SESSION_TTL_SECONDS = {
+  admin: 12 * 60 * 60, // 12 hours - roughly one working day
+  employee: 30 * 24 * 60 * 60, // 30 days
+} as const;
+
+export function sessionTtlSeconds(isAdmin: boolean) {
+  return isAdmin ? SESSION_TTL_SECONDS.admin : SESSION_TTL_SECONDS.employee;
+}
+
+/** Longest TTL we ever issue; used when unsealing, before the role is known. */
+export const MAX_SESSION_TTL_SECONDS = SESSION_TTL_SECONDS.employee;
+
+/** Matches iron-session's own rule: the cookie expires a minute before the seal does. */
+export function sessionCookieMaxAge(isAdmin: boolean) {
+  return sessionTtlSeconds(isAdmin) - 60;
+}
+
 export const sessionOptions: SessionOptions = {
   password: sessionSecret,
   cookieName: 'employee-attendance-session',
+  ttl: MAX_SESSION_TTL_SECONDS,
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
@@ -42,6 +71,7 @@ export async function getSessionData(): Promise<SessionData> {
   try {
     const data = (await unsealData(sealed, {
       password: sessionOptions.password,
+      ttl: MAX_SESSION_TTL_SECONDS,
     })) as unknown as {
       user?: {
         id: number;

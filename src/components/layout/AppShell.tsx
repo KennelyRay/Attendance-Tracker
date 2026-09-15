@@ -16,7 +16,7 @@ export function AppShell({
 }) {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.12),_transparent_18%),radial-gradient(circle_at_top_right,_rgba(59,130,246,0.12),_transparent_24%),linear-gradient(180deg,_#07111f_0%,_#081524_48%,_#091829_100%)] text-slate-100">
-      <InactivityGuard />
+      <InactivityGuard isAdmin={user.isAdmin} />
       <TopNav user={user} title={title} fullWidth={fullWidth} />
       <main
         className={

@@ -1,22 +1,49 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { setAuthFlash } from '@/modules/auth/flash';
 
-const WARNING_AFTER_MS = 10 * 60 * 1000;
-const LOGOUT_DELAY_MS = 10 * 1000;
+/**
+ * Idle limits before an automatic sign-out.
+ *
+ * An admin session can read every employee's records, so it stays tight. An employee
+ * session only reaches that employee's own data, and is usually on a personal phone,
+ * so a ten-minute limit there just punished people for switching apps.
+ */
+const IDLE_LIMIT_MS = {
+  admin: 30 * 60 * 1000, // 30 minutes
+  employee: 8 * 60 * 60 * 1000, // 8 hours - one working day
+} as const;
 
-export function InactivityGuard() {
+const WARNING_LEAD_MS = 60 * 1000;
+
+function idleLimitFor(isAdmin: boolean) {
+  return isAdmin ? IDLE_LIMIT_MS.admin : IDLE_LIMIT_MS.employee;
+}
+
+function formatIdleLimit(limitMs: number) {
+  const minutes = Math.round(limitMs / 60000);
+  if (minutes < 60) return `${minutes} minutes`;
+  const hours = Math.round(minutes / 60);
+  return `${hours} hour${hours === 1 ? '' : 's'}`;
+}
+
+export function InactivityGuard({ isAdmin = false }: { isAdmin?: boolean }) {
   const router = useRouter();
+  const idleLimit = useMemo(() => idleLimitFor(isAdmin), [isAdmin]);
+
   const warningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const logoutTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const expiresAtRef = useRef<number | null>(null);
   const isWarningOpenRef = useRef(false);
+  // Seeded by resetInactivityTimer() on mount - Date.now() must not run during render.
+  const lastActivityRef = useRef(0);
+
   const [isWarningOpen, setIsWarningOpen] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(LOGOUT_DELAY_MS / 1000);
+  const [secondsLeft, setSecondsLeft] = useState(WARNING_LEAD_MS / 1000);
 
   const clearTimers = useCallback(() => {
     if (warningTimeoutRef.current) {
@@ -50,8 +77,8 @@ export function InactivityGuard() {
     clearTimers();
     isWarningOpenRef.current = true;
     setIsWarningOpen(true);
-    setSecondsLeft(LOGOUT_DELAY_MS / 1000);
-    expiresAtRef.current = Date.now() + LOGOUT_DELAY_MS;
+    setSecondsLeft(WARNING_LEAD_MS / 1000);
+    expiresAtRef.current = Date.now() + WARNING_LEAD_MS;
 
     countdownIntervalRef.current = setInterval(() => {
       if (!expiresAtRef.current) return;
@@ -62,37 +89,22 @@ export function InactivityGuard() {
 
     logoutTimeoutRef.current = setTimeout(() => {
       void forceLogout();
-    }, LOGOUT_DELAY_MS);
+    }, WARNING_LEAD_MS);
   }, [clearTimers, forceLogout]);
 
-  const scheduleWarning = useCallback(() => {
-    if (warningTimeoutRef.current) {
-      clearTimeout(warningTimeoutRef.current);
-    }
+  const resetInactivityTimer = useCallback(() => {
+    clearTimers();
+    lastActivityRef.current = Date.now();
 
     warningTimeoutRef.current = setTimeout(() => {
       openWarning();
-    }, WARNING_AFTER_MS);
-  }, [openWarning]);
-
-  const resetInactivityTimer = useCallback(() => {
-    if (logoutTimeoutRef.current) {
-      clearTimeout(logoutTimeoutRef.current);
-      logoutTimeoutRef.current = null;
-    }
-
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-      countdownIntervalRef.current = null;
-    }
-
-    scheduleWarning();
-  }, [scheduleWarning]);
+    }, Math.max(0, idleLimit - WARNING_LEAD_MS));
+  }, [clearTimers, idleLimit, openWarning]);
 
   const acknowledgeWarning = useCallback(() => {
     isWarningOpenRef.current = false;
     setIsWarningOpen(false);
-    setSecondsLeft(LOGOUT_DELAY_MS / 1000);
+    setSecondsLeft(WARNING_LEAD_MS / 1000);
     expiresAtRef.current = null;
     resetInactivityTimer();
   }, [resetInactivityTimer]);
@@ -117,17 +129,43 @@ export function InactivityGuard() {
       resetInactivityTimer();
     };
 
+    /**
+     * Phones suspend timers for backgrounded apps, so a setTimeout alone either fires
+     * late or fires the moment the app is reopened. On returning to the page we
+     * measure the real elapsed time and decide from that instead.
+     */
+    const handleVisibility = () => {
+      if (document.visibilityState !== 'visible' || isWarningOpenRef.current) {
+        return;
+      }
+
+      const idleFor = Date.now() - lastActivityRef.current;
+
+      if (idleFor >= idleLimit) {
+        void forceLogout();
+        return;
+      }
+
+      clearTimers();
+      warningTimeoutRef.current = setTimeout(
+        () => openWarning(),
+        Math.max(0, idleLimit - WARNING_LEAD_MS - idleFor)
+      );
+    };
+
     for (const eventName of events) {
       window.addEventListener(eventName, handleActivity, { passive: true });
     }
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
       clearTimers();
       for (const eventName of events) {
         window.removeEventListener(eventName, handleActivity);
       }
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [clearTimers, resetInactivityTimer]);
+  }, [clearTimers, forceLogout, idleLimit, openWarning, resetInactivityTimer]);
 
   if (!isWarningOpen) {
     return null;
@@ -143,7 +181,7 @@ export function InactivityGuard() {
           You will be logged out soon
         </div>
         <div className="mt-3 text-sm leading-6 text-slate-400">
-          You have been inactive for 10 minutes. Please click{' '}
+          You have been inactive for {formatIdleLimit(idleLimit)}. Choose{' '}
           <span className="font-semibold text-sky-300">Stay Logged In</span> within{' '}
           <span className="font-semibold text-sky-300">{secondsLeft}</span> seconds to keep your
           session active.
@@ -152,7 +190,7 @@ export function InactivityGuard() {
           <div
             className="h-2 bg-gradient-to-r from-amber-400 via-sky-400 to-cyan-300 transition-[width] duration-300"
             style={{
-              width: `${(secondsLeft / (LOGOUT_DELAY_MS / 1000)) * 100}%`,
+              width: `${(secondsLeft / (WARNING_LEAD_MS / 1000)) * 100}%`,
             }}
           />
         </div>

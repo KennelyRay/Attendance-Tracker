@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import { getPool } from '@/lib/db';
-import { sessionOptions, sealData } from '@/lib/session';
+import {
+  sessionOptions,
+  sealData,
+  sessionTtlSeconds,
+  sessionCookieMaxAge,
+} from '@/lib/session';
 import { ensureUserAccessColumns } from '@/lib/user-access';
 import { cookies } from 'next/headers';
 
@@ -68,9 +73,19 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    const sealed = await sealData(sessionData, { password: sessionOptions.password });
+    // The seal carries its own expiry and the cookie is given a matching max-age, so
+    // the session survives the app being closed instead of dying with the browser.
+    const isAdmin = sessionData.user.isAdmin;
+    const sealed = await sealData(sessionData, {
+      password: sessionOptions.password,
+      ttl: sessionTtlSeconds(isAdmin),
+    });
+
     const cookieStore = await cookies();
-    cookieStore.set(sessionOptions.cookieName, sealed, sessionOptions.cookieOptions);
+    cookieStore.set(sessionOptions.cookieName, sealed, {
+      ...sessionOptions.cookieOptions,
+      maxAge: sessionCookieMaxAge(isAdmin),
+    });
 
     return NextResponse.json({ user: sessionData.user });
   } catch (error) {

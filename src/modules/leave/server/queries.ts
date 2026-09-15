@@ -1,5 +1,6 @@
 import { getPool } from '@/lib/db';
 import { recordAuditEvent } from '@/lib/audit-log';
+import { notifyAdmins, notifyUser } from '@/lib/push';
 import { getHolidayDateSet } from '@/modules/holidays/server/queries';
 import { ensureHolidaySchema } from '@/lib/holiday-system';
 import {
@@ -198,6 +199,15 @@ async function rejectOverdueLeaveRequests() {
         totalDays: row.total_days,
         reviewWindowHours: LEAVE_REVIEW_WINDOW_HOURS,
       },
+    });
+
+    await notifyUser(row.user_id, {
+      title: 'Leave request expired',
+      body:
+        `Your ${getLeavePolicy(row.leave_type).label} request was rejected automatically ` +
+        `after ${LEAVE_REVIEW_WINDOW_HOURS} hours without review.`,
+      url: '/employee/dashboard',
+      tag: `leave-${row.id}`,
     });
   }
 }
@@ -524,6 +534,21 @@ export async function createLeaveRequestForUser(
 
     await client.query('COMMIT');
 
+    // After COMMIT only: a rolled-back request must never page anyone. notifyAdmins
+    // swallows its own errors, so this cannot reach the ROLLBACK below.
+    const employeeName = (
+      await pool.query('SELECT name FROM users WHERE id = $1', [userId])
+    ).rows[0]?.name;
+
+    await notifyAdmins({
+      title: 'Leave request awaiting review',
+      body:
+        `${employeeName ?? 'An employee'} filed a ${totalDays}-day ${policy.label} request. ` +
+        `It is auto-rejected in ${LEAVE_REVIEW_WINDOW_HOURS} hours if not reviewed.`,
+      url: '/admin/dashboard',
+      tag: `leave-new-${createdRequest.id}`,
+    });
+
     return {
       ...createdRequest,
       attachments: createdAttachments,
@@ -667,6 +692,15 @@ export async function reviewLeaveRequest(adminId: number, input: ReviewLeaveRequ
   }
 
   const policyLabel = getLeavePolicy(request.leave_type).label;
+
+  await notifyUser(request.user_id, {
+    title: nextStatus === 'approved' ? 'Leave approved' : 'Leave rejected',
+    body:
+      `Your ${request.total_days}-day ${policyLabel} request ` +
+      `(${normalizeDateOnly(request.start_date)}) was ${nextStatus}.`,
+    url: '/employee/dashboard',
+    tag: `leave-${requestId}`,
+  });
 
   await recordAuditEvent({
     actorId: adminId,

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { NotificationToggle } from '@/components/pwa/NotificationToggle';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
@@ -340,6 +341,8 @@ export function LeaveManagementPanel({
 
   return (
     <div className="space-y-6">
+      <NotificationToggle />
+
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.75fr)]">
         <div className="order-2 xl:order-1">
           <Card>

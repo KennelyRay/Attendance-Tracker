@@ -1,3 +1,4 @@
+import { createECDH } from 'node:crypto';
 import webpush from 'web-push';
 import type { Pool } from '@neondatabase/serverless';
 import { getPool } from '@/lib/db';
@@ -5,16 +6,70 @@ import { getPool } from '@/lib/db';
 let ensured = false;
 let vapidConfigured = false;
 
+function toBase64Url(buffer: Buffer) {
+  return buffer.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/**
+ * Checks that the configured public key is the one that belongs to the configured
+ * private key, by deriving the public point from the private scalar.
+ *
+ * Mixing keys from two different pairs is an easy deployment slip and produces no
+ * error at subscribe time - the browser happily registers against whatever public key
+ * the page served. It only fails later, at send time, as a 400 from the push service.
+ * Catching it here turns a silent dead end into a startup-visible misconfiguration.
+ */
+export function vapidPairMatches() {
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+
+  if (!publicKey || !privateKey) return false;
+
+  try {
+    const ecdh = createECDH('prime256v1');
+    ecdh.setPrivateKey(Buffer.from(privateKey, 'base64url'));
+    return toBase64Url(ecdh.getPublicKey()) === publicKey;
+  } catch {
+    return false;
+  }
+}
+
 export function isPushConfigured() {
   return Boolean(
     process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY &&
       process.env.VAPID_PRIVATE_KEY &&
-      process.env.VAPID_SUBJECT
+      process.env.VAPID_SUBJECT &&
+      vapidPairMatches()
   );
 }
 
 function configureVapid() {
-  if (vapidConfigured || !isPushConfigured()) return vapidConfigured;
+  if (vapidConfigured) return true;
+
+  const hasAllVars = Boolean(
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY &&
+      process.env.VAPID_PRIVATE_KEY &&
+      process.env.VAPID_SUBJECT
+  );
+
+  if (!hasAllVars) {
+    console.error('Push disabled: VAPID environment variables are incomplete', {
+      code: 'PUSH_VAPID_MISSING',
+      hasPublicKey: Boolean(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY),
+      hasPrivateKey: Boolean(process.env.VAPID_PRIVATE_KEY),
+      hasSubject: Boolean(process.env.VAPID_SUBJECT),
+    });
+    return false;
+  }
+
+  if (!vapidPairMatches()) {
+    console.error(
+      'Push disabled: NEXT_PUBLIC_VAPID_PUBLIC_KEY does not belong to VAPID_PRIVATE_KEY. ' +
+        'Both must come from the same generated pair, in every environment.',
+      { code: 'PUSH_VAPID_PAIR_MISMATCH' }
+    );
+    return false;
+  }
 
   webpush.setVapidDetails(
     process.env.VAPID_SUBJECT as string,
@@ -127,13 +182,32 @@ async function sendToUserIds(userIds: number[], payload: PushPayload) {
           body
         );
       } catch (error) {
-        const statusCode = (error as { statusCode?: number }).statusCode;
+        const { statusCode, body: errorBody } = error as { statusCode?: number; body?: string };
+
         // 404/410 mean the browser threw the subscription away - stop writing to it.
         if (statusCode === 404 || statusCode === 410) {
           staleIds.push(row.id);
           return;
         }
-        console.error('Push delivery failed', { code: 'PUSH_SEND_FAILED', statusCode });
+
+        // The subscription was created against a different VAPID key, so it can never
+        // be delivered to again. Dropping it lets the device re-subscribe cleanly with
+        // the current key instead of failing forever.
+        if (statusCode === 400 && /VapidPkHashMismatch/i.test(errorBody ?? '')) {
+          console.error(
+            'Push subscription was created with a different VAPID key and has been removed. ' +
+              'The device must enable notifications again.',
+            { code: 'PUSH_VAPID_KEY_ROTATED', subscriptionId: row.id }
+          );
+          staleIds.push(row.id);
+          return;
+        }
+
+        console.error('Push delivery failed', {
+          code: 'PUSH_SEND_FAILED',
+          statusCode,
+          body: errorBody,
+        });
       }
     })
   );

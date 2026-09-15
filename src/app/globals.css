@@ -75,6 +75,78 @@ body {
   padding-top: env(safe-area-inset-top);
 }
 
+/* Modal that is a bottom sheet on a phone and a centred dialog on wider screens.
+   A phone-height dialog anchored in the middle of the screen runs off both ends; a
+   sheet anchored to the bottom cannot. */
+.app-modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  height: 100dvh;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(2, 6, 23, 0.7);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  animation: sheet-fade 160ms ease-out;
+}
+
+.app-modal-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: calc(100dvh - env(safe-area-inset-top) - 3rem);
+  animation: sheet-rise 240ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (min-width: 640px) {
+  .app-modal-scrim {
+    align-items: center;
+    padding: 1.5rem;
+  }
+
+  .app-modal-panel {
+    max-height: calc(100dvh - 3rem);
+    animation: dialog-pop 180ms ease-out;
+  }
+}
+
+@keyframes dialog-pop {
+  from { opacity: 0; transform: scale(0.97) translate3d(0, 6px, 0); }
+  to { opacity: 1; transform: scale(1) translate3d(0, 0, 0); }
+}
+
+/* Confirmation feedback: a brief, non-looping acknowledgement. */
+@keyframes result-pop {
+  0% { opacity: 0; transform: scale(0.6); }
+  60% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.app-result-pop {
+  animation: result-pop 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes check-draw {
+  from { stroke-dashoffset: 28; }
+  to { stroke-dashoffset: 0; }
+}
+
+.app-check-draw {
+  stroke-dasharray: 28;
+  animation: check-draw 420ms 120ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-modal-scrim,
+  .app-modal-panel,
+  .app-result-pop,
+  .app-check-draw {
+    animation: none;
+  }
+}
+
 /* Bottom sheet: the native-feeling way to surface account details and actions on a
    phone, instead of parking them permanently in the header. */
 .app-sheet-backdrop {
@@ -140,12 +212,6 @@ body {
   /* Keeps the buttons clear of the home indicator; the background still reaches the
      very bottom of the screen. */
   padding-bottom: env(safe-area-inset-bottom);
-}
-
-.app-mobile-sticky-action {
-  position: sticky;
-  bottom: calc(5.75rem + env(safe-area-inset-bottom));
-  z-index: 20;
 }
 
 ::selection {

@@ -3,7 +3,20 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 
-type ToggleState = 'checking' | 'unsupported' | 'blocked' | 'off' | 'on' | 'working';
+type ToggleState =
+  | 'checking'
+  | 'unsupported'
+  | 'unavailable'
+  | 'blocked'
+  | 'off'
+  | 'on'
+  | 'working';
+
+function uint8ArrayToUrlBase64(buffer: ArrayBuffer) {
+  let binary = '';
+  for (const byte of new Uint8Array(buffer)) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
 
 function urlBase64ToUint8Array(base64: string) {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
@@ -51,9 +64,50 @@ export function NotificationToggle() {
       }
 
       try {
+        // The server is the only side that knows whether it can actually send.
+        const status = await fetch('/api/push/subscribe', { cache: 'no-store' })
+          .then((response) => (response.ok ? response.json() : null))
+          .catch(() => null);
+
+        if (status && status.configured === false) {
+          if (!isStale) setState('unavailable');
+          return;
+        }
+
         const registration = await navigator.serviceWorker.ready;
         const existing = await registration.pushManager.getSubscription();
-        if (!isStale) setState(existing ? 'on' : 'off');
+
+        if (!existing) {
+          if (!isStale) setState('off');
+          return;
+        }
+
+        // A subscription is bound to the VAPID key that created it. If that key has
+        // since changed, the push service rejects every send, so the browser's
+        // subscription is dead even though it still looks active. Drop it so the next
+        // "Turn on" registers cleanly against the current key.
+        const boundKey = existing.options?.applicationServerKey;
+        const isBoundToCurrentKey = boundKey
+          ? uint8ArrayToUrlBase64(boundKey) === publicKey
+          : false;
+
+        if (!isBoundToCurrentKey) {
+          await existing.unsubscribe().catch(() => undefined);
+          if (!isStale) setState('off');
+          return;
+        }
+
+        // Valid locally but absent server-side (for example pruned after a key
+        // change) - re-register it rather than silently going quiet.
+        if (status && status.subscriptions === 0) {
+          await fetch('/api/push/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(existing.toJSON()),
+          }).catch(() => undefined);
+        }
+
+        if (!isStale) setState('on');
       } catch {
         if (!isStale) setState('unsupported');
       }
@@ -139,7 +193,9 @@ export function NotificationToggle() {
         <div className="min-w-0">
           <div className="text-sm font-semibold text-slate-100">Push notifications</div>
           <div className="mt-0.5 text-xs leading-5 text-slate-400">
-            {state === 'blocked'
+            {state === 'unavailable'
+              ? 'Notifications are not set up on the server yet. Contact your administrator.'
+              : state === 'blocked'
               ? 'Blocked in your browser settings. Allow notifications for this site to turn them on.'
               : state === 'on'
                 ? 'This device will be alerted about leave decisions and requests awaiting review.'
@@ -147,7 +203,7 @@ export function NotificationToggle() {
           </div>
         </div>
 
-        {state !== 'blocked' ? (
+        {state !== 'blocked' && state !== 'unavailable' ? (
           <Button
             variant={state === 'on' ? 'secondary' : 'primary'}
             size="sm"

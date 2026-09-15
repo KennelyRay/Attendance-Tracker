@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { NotificationToggle } from '@/components/pwa/NotificationToggle';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -546,20 +547,21 @@ export function LeaveManagementPanel({
               </div>
 
               {error ? (
-                <div className="rounded-xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300 ring-1 ring-inset ring-rose-400/20">
+                <div className="hidden rounded-xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300 ring-1 ring-inset ring-rose-400/20 sm:block">
                   {error}
                 </div>
               ) : null}
 
-              <div className="app-mobile-sticky-action -mx-1 rounded-2xl bg-slate-950/90 p-3 ring-1 ring-inset ring-white/5 backdrop-blur-md sm:mx-0 sm:bg-transparent sm:p-0 sm:ring-0 sm:backdrop-blur-0">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-                  <div className="text-xs leading-5 text-slate-500 sm:hidden">
-                    Review your request details before submitting it for admin approval.
-                  </div>
-                  <Button className="w-full sm:w-auto" type="submit" disabled={isSubmitting}>
-                    Review Leave Request
-                  </Button>
+              {/* Sits in normal flow at the end of the form. It used to be
+                  position:sticky, which detached it mid-scroll so it hovered over the
+                  content and then snapped back - it read as a bug, not an affordance. */}
+              <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-end">
+                <div className="text-xs leading-5 text-slate-500 sm:hidden">
+                  Review your request details before submitting it for admin approval.
                 </div>
+                <Button className="h-12 w-full sm:h-10 sm:w-auto" type="submit" disabled={isSubmitting}>
+                  Review Leave Request
+                </Button>
               </div>
             </form>
           </CardBody>
@@ -811,18 +813,21 @@ export function LeaveManagementPanel({
         </CardBody>
       </Card>
 
-      {selectedRequest ? (
-        <div className="app-overlay-scroll bg-slate-950/70 backdrop-blur-sm">
-          <div className="app-overlay-panel max-w-2xl rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <div className="text-lg font-semibold text-slate-100">
-                  {getLeavePolicy(selectedRequest.leave_type).label}
-                </div>
-                <div className="mt-2 text-sm leading-6 text-slate-400">
-                  Review the full summary of your submitted leave request.
-                </div>
-              </div>
+      <Modal
+        isOpen={Boolean(selectedRequest)}
+        onClose={() => setSelectedRequest(null)}
+        title={selectedRequest ? getLeavePolicy(selectedRequest.leave_type).label : ""}
+        description="Full summary of this leave request."
+        size="lg"
+        footer={
+          <Button className="h-12 w-full sm:h-10 sm:w-auto" onClick={() => setSelectedRequest(null)}>
+            Close
+          </Button>
+        }
+      >
+        {selectedRequest ? (
+          <div className="pb-1">
+              {/* Title and description belong to the Modal; keep only the status. */}
               <span
                 className={[
                   'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold capitalize',
@@ -831,170 +836,185 @@ export function LeaveManagementPanel({
               >
                 {selectedRequest.status}
               </span>
-            </div>
 
-            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  Date Range
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Date Range
+                  </div>
+                  <div className="mt-2 text-sm text-slate-200">
+                    {formatDateOnly(selectedRequest.start_date)} to{' '}
+                    {formatDateOnly(selectedRequest.end_date)}
+                  </div>
                 </div>
-                <div className="mt-2 text-sm text-slate-200">
-                  {formatDateOnly(selectedRequest.start_date)} to{' '}
-                  {formatDateOnly(selectedRequest.end_date)}
+                <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Total Days
+                  </div>
+                  <div className="mt-2 text-sm text-slate-200">{selectedRequest.total_days}</div>
+                </div>
+                <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Submitted
+                  </div>
+                  <div className="mt-2 text-sm text-slate-200">
+                    {new Date(selectedRequest.created_at).toLocaleString()}
+                  </div>
+                </div>
+                <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Balance Impact
+                  </div>
+                  <div className="mt-2 text-sm text-slate-200">
+                    {selectedRequest.deduct_from_paid_balance
+                      ? 'Deducts from your paid leave balance'
+                      : 'Does not deduct from your paid leave balance'}
+                  </div>
                 </div>
               </div>
-              <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  Total Days
-                </div>
-                <div className="mt-2 text-sm text-slate-200">{selectedRequest.total_days}</div>
-              </div>
-              <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  Submitted
-                </div>
-                <div className="mt-2 text-sm text-slate-200">
-                  {new Date(selectedRequest.created_at).toLocaleString()}
-                </div>
-              </div>
-              <div className="rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  Balance Impact
-                </div>
-                <div className="mt-2 text-sm text-slate-200">
-                  {selectedRequest.deduct_from_paid_balance
-                    ? 'Deducts from your paid leave balance'
-                    : 'Does not deduct from your paid leave balance'}
-                </div>
-              </div>
-            </div>
 
-            <div className="mt-4 rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                Reason
-              </div>
-              <div className="mt-2 text-sm leading-6 text-slate-300">{selectedRequest.reason}</div>
-            </div>
-
-            <div className="mt-4 rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                Supporting Documents
-              </div>
-              {selectedRequest.attachments.length > 0 ? (
-                <div className="mt-3 space-y-2">
-                  {selectedRequest.attachments.map((attachment) => (
-                    <button
-                      key={attachment.id}
-                      type="button"
-                      onClick={() => openStoredAttachmentPreview(attachment)}
-                      className="flex items-center justify-between rounded-xl bg-slate-950/70 px-4 py-3 text-sm text-slate-300 ring-1 ring-inset ring-slate-800 transition-colors hover:bg-slate-900/90"
-                    >
-                      <span className="truncate pr-3 text-left">{attachment.file_name}</span>
-                      <span className="whitespace-nowrap text-xs text-slate-400">
-                        Preview
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-2 text-sm leading-6 text-slate-400">
-                  No supporting documents were attached to this request.
-                </div>
-              )}
-            </div>
-
-            {selectedRequest.admin_notes ? (
               <div className="mt-4 rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  Admin Note
+                  Reason
                 </div>
-                <div className="mt-2 text-sm leading-6 text-slate-300">
-                  {selectedRequest.admin_notes}
-                </div>
+                <div className="mt-2 text-sm leading-6 text-slate-300">{selectedRequest.reason}</div>
               </div>
-            ) : null}
 
-            <div className="mt-6 flex justify-end">
-              <Button className="w-full sm:w-auto" onClick={() => setSelectedRequest(null)}>
-                Close
-              </Button>
-            </div>
+              <div className="mt-4 rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Supporting Documents
+                </div>
+                {selectedRequest.attachments.length > 0 ? (
+                  <div className="mt-3 space-y-2">
+                    {selectedRequest.attachments.map((attachment) => (
+                      <button
+                        key={attachment.id}
+                        type="button"
+                        onClick={() => openStoredAttachmentPreview(attachment)}
+                        className="flex items-center justify-between rounded-xl bg-slate-950/70 px-4 py-3 text-sm text-slate-300 ring-1 ring-inset ring-slate-800 transition-colors hover:bg-slate-900/90"
+                      >
+                        <span className="truncate pr-3 text-left">{attachment.file_name}</span>
+                        <span className="whitespace-nowrap text-xs text-slate-400">
+                          Preview
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-2 text-sm leading-6 text-slate-400">
+                    No supporting documents were attached to this request.
+                  </div>
+                )}
+              </div>
+
+              {selectedRequest.admin_notes ? (
+                <div className="mt-4 rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Admin Note
+                  </div>
+                  <div className="mt-2 text-sm leading-6 text-slate-300">
+                    {selectedRequest.admin_notes}
+                  </div>
+                </div>
+              ) : null}
+
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </Modal>
 
-      {pendingSubmission ? (
-        <div className="app-overlay-scroll bg-slate-950/70 backdrop-blur-sm">
-          <div className="app-overlay-panel max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
-            <div className="text-lg font-semibold text-slate-100">Confirm Leave Request</div>
-            <div className="mt-2 text-sm leading-6 text-slate-400">
-              Please confirm the details before sending your leave request for approval.
-            </div>
-            <div className="mt-4 rounded-xl bg-slate-900/80 px-4 py-4 ring-1 ring-inset ring-slate-800">
-              <div className="text-sm text-slate-300">
-                <span className="font-medium text-slate-100">Leave Type:</span>{' '}
-                {getLeavePolicy(pendingSubmission.leaveType).label}
-              </div>
-              <div className="mt-2 text-sm text-slate-300">
-                <span className="font-medium text-slate-100">Date Range:</span>{' '}
-                {formatDateOnly(pendingSubmission.startDate)} to{' '}
-                {formatDateOnly(pendingSubmission.endDate)}
-              </div>
-              <div className="mt-2 text-sm text-slate-300">
-                <span className="font-medium text-slate-100">Paid Balance:</span>{' '}
-                {pendingSubmission.deductFromPaidBalance ||
+      {/* On a phone the form scrolls, so an inline banner can land off-screen and the
+          submit appears to do nothing. Raising it as a sheet makes it unmissable.
+          Pointer screens keep the inline banner above. */}
+      <div className="sm:hidden">
+        <Modal
+          isOpen={Boolean(error)}
+          onClose={() => setError(null)}
+          title="Check your request"
+          description={error ?? undefined}
+          tone="error"
+          footer={
+            <Button className="h-12 w-full" onClick={() => setError(null)}>
+              Got it
+            </Button>
+          }
+        />
+      </div>
+
+      <Modal
+        isOpen={Boolean(pendingSubmission)}
+        onClose={() => {
+          if (!isSubmitting) setPendingSubmission(null);
+        }}
+        title="Confirm leave request"
+        description="Check the details before sending this for approval."
+        footer={
+          <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end sm:gap-3">
+            <Button
+              className="h-12 w-full sm:h-10 sm:w-auto"
+              variant="secondary"
+              onClick={() => {
+                if (!isSubmitting) setPendingSubmission(null);
+              }}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="h-12 w-full sm:h-10 sm:w-auto"
+              onClick={confirmSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Submitting…' : 'Submit request'}
+            </Button>
+          </div>
+        }
+      >
+        {pendingSubmission ? (
+          <dl className="divide-y divide-slate-800/80 overflow-hidden rounded-2xl bg-slate-900/70 ring-1 ring-inset ring-slate-800">
+            {[
+              ['Leave type', getLeavePolicy(pendingSubmission.leaveType).label],
+              [
+                'Dates',
+                `${formatDateOnly(pendingSubmission.startDate)} to ${formatDateOnly(
+                  pendingSubmission.endDate
+                )}`,
+              ],
+              [
+                'Paid balance',
+                pendingSubmission.deductFromPaidBalance ||
                 getLeavePolicy(pendingSubmission.leaveType).requiresPaidBalance
-                  ? 'This request deducts from your paid leave balance'
-                  : 'This request does not deduct from your paid leave balance'}
-              </div>
-              <div className="mt-2 text-sm text-slate-300">
-                <span className="font-medium text-slate-100">Reason:</span> {pendingSubmission.reason}
-              </div>
-              <div className="mt-2 text-sm text-slate-300">
-                <span className="font-medium text-slate-100">Supporting Documents:</span>{' '}
-                {pendingSubmission.attachments && pendingSubmission.attachments.length > 0
+                  ? 'Deducts from your paid leave'
+                  : 'Does not deduct from your paid leave',
+              ],
+              ['Reason', pendingSubmission.reason],
+              [
+                'Documents',
+                pendingSubmission.attachments && pendingSubmission.attachments.length > 0
                   ? pendingSubmission.attachments.map((file) => file.name).join(', ')
-                  : 'No files attached'}
+                  : 'No files attached',
+              ],
+            ].map(([label, value]) => (
+              <div key={label} className="px-4 py-3">
+                <dt className="text-[11px] uppercase tracking-wide text-slate-500">{label}</dt>
+                <dd className="mt-1 text-sm leading-6 text-slate-200">{value}</dd>
               </div>
-            </div>
-            <div className="mt-6 flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end sm:gap-3">
-              <Button
-                className="w-full sm:w-auto"
-                variant="secondary"
-                onClick={() => {
-                  if (!isSubmitting) {
-                    setPendingSubmission(null);
-                  }
-                }}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="w-full sm:w-auto"
-                onClick={confirmSubmit}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Submitting...' : 'Submit Leave Request'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+            ))}
+          </dl>
+        ) : null}
+      </Modal>
 
-      {successMessage ? (
-        <div className="app-overlay-scroll bg-slate-950/70 backdrop-blur-sm">
-          <div className="app-overlay-panel max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
-            <div className="text-lg font-semibold text-slate-100">Leave Request Sent</div>
-            <div className="mt-2 text-sm leading-6 text-slate-400">{successMessage}</div>
-            <div className="mt-6 flex justify-end">
-              <Button className="w-full sm:w-auto" onClick={() => setSuccessMessage(null)}>
-                OK
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <Modal
+        isOpen={Boolean(successMessage)}
+        onClose={() => setSuccessMessage(null)}
+        title="Leave request sent"
+        description={successMessage ?? undefined}
+        tone="success"
+        footer={
+          <Button className="h-12 w-full sm:h-10 sm:w-auto" onClick={() => setSuccessMessage(null)}>
+            Done
+          </Button>
+        }
+      />
 
       {previewAttachment ? (
         <LeaveAttachmentPreviewModal attachment={previewAttachment} onClose={closePreview} />

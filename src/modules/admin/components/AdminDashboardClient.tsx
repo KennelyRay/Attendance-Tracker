@@ -792,7 +792,7 @@ export function AdminDashboardClient({
       ) : null}
 
       <div className="app-mobile-bottom-nav xl:hidden">
-        <div className="grid grid-cols-5 gap-2 rounded-[1.6rem] border border-slate-800/80 bg-slate-950/90 p-2 shadow-[0_22px_60px_rgba(2,8,23,0.45)] ring-1 ring-inset ring-white/5 backdrop-blur-xl">
+        <div className="grid grid-cols-5 gap-2 border-t border-slate-800/80 bg-slate-950/95 p-2 shadow-[0_-10px_30px_rgba(2,8,23,0.55)] backdrop-blur-xl">
           {([
             ['dashboard', 'Home'],
             ['employees', 'Staff'],

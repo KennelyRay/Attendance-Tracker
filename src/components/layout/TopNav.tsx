@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { triggerGlobalNavigationLoader } from '@/components/layout/navigation-loader';
 import { Button } from '@/components/ui/Button';
+import { InstallAppButton } from '@/components/pwa/InstallAppButton';
 import type { SessionUser } from '@/lib/session';
 import { consumeAuthFlash, setAuthFlash } from '@/modules/auth/flash';
 import { fetchMyProfile } from '@/modules/employee/api';
@@ -179,6 +180,7 @@ export function TopNav({
               <span className="hidden sm:inline">{isLeavePolicyPage ? 'Dashboard' : 'Leave Policy'}</span>
             </Button>
           ) : null}
+          <InstallAppButton />
           <Button className="shrink-0 px-2.5 sm:px-3" variant="danger" size="sm" onClick={onLogout}>
             Logout
           </Button>

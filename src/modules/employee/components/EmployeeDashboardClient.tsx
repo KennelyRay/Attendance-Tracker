@@ -684,7 +684,7 @@ export function EmployeeDashboardClient({
         className="app-mobile-content-pad grid grid-cols-1 gap-6 px-3 sm:px-4 xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-0 xl:px-0 xl:pb-0"
       >
         <div className="hidden border-r border-slate-800/80 xl:block">
-          <div className="sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
+          <div className="sticky top-16 h-[calc(100dvh-4rem)] overflow-y-auto">
             <EmployeeSidebar activeView={activeView} onSelect={setActiveView} />
           </div>
         </div>

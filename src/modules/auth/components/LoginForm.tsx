@@ -55,7 +55,7 @@ export function LoginForm() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[linear-gradient(135deg,_#050c18_0%,_#081524_36%,_#0a1d33_100%)] px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
+    <div className="relative min-h-[100dvh] overflow-hidden bg-[linear-gradient(135deg,_#050c18_0%,_#081524_36%,_#0a1d33_100%)] px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
       <div className="pointer-events-none absolute inset-0">
         <div className="animate-float-slow absolute -left-24 top-8 h-56 w-56 rounded-full bg-sky-400/16 blur-[85px] sm:-left-28 sm:h-[28rem] sm:w-[28rem] sm:bg-sky-400/20 sm:blur-[120px]" />
         <div className="animate-float-medium absolute left-1/4 top-1/3 hidden h-56 w-56 rounded-full bg-cyan-300/16 blur-[90px] sm:block sm:h-72 sm:w-72 sm:blur-[110px]" />
@@ -93,7 +93,7 @@ export function LoginForm() {
         <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(to_right,#7dd3fc_1px,transparent_1px),linear-gradient(to_bottom,#7dd3fc_1px,transparent_1px)] [background-size:44px_44px] sm:[background-size:72px_72px]" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-1rem)] max-w-7xl items-center justify-between gap-4 sm:min-h-[calc(100vh-4rem)] sm:gap-10">
+      <div className="relative z-10 mx-auto flex min-h-[calc(100dvh-1rem)] max-w-7xl items-center justify-between gap-4 sm:min-h-[calc(100dvh-4rem)] sm:gap-10">
         <div className="hidden max-w-xl lg:block">
           <div className="max-w-lg">
             <div className="text-sm font-semibold uppercase tracking-[0.3em] text-sky-300/75">

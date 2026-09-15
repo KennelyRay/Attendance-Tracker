@@ -121,7 +121,7 @@ export function TopNav({
     .join('');
 
   return (
-    <header className="sticky top-0 z-10 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl">
+    <header className="app-safe-top sticky top-0 z-10 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl">
       <div
         className={[
           'flex flex-col gap-2 px-3 py-2 sm:h-16 sm:flex-row sm:items-center sm:justify-between sm:py-0',

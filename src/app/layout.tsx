@@ -30,7 +30,10 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "HRIS",
-    statusBarStyle: "black-translucent",
+    // "black-translucent" draws the page *under* the status bar, so the sticky header
+    // sits beneath the clock and the page reads as taller than the screen. "default"
+    // makes iOS reserve that strip instead.
+    statusBarStyle: "default",
   },
   other: {
     // Next emits the standardized `mobile-web-app-capable`. Older iOS versions only

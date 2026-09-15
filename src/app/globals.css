@@ -60,6 +60,12 @@ body {
   }
 }
 
+/* Installed on a notched phone the page can start under the status bar; this keeps
+   the sticky header clear of it. Resolves to 0 everywhere else. */
+.app-safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
 .app-mobile-content-pad {
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
 }

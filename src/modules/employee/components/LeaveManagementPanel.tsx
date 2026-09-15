@@ -97,7 +97,7 @@ export function LeaveManagementPanel({
       // Keep the last successful state if background refresh fails.
     }
   }, []);
-  const nextBalanceRefreshAt = useMemo(() => {
+  const nextBalanceRefreshAtMs = useMemo(() => {
     const futureCooldownEndTimes = requests
       .filter((request) => request.status === 'approved' && request.deduct_from_paid_balance)
       .map((request) =>
@@ -106,8 +106,9 @@ export function LeaveManagementPanel({
       .filter((endTime) => endTime > now)
       .sort((left, right) => left - right);
 
-    return futureCooldownEndTimes.length > 0 ? new Date(futureCooldownEndTimes[0]) : null;
+    return futureCooldownEndTimes.length > 0 ? futureCooldownEndTimes[0] : null;
   }, [now, requests]);
+
   const groupedRequests = useMemo(
     () => ({
       pending: requests.filter((request) => request.status === 'pending').length,
@@ -201,11 +202,11 @@ export function LeaveManagementPanel({
   }, [previewAttachment]);
 
   useEffect(() => {
-    if (!nextBalanceRefreshAt) {
+    if (nextBalanceRefreshAtMs === null) {
       return;
     }
 
-    const timeoutMs = Math.max(0, nextBalanceRefreshAt.getTime() - Date.now()) + 150;
+    const timeoutMs = Math.max(0, nextBalanceRefreshAtMs - Date.now()) + 150;
     if (timeoutMs > MAX_TIMEOUT_MS) {
       return;
     }
@@ -217,7 +218,7 @@ export function LeaveManagementPanel({
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [loadLeaveData, nextBalanceRefreshAt]);
+  }, [loadLeaveData, nextBalanceRefreshAtMs]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();

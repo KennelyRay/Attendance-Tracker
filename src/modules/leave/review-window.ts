@@ -20,10 +20,27 @@ export type ReviewDeadline = {
 const CRITICAL_HOURS = 12;
 const WARNING_HOURS = 24;
 
-function parseTimestamp(value: string) {
-  const normalized = /[zZ]|[+-]\d{2}:?\d{2}$/.test(value) ? value : `${value.replace(' ', 'T')}Z`;
+/**
+ * Accepts whatever a timestamp actually arrives as.
+ *
+ * TIMESTAMP columns come back from the driver as Date objects, and React Server
+ * Components pass Dates through to the client intact - so a field typed `string` is a
+ * real Date by the time a client component reads it. Assuming a string here threw
+ * "value.replace is not a function" and took the whole panel down.
+ */
+function parseTimestamp(value: string | Date | number) {
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    return new Date(value);
+  }
+
+  const text = String(value);
+  const normalized = /[zZ]|[+-]\d{2}:?\d{2}$/.test(text) ? text : `${text.replace(' ', 'T')}Z`;
   const parsed = new Date(normalized);
-  return Number.isNaN(parsed.getTime()) ? new Date(value) : parsed;
+  return Number.isNaN(parsed.getTime()) ? new Date(text) : parsed;
 }
 
 /**
@@ -33,8 +50,20 @@ function parseTimestamp(value: string) {
  * render, which both breaks React's purity rule and makes server and client markup
  * disagree - the caller must supply a clock it controls, set after mount.
  */
-export function getReviewDeadline(createdAt: string, now: Date): ReviewDeadline {
+export function getReviewDeadline(createdAt: string | Date | number, now: Date): ReviewDeadline {
   const filedAt = parseTimestamp(createdAt);
+
+  // An unparseable timestamp must not produce "NaNd left" on screen, and must never
+  // read as urgent - there is no evidence either way.
+  if (Number.isNaN(filedAt.getTime())) {
+    return {
+      deadline: filedAt,
+      hoursRemaining: Number.POSITIVE_INFINITY,
+      urgency: 'normal',
+      label: 'Pending review',
+    };
+  }
+
   const deadline = new Date(filedAt.getTime() + LEAVE_REVIEW_WINDOW_HOURS * 60 * 60 * 1000);
   const millisecondsLeft = deadline.getTime() - now.getTime();
   const hoursRemaining = millisecondsLeft / (60 * 60 * 1000);

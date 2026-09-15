@@ -64,12 +64,16 @@ function CategoryIcon({ category }: { category: AuditCategory }) {
   );
 }
 
-function parseTimestamp(value: string) {
-  // created_at arrives as an ISO-8601 string with a zone, like the rest of the app.
-  // The fallback only covers a bare timestamp, which is read as UTC rather than local.
-  const normalized = /[zZ]|[+-]\d{2}:?\d{2}$/.test(value) ? value : `${value.replace(' ', 'T')}Z`;
+function parseTimestamp(value: string | Date | number) {
+  // This panel is fed by JSON so it sees strings, but a TIMESTAMP reaching a client
+  // component through RSC props stays a Date - handle both rather than assume.
+  if (value instanceof Date) return value;
+  if (typeof value === 'number') return new Date(value);
+
+  const text = String(value);
+  const normalized = /[zZ]|[+-]\d{2}:?\d{2}$/.test(text) ? text : `${text.replace(' ', 'T')}Z`;
   const parsed = new Date(normalized);
-  return Number.isNaN(parsed.getTime()) ? new Date(value) : parsed;
+  return Number.isNaN(parsed.getTime()) ? new Date(text) : parsed;
 }
 
 function dayKey(date: Date) {

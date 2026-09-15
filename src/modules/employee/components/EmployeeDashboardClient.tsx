@@ -716,7 +716,7 @@ export function EmployeeDashboardClient({
       </div>
 
       <div className="app-mobile-bottom-nav xl:hidden">
-        <div className="grid grid-cols-4 gap-2 border-t border-slate-800/80 bg-slate-950/95 p-2 shadow-[0_-10px_30px_rgba(2,8,23,0.55)] backdrop-blur-xl">
+        <div className="grid grid-cols-4 gap-2 p-2">
           {mobileNavViews.map((view) => {
             const isActive = activeView === view;
             return (

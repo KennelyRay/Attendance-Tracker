@@ -76,8 +76,18 @@ body {
   bottom: 0;
   left: 0;
   z-index: 40;
-  /* Flush to the bottom edge. The inset keeps the row clear of the home indicator
-     while the bar's own background still reaches the very bottom of the screen. */
+
+  /* The surface lives here, not on the inner row. The safe-area inset below the
+     buttons is part of this element, so painting the row instead of the wrapper left
+     that strip transparent and the page showed through as a gap under the bar. */
+  background: rgba(2, 6, 23, 0.95);
+  border-top: 1px solid rgba(30, 41, 59, 0.8);
+  box-shadow: 0 -10px 30px rgba(2, 8, 23, 0.55);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+
+  /* Keeps the buttons clear of the home indicator; the background still reaches the
+     very bottom of the screen. */
   padding-bottom: env(safe-area-inset-bottom);
 }
 

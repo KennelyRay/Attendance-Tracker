@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { RefreshButton } from '@/components/ui/RefreshButton';
 import { NotificationToggle } from '@/components/pwa/NotificationToggle';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -378,9 +379,7 @@ export function LeaveRequestsPanel({
                   <option value="rejected">Rejected</option>
                 </Select>
               </div>
-              <Button variant="secondary" onClick={onRefresh} disabled={isLoading}>
-                {isLoading ? 'Refreshing...' : 'Refresh'}
-              </Button>
+              <RefreshButton onClick={onRefresh} isLoading={isLoading} />
             </div>
           }
         />

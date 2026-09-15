@@ -24,6 +24,11 @@ body {
 .app-overlay-scroll {
   position: fixed;
   inset: 0;
+  /* `inset: 0` resolves against the layout viewport, which on a phone includes the
+     strip behind the browser's collapsing toolbar - so the overlay was taller than
+     the screen. An explicit dvh height tracks what is actually visible. */
+  height: 100dvh;
+  max-height: 100dvh;
   z-index: 50;
   display: flex;
   justify-content: center;
@@ -31,21 +36,27 @@ body {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   padding: 1rem;
+  padding-top: max(1rem, env(safe-area-inset-top));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
 
 .app-overlay-panel {
   width: 100%;
   margin-top: auto;
   margin-bottom: auto;
-  max-height: calc(100dvh - 2rem);
+  /* Measured against the padded container rather than restating the viewport maths,
+     so the panel cannot outgrow its own scroll area however the padding changes. */
+  max-height: 100%;
   overflow-y: auto;
 }
 
 @media (max-width: 639px) {
   .app-overlay-scroll {
     align-items: flex-start;
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+    /* Must keep the safe-area floor - a flat 1rem here overrode the base rule and
+       put modal content back under the status bar and home indicator. */
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 }
 
@@ -53,10 +64,8 @@ body {
   .app-overlay-scroll {
     align-items: center;
     padding: 1.5rem;
-  }
-
-  .app-overlay-panel {
-    max-height: calc(100dvh - 3rem);
+    padding-top: max(1.5rem, env(safe-area-inset-top));
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
   }
 }
 

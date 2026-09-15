@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { RefreshButton } from '@/components/ui/RefreshButton';
 import {
   createViolationCase,
   createEmployeeAccount,
@@ -53,6 +54,9 @@ const leaveAwareViews: AdminView[] = [
   'reports-charts',
   'smart-insights',
 ];
+
+/** Views that aggregate several datasets and have no refresh control of their own. */
+const overviewViews: AdminView[] = ['dashboard', 'reports-charts', 'smart-insights'];
 
 const violationAwareViews: AdminView[] = [
   'dashboard',
@@ -627,7 +631,7 @@ export function AdminDashboardClient({
     <>
       {isMobileSidebarOpen ? (
         <div
-          className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 backdrop-blur-sm xl:hidden"
+          className="fixed inset-0 z-50 h-[100dvh] max-h-[100dvh] overflow-y-auto overscroll-contain bg-slate-950/75 backdrop-blur-sm xl:hidden"
           onClick={() => setIsMobileSidebarOpen(false)}
         >
           <div className="min-h-full w-full p-3 sm:p-4">
@@ -665,32 +669,32 @@ export function AdminDashboardClient({
         </div>
 
         <div className="space-y-6 xl:px-8">
-          {/* Per-view title and description removed - the sidebar and bottom bar
-              already show which view is open. Only the refresh action remains. */}
-          <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
-            {activeView === 'smart-insights' ? (
-              <Button
-                variant="secondary"
+          {/* Only the views whose own panel has no refresh control get one here.
+              Leave, violations, audit and holidays each own theirs, and rendering a
+              second one left a stray button floating above the content on mobile. */}
+          {overviewViews.includes(activeView) ? (
+            <div className="flex justify-end">
+              <RefreshButton
+                label="Refresh data"
+                isLoading={isLeaveRequestsLoading || isViolationsLoading || isEmployeesLoading}
                 onClick={() => {
-                  void Promise.allSettled([loadLeaveRequests(), loadViolationCases()]);
+                  void Promise.allSettled([
+                    loadLeaveRequests(),
+                    loadViolationCases(),
+                    reloadEmployees(),
+                  ]);
                 }}
-              >
-                Refresh Insights Data
-              </Button>
-            ) : activeView === 'leave-requests' ? (
-              <Button variant="secondary" onClick={() => void loadLeaveRequests()}>
-                Refresh Leave Queue
-              </Button>
-            ) : violationAwareViews.includes(activeView) ? (
-              <Button variant="secondary" onClick={() => void loadViolationCases()}>
-                Refresh Violations
-              </Button>
-            ) : activeView === 'employees' ? (
-              <Button variant="secondary" onClick={() => void reloadEmployees()}>
-                Refresh Employees
-              </Button>
-            ) : null}
-          </div>
+              />
+            </div>
+          ) : activeView === 'employees' ? (
+            <div className="flex justify-end">
+              <RefreshButton
+                label="Refresh employees"
+                isLoading={isEmployeesLoading}
+                onClick={() => void reloadEmployees()}
+              />
+            </div>
+          ) : null}
 
           {activeView === 'dashboard' ? (
             <AdminOverviewPanel

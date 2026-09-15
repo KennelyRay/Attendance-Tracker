@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { RefreshButton } from '@/components/ui/RefreshButton';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
@@ -135,15 +136,10 @@ export function HolidayCalendarPanel() {
           title="Holiday Calendar"
           subtitle="Days on this list are never counted against an employee's leave balance."
           right={
-            <Button
-              variant="secondary"
-              size="sm"
+            <RefreshButton
               onClick={() => setRefreshToken((token) => token + 1)}
-              disabled={isLoading}
-              className="w-full sm:w-auto"
-            >
-              Refresh
-            </Button>
+              isLoading={isLoading}
+            />
           }
         />
         <CardBody>

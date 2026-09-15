@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { RefreshButton } from '@/components/ui/RefreshButton';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
@@ -378,15 +379,10 @@ export function AuditTrailPanel() {
           title="Audit Trail"
           subtitle="Every administrative action, recorded as it happens."
           right={
-            <Button
-              variant="secondary"
-              size="sm"
+            <RefreshButton
               onClick={() => setRefreshToken((token) => token + 1)}
-              disabled={isLoading}
-              className="w-full sm:w-auto"
-            >
-              {isLoading ? 'Refreshing…' : 'Refresh'}
-            </Button>
+              isLoading={isLoading}
+            />
           }
         />
         <CardBody>

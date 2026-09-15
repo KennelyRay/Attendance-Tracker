@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { RefreshButton } from '@/components/ui/RefreshButton';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
@@ -372,9 +373,7 @@ export function ViolationCasesPanel({
           title="All Violation Cases"
           subtitle="Review every employee violation case with the newest incidents shown first."
           right={
-            <Button variant="secondary" onClick={onRefresh} disabled={isLoading}>
-              {isLoading ? 'Refreshing...' : 'Refresh'}
-            </Button>
+            <RefreshButton onClick={onRefresh} isLoading={isLoading} />
           }
         />
         <CardBody>

@@ -11,6 +11,8 @@ export type AuditAction =
   | 'leave.approved'
   | 'leave.rejected'
   | 'leave.auto-rejected'
+  | 'holiday.created'
+  | 'holiday.deleted'
   | 'violation.created'
   | 'violation.updated'
   | 'violation.appeal-resolved';
@@ -63,6 +65,8 @@ export const auditActionLabel: Record<AuditAction, string> = {
   'leave.approved': 'Leave approved',
   'leave.rejected': 'Leave rejected',
   'leave.auto-rejected': 'Leave auto-rejected',
+  'holiday.created': 'Holiday added',
+  'holiday.deleted': 'Holiday removed',
   'violation.created': 'Violation filed',
   'violation.updated': 'Violation updated',
   'violation.appeal-resolved': 'Appeal resolved',

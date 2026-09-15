@@ -16,6 +16,7 @@ import type {
   ReviewLeaveRequestInput,
 } from '@/modules/leave/types';
 import type { AuditLogFilters, AuditLogPage } from '@/modules/audit/types';
+import type { CreateHolidayInput, Holiday } from '@/modules/holidays/types';
 
 export async function fetchEmployees(): Promise<Employee[]> {
   const response = await fetch('/api/admin/users', { cache: 'no-store' });
@@ -205,4 +206,38 @@ export async function fetchAuditLog(filters: AuditLogFilters = {}): Promise<Audi
   }
 
   return data as AuditLogPage;
+}
+
+export async function fetchHolidays(): Promise<Holiday[]> {
+  const response = await fetch('/api/holidays', { cache: 'no-store' });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || 'Failed to load the holiday calendar');
+  }
+  return data.holidays as Holiday[];
+}
+
+export async function createHoliday(input: CreateHolidayInput): Promise<Holiday> {
+  const response = await fetch('/api/holidays', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || 'Failed to add the holiday');
+  }
+  return data.holiday as Holiday;
+}
+
+export async function deleteHoliday(holidayId: number): Promise<void> {
+  const response = await fetch('/api/holidays', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ holidayId }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || 'Failed to remove the holiday');
+  }
 }

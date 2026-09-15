@@ -1,10 +1,19 @@
+function toLocalDateOnly(value: Date) {
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(
+    value.getDate()
+  ).padStart(2, '0')}`;
+}
+
 export function normalizeDateOnly(value: unknown) {
   if (value instanceof Date) {
     if (Number.isNaN(value.getTime())) {
       return null;
     }
 
-    return value.toISOString().slice(0, 10);
+    // The driver parses a Postgres DATE to midnight *local* time, so the calendar date
+    // is in the local fields. Reading it through toISOString() shifts the day backwards
+    // for any server east of UTC - Asia/Manila reads 2026-01-01 as 2025-12-31.
+    return toLocalDateOnly(value);
   }
 
   if (typeof value === 'string') {
@@ -21,7 +30,7 @@ export function normalizeDateOnly(value: unknown) {
 
     const parsed = new Date(trimmedValue);
     if (!Number.isNaN(parsed.getTime())) {
-      return parsed.toISOString().slice(0, 10);
+      return toLocalDateOnly(parsed);
     }
   }
 
@@ -46,7 +55,24 @@ export function formatDateOnly(value: string | Date) {
   return parseDateOnly(normalized).toLocaleDateString();
 }
 
-export function countBusinessDays(startDate: string, endDate: string) {
+function toDateOnlyKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+    date.getDate()
+  ).padStart(2, '0')}`;
+}
+
+/**
+ * Counts the working days an employee actually gives up for a leave range.
+ *
+ * Weekends never count, and neither do dates in `holidays` - an employee would not
+ * have worked a holiday, so charging it against their leave balance would take a
+ * paid day they never used. Callers that omit `holidays` fall back to weekends only.
+ */
+export function countBusinessDays(
+  startDate: string,
+  endDate: string,
+  holidays?: ReadonlySet<string>
+) {
   const normalizedStart = normalizeDateOnly(startDate);
   const normalizedEnd = normalizeDateOnly(endDate);
 
@@ -66,13 +92,52 @@ export function countBusinessDays(startDate: string, endDate: string) {
 
   while (cursor <= end) {
     const day = cursor.getDay();
-    if (day !== 0 && day !== 6) {
+    const isWeekend = day === 0 || day === 6;
+    const isHoliday = holidays?.has(toDateOnlyKey(cursor)) ?? false;
+
+    if (!isWeekend && !isHoliday) {
       days += 1;
     }
     cursor.setDate(cursor.getDate() + 1);
   }
 
   return days;
+}
+
+/** The holidays that fall on a weekday inside a range, for showing what was excluded. */
+export function holidaysWithinRange(
+  startDate: string,
+  endDate: string,
+  holidays: ReadonlySet<string>
+) {
+  const normalizedStart = normalizeDateOnly(startDate);
+  const normalizedEnd = normalizeDateOnly(endDate);
+
+  if (!normalizedStart || !normalizedEnd) {
+    return [];
+  }
+
+  const start = parseDateOnly(normalizedStart);
+  const end = parseDateOnly(normalizedEnd);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) {
+    return [];
+  }
+
+  const cursor = new Date(start);
+  const matched: string[] = [];
+
+  while (cursor <= end) {
+    const day = cursor.getDay();
+    const key = toDateOnlyKey(cursor);
+
+    if (day !== 0 && day !== 6 && holidays.has(key)) {
+      matched.push(key);
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return matched;
 }
 
 export function getServiceYears(startDate: string, asOf = new Date()) {

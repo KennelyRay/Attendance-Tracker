@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -11,8 +11,27 @@ import {
   type LeaveAttachmentPreview,
 } from '@/modules/leave/components/LeaveAttachmentPreviewModal';
 import { getLeavePolicy } from '@/modules/leave/policy';
+import {
+  LEAVE_REVIEW_WINDOW_HOURS,
+  getReviewDeadline,
+  isUrgentReview,
+  type ReviewUrgency,
+} from '@/modules/leave/review-window';
 
 const REQUESTS_PER_PAGE = 5;
+
+function deadlineClass(urgency: ReviewUrgency) {
+  switch (urgency) {
+    case 'expired':
+      return 'bg-rose-500/15 text-rose-200 ring-1 ring-inset ring-rose-400/40';
+    case 'critical':
+      return 'bg-rose-500/12 text-rose-300 ring-1 ring-inset ring-rose-400/25';
+    case 'warning':
+      return 'bg-amber-500/12 text-amber-300 ring-1 ring-inset ring-amber-400/25';
+    default:
+      return 'bg-slate-950/80 text-slate-400 ring-1 ring-inset ring-slate-800';
+  }
+}
 
 function statusClass(status: AdminLeaveRequest['status']) {
   switch (status) {
@@ -60,13 +79,13 @@ export function LeaveRequestsPanel({
   const filteredRequests = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
-    if (!normalizedSearch) {
-      return requests;
-    }
-
-    return requests.filter((request) => {
+    const matches = requests.filter((request) => {
       if (statusFilter !== 'all' && request.status !== statusFilter) {
         return false;
+      }
+
+      if (!normalizedSearch) {
+        return true;
       }
 
       const policy = getLeavePolicy(request.leave_type);
@@ -90,7 +109,42 @@ export function LeaveRequestsPanel({
 
       return searchableFields.some((value) => value.toLowerCase().includes(normalizedSearch));
     });
+
+    // Pending first and oldest first within it, so whatever is closest to being
+    // auto-rejected is the first thing on screen.
+    return [...matches].sort((left, right) => {
+      if (left.status === 'pending' && right.status !== 'pending') return -1;
+      if (right.status === 'pending' && left.status !== 'pending') return 1;
+
+      const leftFiled = new Date(left.created_at).getTime();
+      const rightFiled = new Date(right.created_at).getTime();
+
+      return left.status === 'pending' ? leftFiled - rightFiled : rightFiled - leftFiled;
+    });
   }, [requests, searchTerm, statusFilter]);
+
+  // One instant for the whole list, so every countdown is measured against the same
+  // clock, refreshed each minute so the remaining time stays honest while the page sits open.
+  const [reviewClock, setReviewClock] = useState(() => new Date());
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setReviewClock(new Date());
+    }, 60_000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
+  const urgentPending = useMemo(
+    () =>
+      grouped.pending
+        .map((request) => ({ request, deadline: getReviewDeadline(request.created_at, reviewClock) }))
+        .filter((entry) => isUrgentReview(entry.deadline.urgency))
+        .sort((left, right) => left.deadline.hoursRemaining - right.deadline.hoursRemaining),
+    [grouped.pending, reviewClock]
+  );
 
   const totalPages = Math.max(1, Math.ceil(filteredRequests.length / REQUESTS_PER_PAGE));
   const currentPage = Math.min(page, totalPages);
@@ -204,6 +258,11 @@ export function LeaveRequestsPanel({
           <CardBody>
             <div className="text-xs font-semibold uppercase tracking-wide text-amber-300">Pending</div>
             <div className="mt-2 text-2xl font-semibold text-slate-50">{grouped.pending.length}</div>
+            {urgentPending.length > 0 ? (
+              <div className="mt-1 text-[11px] font-medium text-rose-300">
+                {urgentPending.length} nearing auto-rejection
+              </div>
+            ) : null}
           </CardBody>
         </Card>
         <Card>
@@ -223,6 +282,54 @@ export function LeaveRequestsPanel({
           </CardBody>
         </Card>
       </div>
+
+      {urgentPending.length > 0 ? (
+        <div className="rounded-2xl border border-rose-400/25 bg-rose-500/10 px-4 py-3.5 ring-1 ring-inset ring-rose-400/10">
+          <div className="flex flex-wrap items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-4 w-4 shrink-0 text-rose-300">
+              <path
+                d="M12 8.75v4M12 16.25h.01M10.3 4.9 3.6 16.5a2 2 0 0 0 1.73 3h13.34a2 2 0 0 0 1.73-3L13.7 4.9a2 2 0 0 0-3.4 0Z"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="text-sm font-semibold text-rose-200">
+              {urgentPending.length} request{urgentPending.length === 1 ? '' : 's'} near the{' '}
+              {LEAVE_REVIEW_WINDOW_HOURS}-hour limit
+            </span>
+          </div>
+          <div className="mt-1.5 text-xs leading-5 text-rose-200/80">
+            Requests left unreviewed past the limit are rejected automatically. Review these before
+            that happens.
+          </div>
+          <ul className="mt-2.5 flex flex-col gap-1.5">
+            {urgentPending.slice(0, 4).map(({ request, deadline }) => (
+              <li key={request.id} className="flex flex-wrap items-center gap-2 text-xs">
+                <span
+                  className={[
+                    'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold',
+                    deadlineClass(deadline.urgency),
+                  ].join(' ')}
+                >
+                  {deadline.label}
+                </span>
+                <span className="font-medium text-slate-100">{request.user_name}</span>
+                <span className="text-slate-400">
+                  {getLeavePolicy(request.leave_type).label} · {request.total_days} day
+                  {request.total_days === 1 ? '' : 's'}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {urgentPending.length > 4 ? (
+            <div className="mt-2 text-[11px] text-rose-200/70">
+              and {urgentPending.length - 4} more below
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {actionError ? (
         <div className="rounded-xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300 ring-1 ring-inset ring-rose-400/20">
@@ -292,6 +399,10 @@ export function LeaveRequestsPanel({
 
               {paginatedRequests.map((request) => {
                 const policy = getLeavePolicy(request.leave_type);
+                const reviewDeadline =
+                  request.status === 'pending'
+                    ? getReviewDeadline(request.created_at, reviewClock)
+                    : null;
                 const isBusy = busyRequestId === request.id;
                 const isExpanded = expandedRequestIds.includes(request.id);
 
@@ -330,14 +441,36 @@ export function LeaveRequestsPanel({
                           </span>
                         </div>
                       </div>
-                      <span
-                        className={[
-                          'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold capitalize',
-                          statusClass(request.status),
-                        ].join(' ')}
-                      >
-                        {request.status}
-                      </span>
+                      <div className="flex shrink-0 flex-wrap items-center gap-2">
+                        <span
+                          className={[
+                            'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold capitalize',
+                            statusClass(request.status),
+                          ].join(' ')}
+                        >
+                          {request.status}
+                        </span>
+                        {reviewDeadline ? (
+                          <span
+                            title={`Auto-rejects ${reviewDeadline.deadline.toLocaleString()}`}
+                            className={[
+                              'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold',
+                              deadlineClass(reviewDeadline.urgency),
+                            ].join(' ')}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-3 w-3">
+                              <path
+                                d="M12 6.75v5.5l3.25 2M12 4.75a7.25 7.25 0 1 1 0 14.5 7.25 7.25 0 0 1 0-14.5Z"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                            {reviewDeadline.label}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
 
                     <div className="mt-3 grid grid-cols-2 gap-3 text-sm lg:grid-cols-4">

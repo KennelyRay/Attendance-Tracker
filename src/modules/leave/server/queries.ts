@@ -1,5 +1,11 @@
 import { getPool } from '@/lib/db';
 import { recordAuditEvent } from '@/lib/audit-log';
+import { getHolidayDateSet } from '@/modules/holidays/server/queries';
+import { ensureHolidaySchema } from '@/lib/holiday-system';
+import {
+  LEAVE_REVIEW_WINDOW_HOURS,
+  OVERDUE_LEAVE_REJECTION_NOTE,
+} from '@/modules/leave/review-window';
 import { ensureLeaveSystemSchema } from '@/lib/leave-system';
 import { getLeavePolicy } from '@/modules/leave/policy';
 import type {
@@ -21,9 +27,7 @@ import {
 
 const LEAVE_COOLDOWN_MS = 13 * 7 * 24 * 60 * 60 * 1000;
 
-const LEAVE_REVIEW_WINDOW_HOURS = 72;
 
-const OVERDUE_LEAVE_REJECTION_NOTE = `Not reviewed within ${LEAVE_REVIEW_WINDOW_HOURS} hours`;
 
 type LeaveRequestRow = Omit<LeaveRequest, 'attachments'>;
 
@@ -404,10 +408,13 @@ export async function createLeaveRequestForUser(
     throw new Error('Employee start date is missing');
   }
 
-  const totalDays = countBusinessDays(input.startDate, input.endDate);
+  const holidayDates = await getHolidayDateSet();
+  const totalDays = countBusinessDays(input.startDate, input.endDate, holidayDates);
 
   if (totalDays <= 0) {
-    throw new Error('The selected range must include at least one weekday');
+    throw new Error(
+      'The selected range must include at least one working day that is not a weekend or holiday'
+    );
   }
 
   if (policy.maxDaysPerRequest && totalDays > policy.maxDaysPerRequest) {
@@ -537,11 +544,16 @@ async function markApprovedLeaveInAttendance(
   reviewedBy: number
 ) {
   const pool = getPool();
+  // The day query below reads the holidays table, so make sure it exists first.
+  await ensureHolidaySchema(pool);
   const note = `Approved leave: ${leaveType}`;
+  // Mirrors countBusinessDays: no attendance row is written for a weekend or a
+  // holiday, so an approved leave never marks a day the employee would not have worked.
   const leaveDaysQuery = `
     SELECT day::date AS leave_date
     FROM generate_series($2::date, $3::date, interval '1 day') AS day
     WHERE EXTRACT(DOW FROM day) NOT IN (0, 6)
+      AND day::date NOT IN (SELECT date FROM holidays)
   `;
 
   await pool.query(

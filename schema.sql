@@ -102,6 +102,18 @@ CREATE TABLE IF NOT EXISTS employee_violations (
   )
 );
 
+CREATE TABLE IF NOT EXISTS holidays (
+  id SERIAL PRIMARY KEY,
+  date DATE NOT NULL UNIQUE,
+  name VARCHAR(160) NOT NULL,
+  holiday_type VARCHAR(16) NOT NULL DEFAULT 'regular',
+  created_by INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT holidays_type CHECK (holiday_type IN ('regular', 'special'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_holidays_date ON holidays(date);
+
 CREATE TABLE IF NOT EXISTS audit_log (
   id SERIAL PRIMARY KEY,
   actor_id INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,

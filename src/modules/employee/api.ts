@@ -107,3 +107,18 @@ export async function appealMyViolation(
 
   return data.violation as EmployeeViolationRecord;
 }
+
+export async function fetchHolidayDates(): Promise<Set<string>> {
+  const response = await fetch('/api/holidays', { cache: 'no-store' });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    // A missing calendar must not block filing leave; the server still applies the
+    // authoritative count, so the preview simply falls back to weekends only.
+    return new Set<string>();
+  }
+
+  return new Set<string>(
+    (data.holidays as Array<{ date: string }> | undefined)?.map((holiday) => holiday.date) ?? []
+  );
+}

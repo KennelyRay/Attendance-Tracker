@@ -29,6 +29,7 @@ import {
 import { AdminOverviewPanel } from '@/modules/admin/components/AdminOverviewPanel';
 import { AdminInsightsPanel } from '@/modules/admin/components/AdminInsightsPanel';
 import { AuditTrailPanel } from '@/modules/admin/components/AuditTrailPanel';
+import { HolidayCalendarPanel } from '@/modules/admin/components/HolidayCalendarPanel';
 import { LeaveRequestsPanel } from '@/modules/admin/components/LeaveRequestsPanel';
 import { NewViolationPanel } from '@/modules/admin/components/NewViolationPanel';
 import { ViolationCasesPanel } from '@/modules/admin/components/ViolationCasesPanel';
@@ -70,6 +71,7 @@ const viewDescriptions: Record<AdminView, string> = {
   dashboard: 'Main statistics and workforce charts',
   employees: 'Attendance updates and employee detail management',
   'leave-requests': 'Review pending leave requests and completed decisions',
+  'holiday-calendar': 'Days excluded from leave counting',
   'new-violation': 'Create a new employee violation case workspace',
   'all-violation-cases': 'Review all existing violation cases and statuses',
   'reports-charts': 'Deeper reports and management charts',
@@ -757,6 +759,8 @@ export function AdminDashboardClient({
               isViolationDataLoading={isViolationsLoading}
               onOpenView={(view) => void openView(view)}
             />
+          ) : activeView === 'holiday-calendar' ? (
+            <HolidayCalendarPanel />
           ) : activeView === 'employee-accounts' ? (
             <AccountManagementPanel
               accounts={employees}

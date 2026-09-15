@@ -6,13 +6,14 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import { createLeaveRequest, fetchMyLeaveData } from '@/modules/employee/api';
+import { createLeaveRequest, fetchHolidayDates, fetchMyLeaveData } from '@/modules/employee/api';
 import {
   LeaveAttachmentPreviewModal,
   type LeaveAttachmentPreview,
 } from '@/modules/leave/components/LeaveAttachmentPreviewModal';
 import { leavePolicies, getLeavePolicy } from '@/modules/leave/policy';
-import { countBusinessDays, formatDateOnly } from '@/modules/leave/utils';
+import { countBusinessDays, formatDateOnly, holidaysWithinRange } from '@/modules/leave/utils';
+import { getReviewDeadline } from '@/modules/leave/review-window';
 import type { EmployeePortalProfile } from '@/modules/employee/types';
 import type {
   CreateLeaveRequestInput,
@@ -70,6 +71,18 @@ export function LeaveManagementPanel({
   const [requestPage, setRequestPage] = useState(1);
   const [requestStatusFilter, setRequestStatusFilter] = useState<'all' | LeaveRequestStatus>('all');
   const [now, setNow] = useState(() => Date.now());
+  const [holidayDates, setHolidayDates] = useState<ReadonlySet<string>>(() => new Set<string>());
+
+  const rangePreview = useMemo(() => {
+    if (!startDate || !endDate || startDate > endDate) {
+      return null;
+    }
+
+    return {
+      workingDays: countBusinessDays(startDate, endDate, holidayDates),
+      excludedHolidays: holidaysWithinRange(startDate, endDate, holidayDates),
+    };
+  }, [startDate, endDate, holidayDates]);
   const selectedPolicy = useMemo(() => getLeavePolicy(leaveType), [leaveType]);
   const loadLeaveData = useCallback(async () => {
     try {
@@ -112,6 +125,18 @@ export function LeaveManagementPanel({
     const startIndex = (safeRequestPage - 1) * LEAVE_REQUESTS_PER_PAGE;
     return filteredRequests.slice(startIndex, startIndex + LEAVE_REQUESTS_PER_PAGE);
   }, [filteredRequests, safeRequestPage]);
+
+  useEffect(() => {
+    let isStale = false;
+
+    void fetchHolidayDates().then((dates) => {
+      if (!isStale) setHolidayDates(dates);
+    });
+
+    return () => {
+      isStale = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -197,9 +222,11 @@ export function LeaveManagementPanel({
       return;
     }
 
-    const requestedBusinessDays = countBusinessDays(startDate, endDate);
+    const requestedBusinessDays = countBusinessDays(startDate, endDate, holidayDates);
     if (requestedBusinessDays <= 0) {
-      setError('The selected range must include at least one weekday.');
+      setError(
+        'The selected range must include at least one working day that is not a weekend or holiday.'
+      );
       return;
     }
 
@@ -388,6 +415,29 @@ export function LeaveManagementPanel({
                   </div>
                 </div>
               </div>
+
+              {rangePreview ? (
+                <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 px-4 py-3 text-sm ring-1 ring-inset ring-white/5">
+                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <span className="font-semibold text-slate-100">
+                      {rangePreview.workingDays} working day
+                      {rangePreview.workingDays === 1 ? '' : 's'}
+                    </span>
+                    <span className="text-xs text-slate-400">will be counted for this request</span>
+                  </div>
+                  {rangePreview.excludedHolidays.length > 0 ? (
+                    <div className="mt-1.5 text-xs leading-5 text-emerald-300">
+                      Not counted: {rangePreview.excludedHolidays.map(formatDateOnly).join(', ')} &mdash;{' '}
+                      {rangePreview.excludedHolidays.length === 1 ? 'a holiday' : 'holidays'}, so your
+                      balance is not charged for {rangePreview.excludedHolidays.length === 1 ? 'it' : 'them'}.
+                    </div>
+                  ) : (
+                    <div className="mt-1.5 text-xs text-slate-500">
+                      Weekends and holidays are never counted.
+                    </div>
+                  )}
+                </div>
+              ) : null}
 
               {selectedPolicy.canUsePaidBalance && !selectedPolicy.requiresPaidBalance ? (
                 <label className="flex items-start gap-3 rounded-2xl border border-slate-800/80 bg-slate-900/60 px-4 py-3 text-sm text-slate-300 ring-1 ring-inset ring-white/5">
@@ -632,6 +682,8 @@ export function LeaveManagementPanel({
 
               {paginatedRequests.map((request) => {
                 const policy = getLeavePolicy(request.leave_type);
+                const reviewDeadline =
+                  request.status === 'pending' ? getReviewDeadline(request.created_at) : null;
 
                 return (
                   <button
@@ -647,14 +699,34 @@ export function LeaveManagementPanel({
                           {formatDateOnly(request.start_date)} to {formatDateOnly(request.end_date)}
                         </div>
                       </div>
-                      <span
-                        className={[
-                          'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold capitalize',
-                          statusClass(request.status),
-                        ].join(' ')}
-                      >
-                        {request.status}
-                      </span>
+                      <div className="flex shrink-0 flex-wrap items-center gap-2">
+                        <span
+                          className={[
+                            'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold capitalize',
+                            statusClass(request.status),
+                          ].join(' ')}
+                        >
+                          {request.status}
+                        </span>
+                        {reviewDeadline ? (
+                          <span
+                            title={`Automatically rejected if not reviewed by ${reviewDeadline.deadline.toLocaleString()}`}
+                            className={[
+                              'inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold',
+                              reviewDeadline.urgency === 'expired' ||
+                              reviewDeadline.urgency === 'critical'
+                                ? 'bg-rose-500/12 text-rose-300 ring-1 ring-inset ring-rose-400/25'
+                                : reviewDeadline.urgency === 'warning'
+                                  ? 'bg-amber-500/12 text-amber-300 ring-1 ring-inset ring-amber-400/25'
+                                  : 'bg-slate-900/80 text-slate-400 ring-1 ring-inset ring-slate-800',
+                            ].join(' ')}
+                          >
+                            {reviewDeadline.urgency === 'expired'
+                              ? 'Awaiting closure'
+                              : `${reviewDeadline.label} to review`}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-2.5 text-xs text-slate-400">
                       <span className="inline-flex items-center rounded-full bg-slate-900/80 px-2.5 py-1 ring-1 ring-inset ring-slate-800">

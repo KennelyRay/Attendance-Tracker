@@ -4,6 +4,7 @@ export type AdminView =
   | 'dashboard'
   | 'employees'
   | 'leave-requests'
+  | 'holiday-calendar'
   | 'new-violation'
   | 'all-violation-cases'
   | 'reports-charts'
@@ -56,6 +57,19 @@ function SidebarIcon({ view }: { view: AdminView }) {
       return (
         <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className={iconClass}>
           <path d="M6 4.5H14C14.8284 4.5 15.5 5.17157 15.5 6V16L10 13.2L4.5 16V6C4.5 5.17157 5.17157 4.5 6 4.5Z" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      );
+    case 'holiday-calendar':
+      return (
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className={iconClass}>
+          <path d="M6.5 3.5V6M13.5 3.5V6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M3.5 8.25H16.5" stroke="currentColor" strokeWidth="1.5" />
+          <path
+            d="M5.5 5H14.5C15.6 5 16.5 5.9 16.5 7V14.5C16.5 15.6 15.6 16.5 14.5 16.5H5.5C4.4 16.5 3.5 15.6 3.5 14.5V7C3.5 5.9 4.4 5 5.5 5Z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          />
+          <path d="M8 11.75 9.5 13.25 12.5 10.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
     case 'new-violation':
@@ -129,6 +143,11 @@ export const adminNavigationGroups: NavGroup[] = [
         view: 'leave-requests',
         label: 'Leave Requests',
         description: 'Review and process leave',
+      },
+      {
+        view: 'holiday-calendar',
+        label: 'Holiday Calendar',
+        description: 'Days not charged as leave',
       },
     ],
   },

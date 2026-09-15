@@ -805,9 +805,13 @@ export function AdminDashboardClient({
                 key={view}
                 type="button"
                 onClick={() => void openView(view)}
+                aria-current={isActive ? 'page' : undefined}
                 className={[
-                  'flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-center text-[11px] font-medium transition-all',
-                  isActive ? 'bg-sky-500/12 text-slate-50' : 'text-slate-400 hover:bg-slate-900/80',
+                  'flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-center text-[11px] font-medium',
+                  'transition-colors duration-150 active:scale-[0.96] motion-reduce:active:scale-100',
+                  isActive
+                    ? 'bg-sky-500/10 text-sky-300'
+                    : 'text-slate-500 hover:bg-slate-900/60 hover:text-slate-300',
                 ].join(' ')}
               >
                 <AdminMobilePrimaryIcon item={view} />
@@ -818,7 +822,8 @@ export function AdminDashboardClient({
           <button
             type="button"
             onClick={() => setIsMobileSidebarOpen(true)}
-            className="flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-center text-[11px] font-medium text-slate-400 transition-all hover:bg-slate-900/80"
+            aria-haspopup="dialog"
+            className="flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-center text-[11px] font-medium text-slate-500 transition-colors duration-150 hover:bg-slate-900/60 hover:text-slate-300 active:scale-[0.96] motion-reduce:active:scale-100"
           >
             <AdminMobilePrimaryIcon item="menu" />
             <span>More</span>

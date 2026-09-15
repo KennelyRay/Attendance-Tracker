@@ -50,7 +50,7 @@ export function InstallAppButton({ className = '' }: { className?: string }) {
       variant="secondary"
       size="sm"
       onClick={() => void onInstall()}
-      className={['shrink-0 px-2.5 sm:px-3', className].join(' ')}
+      className={['shrink-0', className].join(' ')}
       title="Install HRIS as an app"
     >
       <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
@@ -62,7 +62,7 @@ export function InstallAppButton({ className = '' }: { className?: string }) {
           strokeLinejoin="round"
         />
       </svg>
-      <span className="hidden sm:inline">Install</span>
+      <span>Install app</span>
     </Button>
   );
 }

@@ -688,13 +688,6 @@ export function AdminDashboardClient({
             subtitle={viewDescriptions[activeView]}
             right={
               <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                <Button
-                  className="xl:hidden"
-                  variant="secondary"
-                  onClick={() => setIsMobileSidebarOpen(true)}
-                >
-                  Open Navigation
-                </Button>
                 {activeView === 'smart-insights' ? (
                   <Button
                     variant="secondary"

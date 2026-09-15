@@ -124,7 +124,6 @@ export function EmployeeDashboardClient({
   const [violationsError, setViolationsError] = useState<string | null>(null);
   const [employeeProfile, setEmployeeProfile] = useState<EmployeePortalProfile | null>(null);
   const [activeView, setActiveView] = useState<EmployeeView>('dashboard');
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const load = async (m: string, y: string) => {
     setError(null);
@@ -193,19 +192,6 @@ export function EmployeeDashboardClient({
       document.removeEventListener('visibilitychange', handleFocus);
     };
   }, []);
-
-  useEffect(() => {
-    if (!isMobileSidebarOpen) {
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isMobileSidebarOpen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -694,30 +680,6 @@ export function EmployeeDashboardClient({
 
   return (
     <>
-      {isMobileSidebarOpen ? (
-        <div
-          className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 backdrop-blur-sm xl:hidden"
-          onClick={() => setIsMobileSidebarOpen(false)}
-        >
-          <div className="min-h-full w-full p-3 sm:p-4">
-            <div
-              className="max-h-full w-[min(21rem,85vw)] overflow-y-auto"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <EmployeeSidebar
-                activeView={activeView}
-                mode="mobile"
-                onCloseMobile={() => setIsMobileSidebarOpen(false)}
-                onSelect={(view) => {
-                  setActiveView(view);
-                  setIsMobileSidebarOpen(false);
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      ) : null}
-
       <div
         className="app-mobile-content-pad grid grid-cols-1 gap-6 px-3 sm:px-4 xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-0 xl:px-0 xl:pb-0"
       >
@@ -748,21 +710,6 @@ export function EmployeeDashboardClient({
 
             <div className="flex flex-col gap-3 border-b border-slate-800/80 pb-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsMobileSidebarOpen(true)}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800/80 bg-slate-950/80 text-slate-300 ring-1 ring-inset ring-white/5 transition-colors hover:bg-slate-900 xl:hidden"
-                  aria-label="Open employee navigation"
-                >
-                  <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-                    <path
-                      d="M4.5 6.5H15.5M4.5 10H15.5M4.5 13.5H15.5"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </button>
                 <div className="space-y-1">
                   <div className="text-sm font-semibold text-slate-100">
                     {employeeViewLabel(activeView)}

@@ -128,13 +128,15 @@ export function TopNav({
         ].join(' ')}
       >
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900/80 ring-1 ring-inset ring-sky-400/15 shadow-[0_10px_24px_rgba(34,211,238,0.18)] sm:h-9 sm:w-9">
+          <div className="shrink-0 rounded-[0.7rem] shadow-[0_10px_24px_rgba(34,211,238,0.22)] ring-1 ring-inset ring-sky-400/20 sm:rounded-xl">
             <Image
-              src="/hris-logo.png"
+              src="/hris-logo.svg"
               alt="HRIS logo"
-              width={32}
-              height={32}
-              className="h-7 w-7 object-contain sm:h-8 sm:w-8"
+              width={36}
+              height={36}
+              priority
+              unoptimized
+              className="h-8 w-8 sm:h-9 sm:w-9"
             />
           </div>
           <div className="min-w-0">

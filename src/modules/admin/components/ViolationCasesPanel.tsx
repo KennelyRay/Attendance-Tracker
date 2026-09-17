@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { RefreshButton } from '@/components/ui/RefreshButton';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { LoadingState } from '@/components/ui/LoadingState';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Table, TBody, TD, TH, THead } from '@/components/ui/Table';
@@ -435,11 +436,15 @@ export function ViolationCasesPanel({
             </div>
           </div>
 
-          {violations.length === 0 && !isLoading ? (
+          {isLoading && violations.length === 0 ? (
+            <div className="mt-4">
+              <LoadingState label="Loading violation cases…" />
+            </div>
+          ) : violations.length === 0 ? (
             <div className="mt-4">
               <EmptyState
                 title="No violation cases yet"
-                description="Violation cases will appear here after an admin records one."
+                description="Nothing has been filed. Cases appear here once an admin records one."
               />
             </div>
           ) : filteredViolations.length === 0 ? (

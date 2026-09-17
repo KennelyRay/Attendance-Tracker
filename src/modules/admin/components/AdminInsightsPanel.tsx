@@ -331,7 +331,7 @@ export function AdminInsightsPanel({
         <CardBody>
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.15fr_0.85fr]">
             <div className="rounded-2xl border border-sky-400/15 bg-sky-500/8 px-5 py-5 ring-1 ring-inset ring-sky-400/10">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-300">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-sky-300">
                 Next Best Action
               </div>
               <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -466,7 +466,7 @@ export function AdminInsightsPanel({
           <CardBody>
             <div className="space-y-5">
               <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Company Risk
                 </div>
                 {rankedCompanyRisk.length === 0 ? (
@@ -507,7 +507,7 @@ export function AdminInsightsPanel({
               </div>
 
               <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Employee Watchlist
                 </div>
                 {employeeViolationWatchlist.length === 0 ? (

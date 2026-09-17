@@ -22,7 +22,7 @@ export function AmbientPageLoader({
             </div>
           </div>
 
-          <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-300/80 sm:text-sm sm:tracking-[0.28em]">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-sky-300/80 sm:text-sm sm:tracking-wide">
             Syncing View
           </div>
           <div className="mt-2.5 text-lg font-semibold text-slate-100 sm:mt-3 sm:text-2xl">{title}</div>

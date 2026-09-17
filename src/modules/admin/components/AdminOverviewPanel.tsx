@@ -57,11 +57,13 @@ function MetricStat({
   value,
   tone,
   description,
+  isLoading = false,
 }: {
   label: string;
   value: string;
   tone: 'sky' | 'emerald' | 'amber' | 'violet';
   description: string;
+  isLoading?: boolean;
 }) {
   const toneClass =
     tone === 'sky'
@@ -75,7 +77,15 @@ function MetricStat({
   return (
     <div className={`rounded-2xl border px-4 py-4 ring-1 ring-inset ${toneClass}`}>
       <div className="text-[11px] font-semibold uppercase tracking-wide">{label}</div>
-      <div className="mt-2 text-2xl font-semibold text-slate-50">{value}</div>
+      {isLoading ? (
+        <div
+          role="status"
+          aria-label={`Loading ${label}`}
+          className="app-skeleton mt-2 h-8 w-16 rounded-lg"
+        />
+      ) : (
+        <div className="mt-2 text-3xl font-semibold tabular-nums text-slate-50">{value}</div>
+      )}
       <div className="mt-1.5 text-sm leading-5 text-slate-400">{description}</div>
     </div>
   );
@@ -118,7 +128,7 @@ function PieChartCard({
               <div className="absolute inset-6 flex items-center justify-center rounded-full bg-slate-950/95 ring-1 ring-inset ring-slate-800">
                 <div className="text-center">
                   <div className="text-3xl font-semibold text-slate-50">{total}</div>
-                  <div className="mt-1 text-xs uppercase tracking-[0.22em] text-slate-400">
+                  <div className="mt-1 text-xs uppercase tracking-wide text-slate-400">
                     Total
                   </div>
                 </div>
@@ -706,25 +716,29 @@ export function AdminOverviewPanel({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <MetricStat
                 label="Violation Cases"
-                value={isViolationDataLoading ? '...' : String(violations.length)}
+                isLoading={isViolationDataLoading}
+              value={String(violations.length)}
                 tone="violet"
                 description="All recorded employee violation cases currently available for reporting."
               />
               <MetricStat
                 label="Employees Flagged"
-                value={isViolationDataLoading ? '...' : String(violationEmployeeStats.length)}
+                isLoading={isViolationDataLoading}
+              value={String(violationEmployeeStats.length)}
                 tone="amber"
                 description="Unique employees with at least one violation case on record."
               />
               <MetricStat
                 label="Termination Review"
-                value={isViolationDataLoading ? '...' : String(terminationReviewCandidates.length)}
+                isLoading={isViolationDataLoading}
+              value={String(terminationReviewCandidates.length)}
                 tone="emerald"
                 description="Employees meeting the watchlist threshold for escalation review."
               />
               <MetricStat
                 label="Highest Company Load"
-                value={isViolationDataLoading ? '...' : String(mostViolationsCompany?.total ?? 0)}
+                isLoading={isViolationDataLoading}
+              value={String(mostViolationsCompany?.total ?? 0)}
                 tone="sky"
                 description={
                   isViolationDataLoading
@@ -912,19 +926,22 @@ export function AdminOverviewPanel({
             />
             <MetricStat
               label="Pending Leaves"
-              value={isLeaveDataLoading ? '...' : String(leaveStatusCounts.pending)}
+              isLoading={isLeaveDataLoading}
+              value={String(leaveStatusCounts.pending)}
               tone="amber"
               description="Leave filings that still need admin action."
             />
             <MetricStat
               label="Open Violations"
-              value={isViolationDataLoading ? '...' : String(openViolationCount)}
+              isLoading={isViolationDataLoading}
+              value={String(openViolationCount)}
               tone="violet"
               description="Violation cases that are still open or under active review."
             />
             <MetricStat
               label="Approval Rate"
-              value={isLeaveDataLoading ? '...' : approvalRate}
+              isLoading={isLeaveDataLoading}
+              value={approvalRate}
               tone="emerald"
               description="Share of reviewed leave requests that were approved."
             />
@@ -995,7 +1012,7 @@ export function AdminOverviewPanel({
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="text-sm font-semibold text-slate-100">{company.company}</div>
-                      <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                      <div className="text-xs uppercase tracking-wide text-slate-500">
                         Company
                       </div>
                     </div>

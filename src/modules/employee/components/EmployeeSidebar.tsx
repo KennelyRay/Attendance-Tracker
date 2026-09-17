@@ -114,7 +114,7 @@ export function EmployeeSidebar({
 
       <div className="space-y-5 px-5 py-4 sm:px-6 sm:py-5">
         <div>
-          <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
             Workspace
           </div>
           <div className="space-y-2">

@@ -750,6 +750,7 @@ export function AdminDashboardClient({
           ) : activeView === 'employee-accounts' ? (
             <AccountManagementPanel
               accounts={employees}
+              isLoading={isEmployeesLoading}
               onCreate={onCreateAccount}
               onUpdateAccount={onUpdateAccount}
               onUpdateAccess={onUpdateAccountAccess}

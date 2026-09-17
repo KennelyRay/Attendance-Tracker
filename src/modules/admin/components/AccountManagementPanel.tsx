@@ -4,6 +4,7 @@ import { ReactNode, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { LoadingState } from '@/components/ui/LoadingState';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Table, TBody, TD, TH, THead } from '@/components/ui/Table';
@@ -173,12 +174,14 @@ function FeedbackModal({
 
 export function AccountManagementPanel({
   accounts,
+  isLoading = false,
   onCreate,
   onUpdateAccount,
   onUpdateAccess,
   onDelete,
 }: {
   accounts: Employee[];
+  isLoading?: boolean;
   onCreate: (input: CreateEmployeeInput) => Promise<void>;
   onUpdateAccount: (input: UpdateEmployeeAccountInput) => Promise<void>;
   onUpdateAccess: (input: UpdateEmployeeAccessInput) => Promise<void>;
@@ -488,10 +491,14 @@ export function AccountManagementPanel({
         </Card>
       </div>
 
-      {accounts.length === 0 ? (
+      {/* Without the loading branch this claimed "No employee accounts" while the
+          list was still being fetched, which is a wrong answer rather than a slow one. */}
+      {isLoading && accounts.length === 0 ? (
+        <LoadingState label="Loading employee accounts…" />
+      ) : accounts.length === 0 ? (
         <EmptyState
-          title="No employee accounts"
-          description="Create an employee account to manage access and attendance."
+          title="No employee accounts yet"
+          description="Add the first account using the form above to give someone access."
         />
       ) : (
         <Card>

@@ -334,7 +334,7 @@ export function AdminSidebar({
                   <div className="h-px w-8 bg-slate-800/90" />
                 </div>
               ) : (
-                <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                   {group.heading}
                 </div>
               )}

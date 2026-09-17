@@ -6,6 +6,7 @@ import { RefreshButton } from '@/components/ui/RefreshButton';
 import { NotificationToggle } from '@/components/pwa/NotificationToggle';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { LoadingState } from '@/components/ui/LoadingState';
 import { Select } from '@/components/ui/Select';
 import type { AdminLeaveRequest, ReviewLeaveRequestInput } from '@/modules/leave/types';
 import {
@@ -384,10 +385,12 @@ export function LeaveRequestsPanel({
           }
         />
         <CardBody>
-          {requests.length === 0 && !isLoading ? (
+          {isLoading && requests.length === 0 ? (
+            <LoadingState label="Loading the leave queue…" />
+          ) : requests.length === 0 ? (
             <EmptyState
               title="No leave requests yet"
-              description="Employee leave applications will appear here once they submit one."
+              description="Employee leave applications will appear here once they submit one. Nothing is waiting on you."
             />
           ) : filteredRequests.length === 0 ? (
             <EmptyState

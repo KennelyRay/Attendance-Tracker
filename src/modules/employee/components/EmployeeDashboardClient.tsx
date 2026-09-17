@@ -694,7 +694,7 @@ export function EmployeeDashboardClient({
             <div className="xl:hidden">
               {isFirstTimeEmployee ? (
                 <div className="mb-4 rounded-2xl border border-sky-400/15 bg-sky-500/8 px-4 py-4 ring-1 ring-inset ring-sky-400/10">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-sky-300">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-sky-300">
                     Quick Start
                   </div>
                   <div className="mt-2 text-sm font-medium text-slate-100">

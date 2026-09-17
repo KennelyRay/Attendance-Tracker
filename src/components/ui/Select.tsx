@@ -255,8 +255,8 @@ export function Select({
         onClick={() => (isOpen ? close() : openMenu())}
         onKeyDown={onKeyDown}
         className={[
-          'inline-flex h-11 w-full items-center justify-between gap-2 rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 text-left text-sm text-slate-100 shadow-sm transition-colors sm:h-10',
-          'hover:border-slate-600/80 focus:outline-none focus:ring-2 focus:ring-sky-400/70',
+          'inline-flex h-11 w-full items-center justify-between gap-2 rounded-xl border border-field bg-slate-950 px-3 text-left text-sm text-slate-100 transition-colors sm:h-10',
+          'hover:border-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-300',
           'disabled:cursor-not-allowed disabled:opacity-60',
           className,
         ].join(' ')}

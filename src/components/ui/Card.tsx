@@ -1,8 +1,16 @@
 import { ReactNode } from 'react';
 
+/**
+ * The default surface: a flat panel separated by tint and a border.
+ *
+ * It previously carried backdrop-blur, an inset ring and a 60px shadow on every
+ * instance. When every panel is lifted and frosted, elevation stops meaning anything
+ * and the page reads as floating glass. Elevation is now spent only where something
+ * genuinely sits above the page, which is dialogs and the sheet.
+ */
 export function Card({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-sky-400/10 bg-slate-950/70 shadow-[0_22px_60px_rgba(2,8,23,0.45)] ring-1 ring-inset ring-white/5 backdrop-blur-xl">
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/60">
       {children}
     </div>
   );

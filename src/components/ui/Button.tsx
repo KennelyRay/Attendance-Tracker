@@ -8,15 +8,20 @@ export type ButtonProps = ComponentPropsWithoutRef<'button'> & {
   size?: Size;
 };
 
+/* The primary was a sky-to-cyan gradient with a 30px coloured glow, which is the
+ * single most over-represented CTA treatment there is, and the glow made the button
+ * read as lit rather than pressable. A solid accent is the accent; hover shifts it. */
 const variantClass: Record<Variant, string> = {
   primary:
-    'bg-gradient-to-r from-sky-500 to-cyan-400 text-slate-950 shadow-[0_12px_30px_rgba(34,211,238,0.28)] hover:from-sky-400 hover:to-cyan-300 hover:shadow-[0_16px_38px_rgba(34,211,238,0.34)] focus-visible:outline-sky-400 active:from-sky-500 active:to-cyan-400',
+    'bg-sky-400 text-slate-950 hover:bg-sky-300 focus-visible:outline-sky-300 active:bg-sky-400',
   secondary:
-    'bg-slate-900/85 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-700/80 hover:bg-slate-800 hover:shadow focus-visible:outline-sky-400 active:bg-slate-800',
+    'bg-slate-800 text-slate-100 ring-1 ring-inset ring-slate-700 hover:bg-slate-700 focus-visible:outline-sky-300 active:bg-slate-700',
+  /* rose-500 put white text at 3.67:1 and failed AA. rose-600 is 4.70:1, and hover
+   * deepens rather than lightens so the hover state stays above the line too. */
   danger:
-    'bg-rose-500/90 text-white shadow-sm hover:bg-rose-400 hover:shadow focus-visible:outline-rose-400 active:bg-rose-500',
+    'bg-rose-600 text-white hover:bg-rose-700 focus-visible:outline-rose-300 active:bg-rose-600',
   ghost:
-    'bg-transparent text-slate-300 hover:bg-slate-800/80 focus-visible:outline-sky-400 active:bg-slate-800',
+    'bg-transparent text-slate-300 hover:bg-slate-800 hover:text-slate-100 focus-visible:outline-sky-300 active:bg-slate-800',
 };
 
 const sizeClass: Record<Size, string> = {

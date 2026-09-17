@@ -203,7 +203,7 @@ export function EmployeeList({
                     'w-full rounded-lg px-3 py-2 text-left transition-colors',
                     'ring-1 ring-inset',
                     isSelected
-                      ? 'bg-sky-500/12 ring-sky-400/30 shadow-[0_10px_24px_rgba(34,211,238,0.08)]'
+                      ? 'bg-sky-500/12 ring-sky-400/40'
                       : 'bg-slate-900/80 ring-slate-800 hover:bg-slate-900',
                   ].join(' ')}
                 >

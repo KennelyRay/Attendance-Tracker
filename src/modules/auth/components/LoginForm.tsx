@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -15,11 +16,6 @@ export function LoginForm() {
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const lineClass =
-    'animate-lightning-scan absolute h-px w-[18rem] sm:w-[24rem] lg:w-[30rem] bg-[linear-gradient(90deg,transparent,rgba(224,242,254,0.06)_12%,rgba(224,242,254,0.78)_42%,rgba(56,189,248,0.9)_50%,rgba(224,242,254,0.78)_58%,transparent_88%)] shadow-[0_0_14px_rgba(186,230,253,0.72),0_0_34px_rgba(56,189,248,0.56)]';
-  const wideLineClass =
-    'animate-lightning-scan absolute h-px w-[140vw] sm:w-[118vw] bg-[linear-gradient(90deg,transparent,rgba(224,242,254,0.04)_12%,rgba(224,242,254,0.68)_40%,rgba(56,189,248,0.92)_50%,rgba(224,242,254,0.68)_60%,transparent_88%)] shadow-[0_0_16px_rgba(186,230,253,0.78),0_0_40px_rgba(56,189,248,0.6)]';
-
   useEffect(() => {
     const flash = consumeAuthFlash();
     if (!flash) {
@@ -55,56 +51,37 @@ export function LoginForm() {
   };
 
   return (
-    <div className="relative min-h-[100dvh] overflow-hidden bg-[linear-gradient(135deg,_#050c18_0%,_#081524_36%,_#0a1d33_100%)] px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="animate-float-slow absolute -left-24 top-8 h-56 w-56 rounded-full bg-sky-400/16 blur-[85px] sm:-left-28 sm:h-[28rem] sm:w-[28rem] sm:bg-sky-400/20 sm:blur-[120px]" />
-        <div className="animate-float-medium absolute left-1/4 top-1/3 hidden h-56 w-56 rounded-full bg-cyan-300/16 blur-[90px] sm:block sm:h-72 sm:w-72 sm:blur-[110px]" />
-        <div className="animate-float-medium absolute right-4 top-14 h-48 w-48 rounded-full bg-cyan-300/12 blur-[78px] sm:right-8 sm:h-[26rem] sm:w-[26rem] sm:bg-cyan-300/16 sm:blur-[120px]" />
-        <div className="animate-pulse-glow absolute bottom-8 right-1/4 h-44 w-44 rounded-full bg-blue-400/10 blur-[72px] sm:h-72 sm:w-72 sm:bg-blue-400/14 sm:blur-[110px]" />
-        <div className="animate-pulse-glow absolute -right-12 top-1/3 hidden h-64 w-64 rounded-full bg-sky-500/14 blur-[100px] sm:block sm:h-80 sm:w-80 sm:blur-[130px]" />
-        <div className="absolute left-[8%] top-[14%] h-40 w-[18rem] -rotate-12 bg-[linear-gradient(90deg,transparent,rgba(125,211,252,0.22),transparent)] blur-3xl sm:h-56 sm:w-[32rem]" />
-        <div className="absolute left-[38%] top-[34%] hidden h-40 w-[16rem] rotate-[10deg] bg-[linear-gradient(90deg,transparent,rgba(56,189,248,0.16),transparent)] blur-3xl sm:block sm:h-56 sm:w-[26rem]" />
-        <div className="absolute right-[6%] top-[18%] hidden h-36 w-[14rem] rotate-[20deg] bg-[linear-gradient(90deg,transparent,rgba(186,230,253,0.18),transparent)] blur-3xl sm:block sm:h-52 sm:w-[24rem]" />
-
-        <div className={['hidden sm:block', wideLineClass, 'left-[-10%] top-[13%] -rotate-[15deg]'].join(' ')} />
-        <div className={['hidden sm:block', lineClass, 'left-[2%] top-[14%] -rotate-[15deg]'].join(' ')} />
-        <div
-          className={['hidden sm:block', lineClass, 'left-[32%] top-[32%] -rotate-[15deg]'].join(' ')}
-          style={{ animationDelay: '1.1s' }}
-        />
-        <div
-          className={['hidden sm:block', lineClass, 'right-[-4%] top-[18%] -rotate-[15deg]'].join(' ')}
-          style={{ animationDelay: '2.1s' }}
-        />
-        <div
-          className={['hidden sm:block', lineClass, 'left-[10%] top-[24%] -rotate-[15deg]'].join(' ')}
-          style={{ animationDelay: '1.6s' }}
-        />
-        <div
-          className={['hidden sm:block', lineClass, 'left-[46%] top-[42%] -rotate-[15deg]'].join(' ')}
-          style={{ animationDelay: '2.4s' }}
-        />
-        <div
-          className={['hidden sm:block', lineClass, 'right-[10%] bottom-[22%] -rotate-[15deg]'].join(' ')}
-          style={{ animationDelay: '3.2s' }}
-        />
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-200/30 to-transparent" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,_rgba(125,211,252,0.2),_transparent_22%),radial-gradient(circle_at_78%_24%,_rgba(34,211,238,0.16),_transparent_20%),radial-gradient(circle_at_50%_78%,_rgba(59,130,246,0.12),_transparent_28%)]" />
-        <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(to_right,#7dd3fc_1px,transparent_1px),linear-gradient(to_bottom,#7dd3fc_1px,transparent_1px)] [background-size:44px_44px] sm:[background-size:72px_72px]" />
-      </div>
+    <div className="relative min-h-[100dvh] overflow-hidden bg-[#07111f] px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
+      {/* One treatment, one job: a soft lift behind the sign-in card so the eye lands
+          on the form. The previous layer held five floating orbs, seven glowing sweeps,
+          a dot grid and three more radial washes, none of which carried information. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(90rem_50rem_at_72%_38%,rgba(56,189,248,0.10),transparent_62%)]"
+      />
 
       <div className="relative z-10 mx-auto flex min-h-[calc(100dvh-1rem)] max-w-7xl items-center justify-between gap-4 sm:min-h-[calc(100dvh-4rem)] sm:gap-10">
         <div className="hidden max-w-xl lg:block">
           <div className="max-w-lg">
-            <div className="text-sm font-semibold uppercase tracking-[0.3em] text-sky-300/75">
-              Workforce Portal
+            <div className="flex items-center gap-3">
+              <Image
+                src="/hris-logo.svg"
+                alt=""
+                width={44}
+                height={44}
+                priority
+                unoptimized
+                className="h-11 w-11 rounded-xl"
+              />
+              <span className="text-lg font-semibold tracking-tight text-slate-100">HRIS</span>
             </div>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-50 xl:text-[2.9rem]">
-              Human Resources Information System
+            <h1 className="mt-8 text-4xl font-semibold leading-[1.12] tracking-tight text-slate-50 xl:text-[2.75rem]">
+              Attendance, leave, and employee records in one place.
             </h1>
             <p className="mt-5 max-w-md text-base leading-7 text-slate-300">
-              Manage attendance, absences, and leave records in one streamlined workspace built
-              for employees and managers.
+              File a leave request, work through the review queue, or check a balance. Leave
+              types follow Philippine statutory entitlements, so the rules are applied the same
+              way every time.
             </p>
           </div>
         </div>
@@ -117,7 +94,7 @@ export function LoginForm() {
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900/85 ring-1 ring-inset ring-sky-400/15 sm:h-14 sm:w-14">
                       <div className="relative h-7 w-7 sm:h-8 sm:w-8">
                         <div className="absolute inset-0 rounded-full border-2 border-sky-300/20 border-t-sky-300 animate-spin" />
-                        <div className="animate-ambient-loader-pulse absolute inset-[7px] rounded-full bg-sky-300/85 shadow-[0_0_16px_rgba(125,211,252,0.85)]" />
+                        <div className="animate-ambient-loader-pulse absolute inset-[7px] rounded-full bg-sky-300" />
                       </div>
                     </div>
                     <div className="mt-4">
@@ -140,13 +117,26 @@ export function LoginForm() {
                   </div>
                 </div>
               ) : null}
-            <div className="flex flex-col items-center justify-center gap-1.5 border-b border-slate-800/80 px-4 py-5 sm:px-5 sm:py-7">
-              <span className="-mr-[0.28em] bg-gradient-to-r from-sky-300 via-cyan-200 to-sky-400 bg-clip-text text-4xl font-bold tracking-[0.28em] text-transparent drop-shadow-[0_0_28px_rgba(56,189,248,0.45)] sm:text-5xl">
-                HRIS
-              </span>
-              <span className="text-[10px] font-medium uppercase tracking-[0.32em] text-slate-400 sm:text-[11px]">
-                Human Resource Information System
-              </span>
+            {/* The mark carries the identity; the wordmark used gradient-clipped text,
+                a glow and 0.28em tracking, which is three effects doing one job badly. */}
+            <div className="flex flex-col items-center gap-3 border-b border-slate-800/80 px-5 py-7 lg:hidden">
+              <Image
+                src="/hris-logo.svg"
+                alt=""
+                width={48}
+                height={48}
+                priority
+                unoptimized
+                className="h-12 w-12 rounded-xl"
+              />
+              <div className="text-center">
+                <div className="text-xl font-semibold tracking-tight text-slate-50">HRIS</div>
+                <div className="mt-1 text-sm text-slate-400">Attendance, leave, and records</div>
+              </div>
+            </div>
+            <div className="hidden border-b border-slate-800/80 px-6 py-6 lg:block">
+              <h2 className="text-lg font-semibold tracking-tight text-slate-50">Sign in</h2>
+              <p className="mt-1 text-sm text-slate-400">Use your work email address.</p>
             </div>
             <CardBody>
               <form onSubmit={submit} className="space-y-3">

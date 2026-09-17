@@ -161,7 +161,7 @@ export function TopNav({
         ].join(' ')}
       >
         <div className="flex min-w-0 items-center gap-3">
-          <div className="shrink-0 rounded-[0.7rem] shadow-[0_10px_24px_rgba(34,211,238,0.22)] ring-1 ring-inset ring-sky-400/20 sm:rounded-xl">
+          <div className="shrink-0 rounded-[0.7rem] ring-1 ring-inset ring-slate-700 sm:rounded-xl">
             <Image
               src="/hris-logo.svg"
               alt="HRIS logo"

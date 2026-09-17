@@ -23,22 +23,22 @@ type CategoryFilter = AuditCategory | 'all';
 
 const categoryAccent: Record<AuditCategory, { dot: string; chip: string; rail: string }> = {
   account: {
-    dot: 'bg-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.7)]',
+    dot: 'bg-sky-400',
     chip: 'bg-sky-500/12 text-sky-300 ring-1 ring-inset ring-sky-400/25',
     rail: 'text-sky-300',
   },
   attendance: {
-    dot: 'bg-violet-400 shadow-[0_0_12px_rgba(167,139,250,0.7)]',
+    dot: 'bg-violet-400',
     chip: 'bg-violet-500/12 text-violet-300 ring-1 ring-inset ring-violet-400/25',
     rail: 'text-violet-300',
   },
   leave: {
-    dot: 'bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.7)]',
+    dot: 'bg-emerald-400',
     chip: 'bg-emerald-500/12 text-emerald-300 ring-1 ring-inset ring-emerald-400/25',
     rail: 'text-emerald-300',
   },
   violation: {
-    dot: 'bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.7)]',
+    dot: 'bg-amber-400',
     chip: 'bg-amber-500/12 text-amber-300 ring-1 ring-inset ring-amber-400/25',
     rail: 'text-amber-300',
   },

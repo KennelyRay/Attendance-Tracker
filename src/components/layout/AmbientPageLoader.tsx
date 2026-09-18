@@ -17,8 +17,8 @@ export function AmbientPageLoader({
         <div className="relative flex flex-col items-center text-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-[18px] bg-slate-900/85 ring-1 ring-inset ring-sky-400/15 sm:mb-5 sm:h-16 sm:w-16 sm:rounded-full">
             <div className="relative h-8 w-8 sm:h-10 sm:w-10">
-              <span className="absolute inset-0 animate-spin rounded-full border-[3px] border-sky-400/25 border-t-sky-300 shadow-[0_0_20px_rgba(56,189,248,0.2)]" />
-              <span className="animate-ambient-loader-pulse absolute inset-[9px] rounded-full bg-sky-300/85 shadow-[0_0_14px_rgba(56,189,248,0.4)] sm:inset-[12px]" />
+              <span className="absolute inset-0 animate-spin rounded-full border-[3px] border-sky-400/25 border-t-sky-300 shadow-[0_0_20px_rgba(229,138,98,0.2)]" />
+              <span className="animate-ambient-loader-pulse absolute inset-[9px] rounded-full bg-sky-300/85 shadow-[0_0_14px_rgba(229,138,98,0.4)] sm:inset-[12px]" />
             </div>
           </div>
 

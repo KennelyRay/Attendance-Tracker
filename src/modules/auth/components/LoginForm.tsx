@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { m } from 'framer-motion';
+import { panelGroup, panelItem } from '@/components/motion/motion-tokens';
 import { useRouter } from 'next/navigation';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -51,19 +53,19 @@ export function LoginForm() {
   };
 
   return (
-    <div className="relative min-h-[100dvh] overflow-hidden bg-[#07111f] px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
+    <div className="relative min-h-[100dvh] overflow-hidden bg-[#15120f] px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
       {/* One treatment, one job: a soft lift behind the sign-in card so the eye lands
           on the form. The previous layer held five floating orbs, seven glowing sweeps,
           a dot grid and three more radial washes, none of which carried information. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(90rem_50rem_at_72%_38%,rgba(56,189,248,0.10),transparent_62%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(90rem_50rem_at_72%_38%,rgba(229,138,98,0.10),transparent_62%)]"
       />
 
-      <div className="relative z-10 mx-auto flex min-h-[calc(100dvh-1rem)] max-w-7xl items-center justify-between gap-4 sm:min-h-[calc(100dvh-4rem)] sm:gap-10">
+      <m.div variants={panelGroup} initial="hidden" animate="shown" className="relative z-10 mx-auto flex min-h-[calc(100dvh-1rem)] max-w-7xl items-center justify-between gap-4 sm:min-h-[calc(100dvh-4rem)] sm:gap-10">
         <div className="hidden max-w-xl lg:block">
           <div className="max-w-lg">
-            <div className="flex items-center gap-3">
+            <m.div variants={panelItem} className="flex items-center gap-3">
               <Image
                 src="/hris-logo.svg"
                 alt=""
@@ -74,17 +76,19 @@ export function LoginForm() {
                 className="h-11 w-11 rounded-xl"
               />
               <span className="text-lg font-semibold tracking-tight text-slate-100">HRIS</span>
-            </div>
-            <h1 className="mt-8 text-4xl font-semibold leading-[1.12] tracking-tight text-slate-50 xl:text-[2.75rem]">
+            </m.div>
+            <m.h1 variants={panelItem} className="mt-8 text-4xl font-semibold leading-[1.12] tracking-tight text-slate-50 xl:text-[2.75rem]">
               Attendance, leave, and employee records in one place.
-            </h1>
-            <p className="mt-5 max-w-md text-base leading-7 text-slate-300">
+            </m.h1>
+            <m.p variants={panelItem} className="mt-5 max-w-md text-base leading-7 text-slate-300">
               File a leave request, work through the review queue, or check a balance. Leave
               types follow Philippine statutory entitlements, so the rules are applied the same
               way every time.
-            </p>
+            </m.p>
           </div>
         </div>
+        {/* The form stays at rest: it is the action on this page, so it must be usable
+            the moment it arrives, never waiting on hydration or an entrance sequence. */}
         <div className="w-full max-w-sm sm:max-w-md">
           <div className="relative">
             <Card>
@@ -201,7 +205,7 @@ export function LoginForm() {
             </Card>
           </div>
         </div>
-      </div>
+      </m.div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
     @import "tailwindcss";
 
 :root {
-  --background: #07111f;
+  --background: #15120f;
   --foreground: #e6f3ff;
 }
 
@@ -11,38 +11,69 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* Neutral ramp, warmed and contrast-corrected.
+  /* Palette: warm slate with a clay accent.
    *
-   * Two jobs. First, warmth: DESIGN.md asks for "warm and human" while keeping the
-   * navy ground, and the palette is already at its colour cap, so warmth has to come
-   * from the neutrals rather than from a new hue. Steps 50-600 carry a warm cast;
-   * 700-950 stay blue-leaning so surfaces still sit with the #07111f ground.
+   * HR is about people and records, and a blue-black ground with a cyan accent read as
+   * tech-SaaS rather than that. The ground is now a warm near-black, the neutrals carry
+   * the warmth through, and the accent is clay.
    *
-   * Second, contrast: the stock slate-500 measured 3.98:1 on the ground and failed
-   * WCAG AA, across 117 usages. Every step below is measured on #07111f.
+   * Every value below is measured against the ground #15120f with the WCAG formula.
+   * The neutral steps keep the `slate-*` names so the whole app inherits them without
+   * touching 100+ call sites; the accent steps keep `sky-*`/`cyan-*` for the same reason.
    */
-  --color-slate-50: #f8f8f6;   /* 17.81:1 */
-  --color-slate-100: #eceae5;  /* 15.75:1 */
-  --color-slate-200: #dcd9d2;  /* 13.43:1 */
-  --color-slate-300: #c6c2b9;  /* 10.66:1 */
-  --color-slate-400: #a5a199;  /*  7.36:1 */
-  --color-slate-500: #87837b;  /*  5.02:1, was 3.98:1 and failing */
-  --color-slate-600: #63605a;  /*  3.02:1, large text and non-text only */
-  --color-slate-700: #3d3f45;  /* borders and dividers */
-  --color-slate-800: #262a31;  /* raised surfaces */
-  --color-slate-900: #171a20;  /* panel surfaces */
-  --color-slate-950: #0a1018;  /* deep surfaces, nearest the ground */
+  --color-slate-50: #f7f3ec;   /* 16.87:1 */
+  --color-slate-100: #efe9e0;  /* 15.46:1 */
+  --color-slate-200: #e0d8cb;  /* 13.20:1 */
+  --color-slate-300: #c9bfaf;  /* 10.27:1 */
+  --color-slate-400: #a99d8a;  /*  7.00:1 */
+  --color-slate-500: #9c907c;  /*  5.34:1 on a panel, 4.64:1 on a raised surface.
+                                *  Set against the panel, not the ground: tertiary text
+                                *  mostly sits inside cards, and the lighter surface is
+                                *  the strict case. */
+  --color-slate-600: #6b6153;  /*  3.07:1, large text and non-text only */
+  --color-slate-700: #433a30;  /* borders and dividers */
+  --color-slate-800: #2e2821;  /* raised surfaces, table headers */
+  --color-slate-900: #211d18;  /* panel surfaces */
+  --color-slate-950: #1a1713;  /* deep surfaces, nearest the ground */
 
-  /* Interactive boundaries are held to 3:1 (WCAG 1.4.11). The old input border was
-   * 1.72:1 against its own field, so the control edge was effectively invisible. */
-  --color-field: #6e727b;      /* 3.61:1 on a field, 3.93:1 on the ground */
+  /* Clay. One accent, used at the moment that matters: primary action, active state,
+   * focus. Deliberately kept clear of the amber used for "pending" so a warning never
+   * reads as a call to action. */
+  --color-sky-50: #fdf2ec;
+  --color-sky-100: #fae3d6;
+  --color-sky-200: #f5c9b0;
+  --color-sky-300: #f0ac8b;    /*  9.76:1, accent text and icons */
+  --color-sky-400: #e58a62;    /*  7.24:1, primary button ground */
+  --color-sky-500: #d9744a;
+  --color-sky-600: #be5c36;
+  --color-sky-700: #9b482a;
+  --color-sky-800: #7a3a23;
+  --color-sky-900: #5c2d1d;
+  --color-sky-950: #331810;
+
+  /* cyan was a second near-identical accent. It now resolves to the same clay so the
+   * app has one accent rather than two competing ones. */
+  --color-cyan-50: #fdf2ec;
+  --color-cyan-100: #fae3d6;
+  --color-cyan-200: #f5c9b0;
+  --color-cyan-300: #f0ac8b;
+  --color-cyan-400: #e58a62;
+  --color-cyan-500: #d9744a;
+  --color-cyan-600: #be5c36;
+  --color-cyan-700: #9b482a;
+  --color-cyan-800: #7a3a23;
+  --color-cyan-900: #5c2d1d;
+  --color-cyan-950: #331810;
+
+  /* Interactive boundaries are held to 3:1 (WCAG 1.4.11). */
+  --color-field: #7a6f60;      /* 3.63:1 on a field */
 }
 
 body {
   font-family: var(--font-geist-sans);
-  /* A flat ground. The two cyan/blue radial orbs that used to sit behind every page
-   * were decoration with no hierarchy job, and tinted the records they sat behind. */
-  background: #07111f;
+  /* A flat ground. The two radial orbs that used to sit behind every page were
+   * decoration with no hierarchy job, and tinted the records they sat behind. */
+  background: #15120f;
   color: var(--foreground);
 }
 
@@ -114,7 +145,6 @@ body {
   background: rgba(2, 6, 23, 0.7);
   -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
-  animation: sheet-fade 160ms ease-out;
 }
 
 .app-modal-panel {
@@ -122,7 +152,6 @@ body {
   flex-direction: column;
   width: 100%;
   max-height: calc(100dvh - env(safe-area-inset-top) - 3rem);
-  animation: sheet-rise 240ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @media (min-width: 640px) {
@@ -133,7 +162,6 @@ body {
 
   .app-modal-panel {
     max-height: calc(100dvh - 3rem);
-    animation: dialog-pop 180ms ease-out;
   }
 }
 
@@ -240,7 +268,7 @@ body {
 }
 
 ::selection {
-  background: rgba(56, 189, 248, 0.28);
+  background: rgba(229, 138, 98, 0.32);
 }
 
 @keyframes ambient-loader-pulse {
@@ -316,4 +344,13 @@ body {
   );
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.45s linear infinite;
+}
+
+/* Scroll reveals start hidden until they enter the viewport. A printed page never
+   scrolls, so without this any section below the fold would print blank. */
+@media print {
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }

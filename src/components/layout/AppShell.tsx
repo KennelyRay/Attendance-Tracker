@@ -15,7 +15,7 @@ export function AppShell({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-[100dvh] bg-[#07111f] text-slate-100">
+    <div className="min-h-[100dvh] bg-[#15120f] text-slate-100">
       <InactivityGuard isAdmin={user.isAdmin} />
       <TopNav user={user} title={title} fullWidth={fullWidth} />
       <main

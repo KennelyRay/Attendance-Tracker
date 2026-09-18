@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, m } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
+import { arrive } from '@/components/motion/motion-tokens';
 import { RefreshButton } from '@/components/ui/RefreshButton';
 import { NotificationToggle } from '@/components/pwa/NotificationToggle';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
@@ -408,6 +410,7 @@ export function LeaveRequestsPanel({
                 </div>
               </div>
 
+              <AnimatePresence initial={false} mode="popLayout">
               {paginatedRequests.map((request) => {
                 const policy = getLeavePolicy(request.leave_type);
                 const reviewDeadline =
@@ -418,8 +421,13 @@ export function LeaveRequestsPanel({
                 const isExpanded = expandedRequestIds.includes(request.id);
 
                 return (
-                  <div
+                  <m.div
                     key={request.id}
+                    layout="position"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, transition: { duration: 0.12 } }}
+                    transition={arrive}
                     className="rounded-2xl border border-slate-800/80 bg-slate-900/55 p-3.5 ring-1 ring-inset ring-white/5"
                   >
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -614,9 +622,10 @@ export function LeaveRequestsPanel({
                         No admin note added.
                       </div>
                     )}
-                  </div>
+                  </m.div>
                 );
               })}
+              </AnimatePresence>
 
               {totalPages > 1 ? (
                 <div className="flex flex-col gap-3 border-t border-slate-800/80 pt-4 sm:flex-row sm:items-center sm:justify-between">

@@ -1,6 +1,12 @@
 import Link from 'next/link';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import {
+  ParallaxHeader,
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '@/components/motion/ScrollReveal';
 
 const paidLeaveProgression = [
   { years: 'New hire (Year 0)', days: '5 days' },
@@ -135,28 +141,18 @@ const secondaryLinkClass =
 export function LeavePolicyContent() {
   return (
     <div className="space-y-6">
+      <ParallaxHeader>
       <Card>
         <CardBody>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
-              <div className="flex flex-wrap gap-2">
-                <Badge className="bg-sky-500/12 text-sky-300 ring-1 ring-inset ring-sky-400/20">
-                  Employee Guide
-                </Badge>
-                <Badge className="bg-cyan-500/12 text-cyan-300 ring-1 ring-inset ring-cyan-400/20">
-                  ICBS
-                </Badge>
-                <Badge className="bg-emerald-500/12 text-emerald-300 ring-1 ring-inset ring-emerald-400/20">
-                  Law First
-                </Badge>
-              </div>
-              <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-50 sm:text-3xl">
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-50 sm:text-3xl">
                 Leave Policy
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                Everything you need to know about your time-off benefits in one place. This page is
-                based on the employee leave guide in `Leave Policy.docx`. When Philippine law and
-                company policy conflict, the law always wins.
+                Everything you need to know about your time off, in one place. It follows the
+                ICBS employee leave guide, and where Philippine law and company policy differ,
+                the law wins.
               </p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row lg:flex-col">
@@ -167,6 +163,7 @@ export function LeavePolicyContent() {
           </div>
         </CardBody>
       </Card>
+      </ParallaxHeader>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card>
@@ -199,15 +196,16 @@ export function LeavePolicyContent() {
         </Card>
       </div>
 
+      <ScrollReveal>
       <Card>
         <CardHeader
           title="1. Paid Leave (PL)"
           subtitle="A single flexible pool that grows with your years of service."
         />
         <CardBody>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+          <ScrollRevealGroup className="grid grid-cols-2 gap-3 lg:grid-cols-3">
             {paidLeaveProgression.map((item) => (
-              <div
+              <ScrollRevealItem
                 key={item.years}
                 className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 ring-1 ring-inset ring-white/5"
               >
@@ -215,9 +213,9 @@ export function LeavePolicyContent() {
                   {item.years}
                 </div>
                 <div className="mt-2 text-lg font-semibold text-slate-50">{item.days}</div>
-              </div>
+              </ScrollRevealItem>
             ))}
-          </div>
+          </ScrollRevealGroup>
           <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 ring-1 ring-inset ring-white/5">
               <div className="text-sm font-semibold text-slate-100">How it grows</div>
@@ -244,7 +242,9 @@ export function LeavePolicyContent() {
           </div>
         </CardBody>
       </Card>
+      </ScrollReveal>
 
+      <ScrollReveal>
       <Card>
         <CardHeader
           title="2. Statutory Leaves"
@@ -273,7 +273,9 @@ export function LeavePolicyContent() {
           </div>
         </CardBody>
       </Card>
+      </ScrollReveal>
 
+      <ScrollReveal>
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Card>
           <CardHeader
@@ -321,7 +323,9 @@ export function LeavePolicyContent() {
           </CardBody>
         </Card>
       </div>
+      </ScrollReveal>
 
+      <ScrollReveal>
       <Card>
         <CardHeader
           title="5. Quick Reference"
@@ -349,7 +353,9 @@ export function LeavePolicyContent() {
           </div>
         </CardBody>
       </Card>
+      </ScrollReveal>
 
+      <ScrollReveal>
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Card>
           <CardHeader
@@ -412,6 +418,7 @@ export function LeavePolicyContent() {
           </CardBody>
         </Card>
       </div>
+      </ScrollReveal>
     </div>
   );
 }

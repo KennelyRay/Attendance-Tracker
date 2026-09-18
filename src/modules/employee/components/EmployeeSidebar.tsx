@@ -1,5 +1,7 @@
 'use client';
 
+import { NavHighlight } from '@/components/motion/NavHighlight';
+
 export type EmployeeView = 'dashboard' | 'leave' | 'violations' | 'attendance';
 
 type NavItem = {
@@ -127,12 +129,18 @@ export function EmployeeSidebar({
                   type="button"
                   onClick={() => onSelect(item.view)}
                   className={[
-                    'w-full rounded-2xl border bg-slate-900/60 px-4 py-3 text-left transition-all ring-1 ring-inset',
+                    'relative isolate w-full rounded-2xl border px-4 py-3 text-left transition-colors ring-1 ring-inset',
                     isActive
-                      ? 'border-sky-400/25 bg-sky-500/10 text-slate-50 ring-sky-400/20 shadow-[0_14px_34px_rgba(14,165,233,0.14)]'
-                      : 'border-slate-800/80 text-slate-300 ring-white/5 hover:border-slate-700 hover:bg-slate-900/90',
+                      ? 'border-transparent text-slate-50 ring-transparent'
+                      : 'border-slate-800/80 bg-slate-900/60 text-slate-300 ring-white/5 hover:border-slate-700 hover:bg-slate-900/90',
                   ].join(' ')}
                 >
+                  {isActive ? (
+                    <NavHighlight
+                      layoutId="employee-sidebar"
+                      className="rounded-2xl border border-sky-400/25 bg-sky-500/10"
+                    />
+                  ) : null}
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5">
                       <SidebarIcon view={item.view} />

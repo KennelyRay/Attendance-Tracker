@@ -2,7 +2,9 @@
 
 import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, m } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
+import { dialog, scrim } from '@/components/motion/motion-tokens';
 
 export type ModalTone = 'default' | 'success' | 'error';
 
@@ -99,28 +101,43 @@ export function Modal({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen || typeof document === 'undefined') return null;
+  if (typeof document === 'undefined') return null;
 
   const maxWidth =
     size === 'xl' ? 'sm:max-w-3xl' : size === 'lg' ? 'sm:max-w-xl' : 'sm:max-w-md';
 
+  /* AnimatePresence keeps the panel mounted long enough to animate out. CSS keyframes
+     cannot do this: an unmounting element is simply gone, so every dialog used to fade
+     in and then disappear on close. */
   return createPortal(
-    <div
-      className="app-modal-scrim"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        className={[
-          'app-modal-panel rounded-t-3xl border-t border-slate-800 bg-slate-950 shadow-[0_-20px_60px_rgba(2,8,23,0.7)]',
-          'sm:rounded-2xl sm:border sm:shadow-[0_22px_60px_rgba(2,8,23,0.55)]',
-          maxWidth,
-        ].join(' ')}
-      >
+    <AnimatePresence>
+      {isOpen ? (
+        <m.div
+          key="scrim"
+          variants={scrim}
+          initial="hidden"
+          animate="shown"
+          exit="gone"
+          className="app-modal-scrim"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) onClose();
+          }}
+        >
+          <m.div
+            key="panel"
+            variants={dialog}
+            initial="hidden"
+            animate="shown"
+            exit="gone"
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
+            className={[
+              'app-modal-panel rounded-t-3xl border-t border-slate-800 bg-slate-950 shadow-[0_-20px_60px_rgba(2,8,23,0.7)]',
+              'sm:rounded-2xl sm:border sm:shadow-[0_22px_60px_rgba(2,8,23,0.55)]',
+              maxWidth,
+            ].join(' ')}
+          >
         {/* Grab handle, phone only - the affordance a sheet is expected to have. */}
         <div className="flex shrink-0 justify-center pb-1 pt-2.5 sm:hidden">
           <span aria-hidden="true" className="h-1 w-9 rounded-full bg-slate-700" />
@@ -157,9 +174,11 @@ export function Modal({
               Close
             </Button>
           )}
-        </div>
-      </div>
-    </div>,
+          </div>
+        </m.div>
+      </m.div>
+    ) : null}
+    </AnimatePresence>,
     document.body
   );
 }

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NavigationTransitionOverlay } from "@/components/layout/NavigationTransitionOverlay";
 import { ServiceWorkerRegistrar } from "@/components/pwa/ServiceWorkerRegistrar";
+import { MotionProvider } from "@/components/motion/MotionProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -43,7 +44,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#07111f",
+  themeColor: "#15120f",
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
@@ -60,14 +61,16 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full bg-[#07111f] antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full bg-[#15120f] antialiased`}
     >
-      <body className="min-h-full bg-[#07111f] text-slate-100 flex flex-col overflow-x-hidden">
-        <ServiceWorkerRegistrar />
-        <Suspense fallback={null}>
-          <NavigationTransitionOverlay />
-        </Suspense>
-        {children}
+      <body className="min-h-full bg-[#15120f] text-slate-100 flex flex-col overflow-x-hidden">
+        <MotionProvider>
+          <ServiceWorkerRegistrar />
+          <Suspense fallback={null}>
+            <NavigationTransitionOverlay />
+          </Suspense>
+          {children}
+        </MotionProvider>
       </body>
     </html>
   );

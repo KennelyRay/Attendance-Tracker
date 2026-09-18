@@ -25,6 +25,8 @@ import { AdminSidebar, type AdminView } from '@/modules/admin/components/AdminSi
 import { AdminOverviewPanel } from '@/modules/admin/components/AdminOverviewPanel';
 import { AdminInsightsPanel } from '@/modules/admin/components/AdminInsightsPanel';
 import { AuditTrailPanel } from '@/modules/admin/components/AuditTrailPanel';
+import { PanelItem, PanelTransition } from '@/components/motion/PanelTransition';
+import { NavHighlight } from '@/components/motion/NavHighlight';
 import { HolidayCalendarPanel } from '@/modules/admin/components/HolidayCalendarPanel';
 import { LeaveRequestsPanel } from '@/modules/admin/components/LeaveRequestsPanel';
 import { NewViolationPanel } from '@/modules/admin/components/NewViolationPanel';
@@ -707,6 +709,8 @@ export function AdminDashboardClient({
             </div>
           ) : null}
 
+          <PanelTransition viewKey={activeView}>
+            <PanelItem>
           {activeView === 'dashboard' ? (
             <AdminOverviewPanel
               employees={employees}
@@ -777,6 +781,8 @@ export function AdminDashboardClient({
           ) : (
             <AuditTrailPanel />
           )}
+            </PanelItem>
+          </PanelTransition>
         </div>
       </div>
 
@@ -823,13 +829,16 @@ export function AdminDashboardClient({
                 onClick={() => void openView(view)}
                 aria-current={isActive ? 'page' : undefined}
                 className={[
-                  'flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-center text-[11px] font-medium',
+                  'relative isolate flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-center text-[11px] font-medium',
                   'transition-colors duration-150 active:scale-[0.96] motion-reduce:active:scale-100',
                   isActive
-                    ? 'bg-sky-500/10 text-sky-300'
+                    ? 'text-sky-300'
                     : 'text-slate-500 hover:bg-slate-900/60 hover:text-slate-300',
                 ].join(' ')}
               >
+                {isActive ? (
+                  <NavHighlight layoutId="admin-bottom-nav" className="rounded-2xl bg-sky-500/10" />
+                ) : null}
                 <AdminMobilePrimaryIcon item={view} />
                 <span>{label}</span>
               </button>

@@ -1,5 +1,8 @@
 'use client';
 
+import { PanelItem, PanelTransition } from '@/components/motion/PanelTransition';
+import { NavHighlight } from '@/components/motion/NavHighlight';
+
 import { useEffect, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
@@ -252,16 +255,16 @@ export function EmployeeDashboardClient({
       {
         label: 'Half Day',
         value: stats['half-day'] ?? 0,
-        toneClass: 'bg-amber-500/12 text-amber-300 ring-1 ring-inset ring-amber-400/20',
-        barClass: 'bg-amber-400',
-        pieColor: '#fbbf24',
+        toneClass: 'bg-violet-500/12 text-violet-300 ring-1 ring-inset ring-violet-400/20',
+        barClass: 'bg-violet-400',
+        pieColor: '#a78bfa',
       },
       {
         label: 'Leave',
         value: stats.leave ?? 0,
         toneClass: 'bg-sky-500/12 text-sky-300 ring-1 ring-inset ring-sky-400/20',
         barClass: 'bg-sky-400',
-        pieColor: '#38bdf8',
+        pieColor: '#e58a62',
       },
     ].map((item) => ({
       ...item,
@@ -708,9 +711,9 @@ export function EmployeeDashboardClient({
               ) : null}
             </div>
 
-            <div key={activeView} className="app-surface-enter">
-              {renderActiveView()}
-            </div>
+            <PanelTransition viewKey={activeView}>
+              <PanelItem>{renderActiveView()}</PanelItem>
+            </PanelTransition>
           </div>
         </div>
       </div>
@@ -726,13 +729,16 @@ export function EmployeeDashboardClient({
                 onClick={() => setActiveView(view)}
                 aria-current={isActive ? 'page' : undefined}
                 className={[
-                  'flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-center text-[11px] font-medium',
+                  'relative isolate flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-center text-[11px] font-medium',
                   'transition-colors duration-150 active:scale-[0.96] motion-reduce:active:scale-100',
                   isActive
-                    ? 'bg-sky-500/10 text-sky-300'
+                    ? 'text-sky-300'
                     : 'text-slate-500 hover:bg-slate-900/60 hover:text-slate-300',
                 ].join(' ')}
               >
+                {isActive ? (
+                  <NavHighlight layoutId="employee-bottom-nav" className="rounded-2xl bg-sky-500/10" />
+                ) : null}
                 <EmployeeMobileNavIcon view={view} />
                 <span>{view === 'attendance' ? 'History' : employeeViewLabel(view)}</span>
               </button>

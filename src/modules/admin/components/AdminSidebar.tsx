@@ -1,5 +1,7 @@
 'use client';
 
+import { NavHighlight } from '@/components/motion/NavHighlight';
+
 export type AdminView =
   | 'dashboard'
   | 'employees'
@@ -350,16 +352,22 @@ export function AdminSidebar({
                       title={showCollapsedDesktop ? item.label : undefined}
                       onClick={() => onSelect(item.view)}
                       className={[
-                        'w-full rounded-2xl border text-left transition-all',
+                        'relative isolate w-full rounded-2xl border text-left transition-colors',
                         'ring-1 ring-inset',
                         showCollapsedDesktop
                           ? 'min-h-[52px] px-0 py-3.5'
                           : 'px-4 py-3',
                         isActive
-                          ? 'border-sky-400/25 bg-sky-500/10 text-slate-50 ring-sky-400/20 shadow-[0_14px_34px_rgba(14,165,233,0.14)]'
+                          ? 'border-transparent text-slate-50 ring-transparent'
                           : 'border-slate-800/80 bg-slate-900/60 text-slate-300 ring-white/5 hover:border-slate-700 hover:bg-slate-900/90',
                       ].join(' ')}
                     >
+                      {isActive ? (
+                        <NavHighlight
+                          layoutId={`admin-sidebar-${mode}`}
+                          className="rounded-2xl border border-sky-400/25 bg-sky-500/10"
+                        />
+                      ) : null}
                       <div
                         className={[
                           'flex gap-3',

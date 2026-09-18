@@ -637,9 +637,9 @@ export function ViolationCasesPanel({
                     <tr>
                       <TH>Employee</TH>
                       <TH>Case</TH>
-                      <TH>Company</TH>
                       <TH>Severity</TH>
                       <TH>Status</TH>
+                      <TH>Company</TH>
                       <TH>Incident</TH>
                       <TH>Recorded</TH>
                       <TH>Actions</TH>
@@ -691,11 +691,6 @@ export function ViolationCasesPanel({
                           ) : null}
                         </TD>
                         <TD>
-                          <span className="inline-flex items-center rounded-full bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-300 ring-1 ring-inset ring-cyan-400/20">
-                            {companyLabel(violation.company)}
-                          </span>
-                        </TD>
-                        <TD>
                           <span
                             className={[
                               'inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize',
@@ -722,8 +717,13 @@ export function ViolationCasesPanel({
                             </div>
                           ) : null}
                         </TD>
-                        <TD>{new Date(violation.incident_date).toLocaleDateString()}</TD>
                         <TD>
+                          <span className="inline-flex items-center rounded-full bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-300 ring-1 ring-inset ring-cyan-400/20">
+                            {companyLabel(violation.company)}
+                          </span>
+                        </TD>
+                        <TD numeric>{new Date(violation.incident_date).toLocaleDateString()}</TD>
+                        <TD numeric>
                           <div>{new Date(violation.created_at).toLocaleDateString()}</div>
                           <div className="mt-1 text-xs text-slate-500">
                             {violation.created_by_name || 'System'}

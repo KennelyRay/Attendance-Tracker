@@ -325,7 +325,7 @@ export function EmployeeViolationsPanel({
                                 rows={3}
                                 maxLength={2000}
                                 placeholder="I would like to appeal this violation because..."
-                                className="mt-3 w-full rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-2.5 text-sm text-slate-100 shadow-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/70"
+                                className="mt-3 w-full rounded-xl border border-field bg-slate-950 px-3 py-2.5 text-base sm:text-sm text-slate-100 shadow-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/70"
                               />
                               {appealError ? (
                                 <div className="mt-2 rounded-xl bg-rose-500/10 px-3 py-2 text-sm text-rose-300 ring-1 ring-inset ring-rose-400/20">

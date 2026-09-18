@@ -128,7 +128,7 @@ function EditViolationModal({
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               rows={5}
-              className="w-full rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-2.5 text-sm text-slate-100 shadow-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/70"
+              className="w-full rounded-xl border border-field bg-slate-950 px-3 py-2.5 text-base sm:text-sm text-slate-100 shadow-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/70"
             />
           </div>
           <div className="md:col-span-2">
@@ -137,7 +137,7 @@ function EditViolationModal({
               value={actionTaken}
               onChange={(event) => setActionTaken(event.target.value)}
               rows={3}
-              className="w-full rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-2.5 text-sm text-slate-100 shadow-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/70"
+              className="w-full rounded-xl border border-field bg-slate-950 px-3 py-2.5 text-base sm:text-sm text-slate-100 shadow-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/70"
             />
           </div>
         </div>
@@ -226,7 +226,7 @@ function ResolveAppealModal({
             rows={4}
             maxLength={2000}
             placeholder="Explain the final decision on this case and its appeal..."
-            className="w-full rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-2.5 text-sm text-slate-100 shadow-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/70"
+            className="w-full rounded-xl border border-field bg-slate-950 px-3 py-2.5 text-base sm:text-sm text-slate-100 shadow-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/70"
           />
         </div>
 

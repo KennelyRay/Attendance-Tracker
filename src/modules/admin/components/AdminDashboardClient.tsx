@@ -27,6 +27,7 @@ import { AdminInsightsPanel } from '@/modules/admin/components/AdminInsightsPane
 import { AuditTrailPanel } from '@/modules/admin/components/AuditTrailPanel';
 import { PanelItem, PanelTransition } from '@/components/motion/PanelTransition';
 import { NavHighlight } from '@/components/motion/NavHighlight';
+import { AdminMoreSheet, isAdminOverflowView } from '@/modules/admin/components/AdminMoreSheet';
 import { HolidayCalendarPanel } from '@/modules/admin/components/HolidayCalendarPanel';
 import { LeaveRequestsPanel } from '@/modules/admin/components/LeaveRequestsPanel';
 import { NewViolationPanel } from '@/modules/admin/components/NewViolationPanel';
@@ -439,7 +440,9 @@ export function AdminDashboardClient({
   }, [activeView]);
 
   useEffect(() => {
-    if (!isMobileSidebarOpen && !isEmployeePickerOpen) {
+    // The More sheet locks scrolling itself; locking here too meant two effects each
+    // saving and restoring body overflow, which could leave the page stuck unscrollable.
+    if (!isEmployeePickerOpen) {
       return;
     }
 
@@ -449,7 +452,7 @@ export function AdminDashboardClient({
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [isEmployeePickerOpen, isMobileSidebarOpen]);
+  }, [isEmployeePickerOpen]);
 
   const openView = async (view: AdminView) => {
     setActiveView(view);
@@ -642,25 +645,15 @@ export function AdminDashboardClient({
 
   return (
     <>
-      {isMobileSidebarOpen ? (
-        <div
-          className="fixed inset-0 z-50 h-[100dvh] max-h-[100dvh] overflow-y-auto overscroll-contain bg-slate-950/75 backdrop-blur-sm xl:hidden"
-          onClick={() => setIsMobileSidebarOpen(false)}
-        >
-          <div className="min-h-full w-full p-3 sm:p-4">
-            <div className="max-h-full max-w-[20rem] overflow-y-auto" onClick={(event) => event.stopPropagation()}>
-              <AdminSidebar
-                mode="mobile"
-                activeView={activeView}
-                pendingLeaveCount={pendingLeaveCount}
-                attentionCount={accountAttentionCount}
-                onCloseMobile={() => setIsMobileSidebarOpen(false)}
-                onSelect={(view) => void openView(view)}
-              />
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {/* Phones get a bottom sheet of the sections the bottom bar does not reach, in place
+          of the desktop sidebar slid in from the left. */}
+      <AdminMoreSheet
+        isOpen={isMobileSidebarOpen}
+        onClose={() => setIsMobileSidebarOpen(false)}
+        activeView={activeView}
+        attentionCount={accountAttentionCount}
+        onSelect={(view) => void openView(view)}
+      />
 
       <div
         className={[
@@ -848,8 +841,20 @@ export function AdminDashboardClient({
             type="button"
             onClick={() => setIsMobileSidebarOpen(true)}
             aria-haspopup="dialog"
-            className="flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-center text-[11px] font-medium text-slate-500 transition-colors duration-150 hover:bg-slate-900/60 hover:text-slate-300 active:scale-[0.96] motion-reduce:active:scale-100"
+            aria-current={isAdminOverflowView(activeView) ? 'page' : undefined}
+            className={[
+              'relative isolate flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-center text-[11px] font-medium',
+              'transition-colors duration-150 active:scale-[0.96] motion-reduce:active:scale-100',
+              isAdminOverflowView(activeView)
+                ? 'text-sky-300'
+                : 'text-slate-500 hover:bg-slate-900/60 hover:text-slate-300',
+            ].join(' ')}
           >
+            {/* When the open section lives in the sheet, "More" carries the highlight so the
+                bar still says where you are. */}
+            {isAdminOverflowView(activeView) ? (
+              <NavHighlight layoutId="admin-bottom-nav" className="rounded-2xl bg-sky-500/10" />
+            ) : null}
             <AdminMobilePrimaryIcon item="menu" />
             <span>More</span>
           </button>

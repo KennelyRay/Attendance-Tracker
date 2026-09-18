@@ -28,7 +28,7 @@ type NavGroup = {
 
 const iconClass = 'h-4 w-4 shrink-0';
 
-function SidebarIcon({ view }: { view: AdminView }) {
+export function SidebarIcon({ view }: { view: AdminView }) {
   switch (view) {
     case 'dashboard':
       return (

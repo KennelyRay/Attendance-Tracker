@@ -20,11 +20,35 @@ export function CardHeader({
   title,
   subtitle,
   right,
+  action,
 }: {
   title: string;
   subtitle?: string;
   right?: ReactNode;
+  /**
+   * A small control that acts on the whole card, such as refresh. On phones it sits
+   * beside the title, where it stays in reach without taking a row of its own; from
+   * `sm:` up it closes the header row after `right`.
+   */
+  action?: ReactNode;
 }) {
+  if (action) {
+    return (
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-4 border-b border-slate-800/80 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:px-6 sm:py-5">
+        <div className="min-w-0">
+          <div className="text-base font-semibold text-slate-100">{title}</div>
+          {subtitle ? <div className="mt-1 text-sm text-slate-400">{subtitle}</div> : null}
+        </div>
+        {right ? (
+          <div className="col-span-2 row-start-2 sm:col-span-1 sm:col-start-2 sm:row-start-1">
+            {right}
+          </div>
+        ) : null}
+        <div className="col-start-2 row-start-1 sm:col-start-3">{action}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-start gap-4 border-b border-slate-800/80 px-5 py-4 sm:flex-row sm:justify-between sm:px-6 sm:py-5">
       <div className="min-w-0">

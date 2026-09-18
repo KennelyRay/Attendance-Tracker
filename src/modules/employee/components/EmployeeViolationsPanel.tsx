@@ -141,7 +141,7 @@ export function EmployeeViolationsPanel({
       <CardHeader
         title="My Violations"
         subtitle="Review your recorded violation cases, their severity, latest status, and assigned company context."
-        right={
+        action={
           <RefreshButton onClick={onRefresh} isLoading={isLoading} />
         }
       />

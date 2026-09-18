@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import {
@@ -64,6 +65,7 @@ export function AdminInsightsPanel({
   isLeaveDataLoading,
   isViolationDataLoading,
   onOpenView,
+  headerAction,
 }: {
   employees: Employee[];
   leaveRequests: AdminLeaveRequest[];
@@ -71,6 +73,8 @@ export function AdminInsightsPanel({
   isLeaveDataLoading: boolean;
   isViolationDataLoading: boolean;
   onOpenView?: (view: AdminView) => void;
+  /** Rendered in the panel's own header, for controls like refresh that act on it. */
+  headerAction?: ReactNode;
 }) {
   const employeeStatusCounts = employees.reduce(
     (totals, employee) => {
@@ -326,6 +330,7 @@ export function AdminInsightsPanel({
       <Card>
         <CardHeader
           title="Smart Insights"
+          action={headerAction}
           subtitle="Actionable priorities generated from the current leave queue, account status, and discipline data."
         />
         <CardBody>

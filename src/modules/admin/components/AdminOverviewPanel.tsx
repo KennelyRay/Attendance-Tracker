@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import {
@@ -264,6 +265,7 @@ export function AdminOverviewPanel({
   isLeaveDataLoading,
   isViolationDataLoading,
   onOpenView,
+  headerAction,
 }: {
   employees: Employee[];
   leaveRequests: AdminLeaveRequest[];
@@ -272,6 +274,8 @@ export function AdminOverviewPanel({
   isLeaveDataLoading: boolean;
   isViolationDataLoading: boolean;
   onOpenView?: (view: AdminView) => void;
+  /** Rendered in the panel's own header, for controls like refresh that act on it. */
+  headerAction?: ReactNode;
 }) {
   const employeeStatusCounts = employees.reduce(
     (totals, employee) => {
@@ -898,6 +902,7 @@ export function AdminOverviewPanel({
       <Card>
         <CardHeader
           title={mode === 'dashboard' ? 'Operations Dashboard' : 'Reports & Charts'}
+          action={headerAction}
           subtitle={
             mode === 'dashboard'
               ? 'Live workforce health, leave flow, and staffing coverage in one place.'

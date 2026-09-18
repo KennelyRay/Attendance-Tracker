@@ -378,7 +378,7 @@ export function AuditTrailPanel() {
         <CardHeader
           title="Audit Trail"
           subtitle="Every administrative action, recorded as it happens."
-          right={
+          action={
             <RefreshButton
               onClick={() => setRefreshToken((token) => token + 1)}
               isLoading={isLoading}

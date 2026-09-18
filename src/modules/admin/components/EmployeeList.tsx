@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/Button';
 import type { Employee } from '@/modules/admin/types';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
@@ -17,11 +17,14 @@ export function EmployeeList({
   selectedEmployeeId,
   onSelect,
   isLoading,
+  headerAction,
 }: {
   employees: Employee[];
   selectedEmployeeId: number | null;
   onSelect: (employee: Employee) => void;
   isLoading: boolean;
+  /** Rendered in the panel's own header, for controls like refresh that act on it. */
+  headerAction?: ReactNode;
 }) {
   const [query, setQuery] = useState('');
   const [companyFilter, setCompanyFilter] = useState('all');
@@ -112,6 +115,7 @@ export function EmployeeList({
     <Card>
       <CardHeader
         title="Employees"
+        action={headerAction}
         subtitle={
           hasActiveFilters ? `${filtered.length} of ${employees.length} shown` : `${employees.length} total`
         }

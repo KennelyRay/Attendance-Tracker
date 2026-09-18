@@ -58,9 +58,6 @@ const leaveAwareViews: AdminView[] = [
   'smart-insights',
 ];
 
-/** Views that aggregate several datasets and have no refresh control of their own. */
-const overviewViews: AdminView[] = ['dashboard', 'reports-charts', 'smart-insights'];
-
 const violationAwareViews: AdminView[] = [
   'dashboard',
   'reports-charts',
@@ -144,17 +141,6 @@ export function AdminDashboardClient({
   const [activeView, setActiveView] = useState<AdminView>('dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [lastRefreshedAt, setLastRefreshedAt] = useState<number | null>(null);
-
-  // Null until the user actually refreshes, so nothing clock-derived is ever rendered
-  // on the server - that mismatch is what broke the employee Leave tab previously.
-  const lastRefreshedLabel = useMemo(() => {
-    if (lastRefreshedAt === null) return null;
-    return new Date(lastRefreshedAt).toLocaleTimeString(undefined, {
-      hour: 'numeric',
-      minute: '2-digit',
-    });
-  }, [lastRefreshedAt]);
   const [isEmployeePickerOpen, setIsEmployeePickerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -574,6 +560,26 @@ export function AdminDashboardClient({
       </Card>
     ) : null;
 
+  // Overview, reports and insights draw on every dataset, so their refresh reloads all
+  // of them. It lives in each panel's header, beside what it updates.
+  const isAnyDataLoading = isLeaveRequestsLoading || isViolationsLoading || isEmployeesLoading;
+  const allDataRefreshControl = (
+    <RefreshButton
+      label="Refresh data"
+      isLoading={isAnyDataLoading}
+      onClick={() => {
+        void Promise.allSettled([loadLeaveRequests(), loadViolationCases(), reloadEmployees()]);
+      }}
+    />
+  );
+  const employeesRefreshControl = (
+    <RefreshButton
+      label="Refresh employees"
+      isLoading={isEmployeesLoading}
+      onClick={() => void reloadEmployees()}
+    />
+  );
+
   const renderEmployeesView = () => (
     <>
       <div className="space-y-6 lg:hidden">
@@ -613,6 +619,7 @@ export function AdminDashboardClient({
             selectedEmployeeId={selectedEmployeeId}
             onSelect={onSelect}
             isLoading={isEmployeesLoading}
+            headerAction={employeesRefreshControl}
           />
         </div>
         <div className="space-y-6 lg:col-span-2">
@@ -675,33 +682,6 @@ export function AdminDashboardClient({
         </div>
 
         <div className="space-y-6 xl:px-8">
-          {/* A lone icon button floating above the content read as a stray control, so
-              it is paired with the freshness it acts on - together they form a small
-              toolbar rather than an orphan. Views whose panel owns a refresh get none. */}
-          {overviewViews.includes(activeView) || activeView === 'employees' ? (
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800/70 bg-slate-900/40 px-3 py-2">
-              <span className="min-w-0 truncate text-xs text-slate-500">
-                {isLeaveRequestsLoading || isViolationsLoading || isEmployeesLoading
-                  ? 'Updating…'
-                  : lastRefreshedLabel
-                    ? `Updated ${lastRefreshedLabel}`
-                    : 'Up to date'}
-              </span>
-              <RefreshButton
-                label={activeView === 'employees' ? 'Refresh employees' : 'Refresh data'}
-                isLoading={isLeaveRequestsLoading || isViolationsLoading || isEmployeesLoading}
-                onClick={() => {
-                  setLastRefreshedAt(Date.now());
-                  void Promise.allSettled(
-                    activeView === 'employees'
-                      ? [reloadEmployees()]
-                      : [loadLeaveRequests(), loadViolationCases(), reloadEmployees()]
-                  );
-                }}
-              />
-            </div>
-          ) : null}
-
           <PanelTransition viewKey={activeView}>
             <PanelItem>
           {activeView === 'dashboard' ? (
@@ -712,6 +692,7 @@ export function AdminDashboardClient({
               isLeaveDataLoading={isLeaveRequestsLoading}
               isViolationDataLoading={isViolationsLoading}
               onOpenView={(view) => void openView(view)}
+              headerAction={allDataRefreshControl}
             />
           ) : activeView === 'employees' ? (
             renderEmployeesView()
@@ -732,6 +713,7 @@ export function AdminDashboardClient({
               isLeaveDataLoading={isLeaveRequestsLoading}
               isViolationDataLoading={isViolationsLoading}
               onOpenView={(view) => void openView(view)}
+              headerAction={allDataRefreshControl}
             />
           ) : activeView === 'smart-insights' ? (
             <AdminInsightsPanel
@@ -741,6 +723,7 @@ export function AdminDashboardClient({
               isLeaveDataLoading={isLeaveRequestsLoading}
               isViolationDataLoading={isViolationsLoading}
               onOpenView={(view) => void openView(view)}
+              headerAction={allDataRefreshControl}
             />
           ) : activeView === 'holiday-calendar' ? (
             <HolidayCalendarPanel />
@@ -801,6 +784,7 @@ export function AdminDashboardClient({
                 setIsEmployeePickerOpen(false);
               }}
               isLoading={isEmployeesLoading}
+              headerAction={employeesRefreshControl}
             />
           </div>
         </div>

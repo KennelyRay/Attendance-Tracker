@@ -373,7 +373,7 @@ export function ViolationCasesPanel({
         <CardHeader
           title="All Violation Cases"
           subtitle="Review every employee violation case with the newest incidents shown first."
-          right={
+          action={
             <RefreshButton onClick={onRefresh} isLoading={isLoading} />
           }
         />

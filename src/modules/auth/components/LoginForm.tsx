@@ -19,12 +19,16 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   useEffect(() => {
+    // The flash lives in sessionStorage, which the server cannot read, so it is picked up
+    // after the first render rather than during it; reading it in render would make the
+    // server and client HTML disagree. This is React's two-pass pattern for client-only data.
     const flash = consumeAuthFlash();
     if (!flash) {
       return;
     }
 
     if (flash.type === 'logout-success') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- see note above
       setSuccessNotice('Logged out successfully. You can sign in again at any time.');
     } else if (flash.type === 'session-expired') {
       setSuccessNotice('Session ended successfully. Please sign in again to continue.');
@@ -91,7 +95,7 @@ export function LoginForm() {
             the moment it arrives, never waiting on hydration or an entrance sequence. */}
         <div className="w-full max-w-sm sm:max-w-md">
           <div className="relative">
-            <Card>
+            <Card variant="surface">
               {isLoading ? (
                 <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-slate-950/82 p-4 backdrop-blur-sm">
                   <div className="w-full max-w-[16rem] rounded-2xl border border-sky-400/12 bg-slate-950/85 px-4 py-5 text-center ring-1 ring-inset ring-white/5 sm:max-w-[18rem] sm:px-5">

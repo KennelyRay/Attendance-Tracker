@@ -382,8 +382,8 @@ export function EmployeeDashboardClient({
             <div className="md:hidden space-y-4">
               <Card>
                 <CardHeader
-                  title="Mobile Overview"
-                  subtitle={`Your ${monthLabel(month, year)} attendance at a glance.`}
+                  title={monthLabel(month, year)}
+                  subtitle="Your attendance at a glance."
                   right={
                     <MonthYearPicker
                       month={month}
@@ -412,9 +412,9 @@ export function EmployeeDashboardClient({
                     <div className="mt-4 rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 ring-1 ring-inset ring-white/5">
                       <div className="text-sm font-semibold text-slate-50">What To Do First</div>
                       <div className="mt-3 space-y-2 text-sm leading-6 text-slate-400">
-                        <div>1. Open `Leave` to understand your current balance and request options.</div>
-                        <div>2. Open `History` to verify this month’s attendance records.</div>
-                        <div>3. Use `Policy` in the header if you need a quick rule check before filing leave.</div>
+                        <div>1. Open Leave to see your balance and how to file a request.</div>
+                        <div>2. Open History to check this month’s attendance records.</div>
+                        <div>3. Tap Policy in the header to check the rules before filing leave.</div>
                       </div>
                     </div>
                   ) : null}
@@ -426,7 +426,7 @@ export function EmployeeDashboardClient({
                     >
                       <div className="text-sm font-semibold text-slate-50">Go To Leave</div>
                       <div className="mt-1 text-sm leading-6 text-slate-400">
-                        Apply for leave or check request progress without opening the desktop-style dashboard.
+                        Apply for leave or check where your requests stand.
                       </div>
                     </button>
                     <button
@@ -436,7 +436,7 @@ export function EmployeeDashboardClient({
                     >
                       <div className="text-sm font-semibold text-slate-50">Open Attendance History</div>
                       <div className="mt-1 text-sm leading-6 text-slate-400">
-                        Review the full record list with the mobile card layout.
+                        See every recorded day and its status.
                       </div>
                     </button>
                   </div>
@@ -446,7 +446,7 @@ export function EmployeeDashboardClient({
               <Card>
                 <CardHeader
                   title="Attendance Breakdown"
-                  subtitle="Compact trend bars designed for smaller screens."
+                  subtitle="How this month's days were recorded."
                 />
                 <CardBody>
                   <div className="space-y-4">
@@ -697,9 +697,9 @@ export function EmployeeDashboardClient({
 
         <div className="min-w-0 xl:px-6 xl:py-6">
           <div className="space-y-6">
-            <div className="xl:hidden">
-              {isFirstTimeEmployee ? (
-                <div className="mb-4 rounded-2xl border border-sky-400/15 bg-sky-500/8 px-4 py-4 ring-1 ring-inset ring-sky-400/10">
+            {isFirstTimeEmployee ? (
+              <div className="xl:hidden">
+                <div className="rounded-2xl border border-sky-400/15 bg-sky-500/8 px-4 py-4 ring-1 ring-inset ring-sky-400/10">
                   <div className="text-[11px] font-semibold uppercase tracking-wide text-sky-300">
                     Quick Start
                   </div>
@@ -707,12 +707,12 @@ export function EmployeeDashboardClient({
                     Start with leave, attendance, or policy review.
                   </div>
                   <div className="mt-2 text-sm leading-6 text-slate-400">
-                    This is your mobile shortcut area. Use the tabs below to check your leave balance,
-                    review attendance, and see any admin updates as soon as they appear.
+                    Use the tabs below to check your leave balance, review your attendance, and see
+                    updates from your admin as soon as they arrive.
                   </div>
                 </div>
-              ) : null}
-            </div>
+              </div>
+            ) : null}
 
             <PanelTransition viewKey={activeView}>
               <PanelItem>{renderActiveView()}</PanelItem>

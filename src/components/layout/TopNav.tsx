@@ -68,11 +68,14 @@ export function TopNav({
   }, [isEmployee]);
 
   useEffect(() => {
+    // Read after the first render because sessionStorage does not exist on the server;
+    // see the matching note in LoginForm.
     const flash = consumeAuthFlash();
     if (flash?.type !== 'login-success') {
       return;
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only data, read post-render
     setAuthNotice(
       user.isAdmin
         ? 'Login successful. Admin controls are ready.'

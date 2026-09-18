@@ -7,10 +7,31 @@ import { ReactNode } from 'react';
  * instance. When every panel is lifted and frosted, elevation stops meaning anything
  * and the page reads as floating glass. Elevation is now spent only where something
  * genuinely sits above the page, which is dialogs and the sheet.
+ *
+ * On phones a `section` drops its box entirely. The page gutter already frames it, and
+ * a border inside that gutter spent width on a second frame while the tiles inside
+ * added a third. The rule under each heading is what separates sections there.
+ * A `surface` keeps its box at every width, for a card that stands alone on the page,
+ * like the sign-in form.
+ *
+ * `--card-px` carries the inset to CardHeader and CardBody, so they line up with
+ * whichever variant they sit in.
  */
-export function Card({ children }: { children: ReactNode }) {
+export function Card({
+  children,
+  variant = 'section',
+}: {
+  children: ReactNode;
+  variant?: 'section' | 'surface';
+}) {
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60">
+    <div
+      className={
+        variant === 'surface'
+          ? 'rounded-2xl border border-slate-800 bg-slate-900/60 [--card-px:1.25rem] sm:[--card-px:1.5rem]'
+          : '[--card-px:0.25rem] sm:rounded-2xl sm:border sm:border-slate-800 sm:bg-slate-900/60 sm:[--card-px:1.5rem]'
+      }
+    >
       {children}
     </div>
   );
@@ -34,7 +55,7 @@ export function CardHeader({
 }) {
   if (action) {
     return (
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-4 border-b border-slate-800/80 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:px-6 sm:py-5">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-4 border-b border-slate-800/80 px-[var(--card-px)] py-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:py-5">
         <div className="min-w-0">
           <div className="text-base font-semibold text-slate-100">{title}</div>
           {subtitle ? <div className="mt-1 text-sm text-slate-400">{subtitle}</div> : null}
@@ -50,7 +71,7 @@ export function CardHeader({
   }
 
   return (
-    <div className="flex flex-col items-start gap-4 border-b border-slate-800/80 px-5 py-4 sm:flex-row sm:justify-between sm:px-6 sm:py-5">
+    <div className="flex flex-col items-start gap-4 border-b border-slate-800/80 px-[var(--card-px)] py-4 sm:flex-row sm:justify-between sm:py-5">
       <div className="min-w-0">
         <div className="text-base font-semibold text-slate-100">{title}</div>
         {subtitle ? (
@@ -63,5 +84,5 @@ export function CardHeader({
 }
 
 export function CardBody({ children }: { children: ReactNode }) {
-  return <div className="px-5 py-4 sm:px-6 sm:py-5">{children}</div>;
+  return <div className="px-[var(--card-px)] py-4 sm:py-5">{children}</div>;
 }

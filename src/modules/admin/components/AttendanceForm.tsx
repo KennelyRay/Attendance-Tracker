@@ -122,7 +122,7 @@ export function AttendanceForm({
                       'rounded-2xl border px-4 py-4 text-left transition-all',
                       'ring-1 ring-inset',
                       isSelected
-                        ? `${attendanceStatusClass(option.value)} border-current/20 shadow-[0_12px_30px_rgba(2,8,23,0.22)]`
+                        ? `${attendanceStatusClass(option.value)} border-current/20 shadow-[0_12px_30px_rgba(8,6,4,0.22)]`
                         : 'border-slate-800/80 bg-slate-950/70 text-slate-300 ring-white/5 hover:border-slate-700 hover:bg-slate-900/90',
                     ].join(' ')}
                   >

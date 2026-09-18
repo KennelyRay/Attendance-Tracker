@@ -43,7 +43,7 @@ function buildAttendancePie(segments: Array<{ percentage: number; color: string 
   const nonZeroSegments = segments.filter((segment) => segment.percentage > 0);
 
   if (nonZeroSegments.length === 0) {
-    return 'conic-gradient(rgba(15,23,42,0.95) 0deg 360deg)';
+    return 'conic-gradient(rgba(33,29,24,0.95) 0deg 360deg)';
   }
 
   let current = 0;
@@ -54,7 +54,7 @@ function buildAttendancePie(segments: Array<{ percentage: number; color: string 
   });
 
   if (current < 360) {
-    stops.push(`rgba(15,23,42,0.95) ${current}deg 360deg`);
+    stops.push(`rgba(33,29,24,0.95) ${current}deg 360deg`);
   }
 
   return `conic-gradient(${stops.join(', ')})`;
@@ -255,9 +255,12 @@ export function EmployeeDashboardClient({
       {
         label: 'Half Day',
         value: stats['half-day'] ?? 0,
-        toneClass: 'bg-violet-500/12 text-violet-300 ring-1 ring-inset ring-violet-400/20',
-        barClass: 'bg-violet-400',
-        pieColor: '#a78bfa',
+        // Violet sat at hue 252-255, on the blue boundary, and read as blue on the warm
+        // ground. Lemon is clearly not blue, clearly not the clay used for Leave, and
+        // separates from it at 1.96:1 where violet managed 1.06:1.
+        toneClass: 'bg-yellow-500/12 text-yellow-300 ring-1 ring-inset ring-yellow-400/20',
+        barClass: 'bg-yellow-300',
+        pieColor: '#fde047',
       },
       {
         label: 'Leave',

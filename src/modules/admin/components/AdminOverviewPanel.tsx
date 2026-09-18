@@ -113,7 +113,7 @@ function PieChartCard({
           })
           .join(', ');
       })()
-    : 'rgba(15, 23, 42, 0.9) 0% 100%';
+    : 'rgba(33, 29, 24, 0.9) 0% 100%';
 
   return (
     <Card>

@@ -657,7 +657,7 @@ export function LeaveRequestsPanel({
 
       {pendingRejectRequest ? (
         <div className="app-overlay-scroll bg-slate-950/70 backdrop-blur-sm">
-          <div className="app-overlay-panel max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
+          <div className="app-overlay-panel max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(8,6,4,0.55)] ring-1 ring-inset ring-white/5">
             <div className="text-lg font-semibold text-slate-100">Reject Leave Request</div>
             <div className="mt-2 text-sm leading-6 text-slate-400">
               Add the reason for rejecting {pendingRejectRequest.user_name}&apos;s leave request.
@@ -714,7 +714,7 @@ export function LeaveRequestsPanel({
 
       {pendingApproveRequest ? (
         <div className="app-overlay-scroll bg-slate-950/70 backdrop-blur-sm">
-          <div className="app-overlay-panel max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5">
+          <div className="app-overlay-panel max-w-md rounded-2xl border border-slate-800/80 bg-slate-950/95 p-6 shadow-[0_22px_60px_rgba(8,6,4,0.55)] ring-1 ring-inset ring-white/5">
             <div className="text-lg font-semibold text-slate-100">Approve Leave Request</div>
             <div className="mt-2 text-sm leading-6 text-slate-400">
               Add an admin note before approving {pendingApproveRequest.user_name}&apos;s leave

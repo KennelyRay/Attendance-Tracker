@@ -416,7 +416,7 @@ export function AdminSidebar({
 
   return (
     isMobile ? (
-      <div className="overflow-hidden rounded-2xl border border-sky-400/10 bg-slate-950/80 shadow-[0_22px_60px_rgba(2,8,23,0.45)] ring-1 ring-inset ring-white/5 ">
+      <div className="overflow-hidden rounded-2xl border border-sky-400/10 bg-slate-950/80 shadow-[0_22px_60px_rgba(8,6,4,0.45)] ring-1 ring-inset ring-white/5 ">
         {sidebarContent}
       </div>
     ) : (

@@ -30,7 +30,7 @@ export default function AppError({
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md rounded-3xl border border-slate-800/80 bg-slate-950/85 p-5 text-center shadow-[0_28px_80px_rgba(2,8,23,0.65)] ring-1 ring-inset ring-white/5 sm:p-7">
+      <div className="w-full max-w-md rounded-3xl border border-slate-800/80 bg-slate-950/85 p-5 text-center shadow-[0_28px_80px_rgba(8,6,4,0.65)] ring-1 ring-inset ring-white/5 sm:p-7">
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-900/90 ring-1 ring-inset ring-amber-400/20">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-6 w-6 text-amber-300">
             <path

@@ -9,7 +9,7 @@ export function AmbientPageLoader({
 }: AmbientPageLoaderProps) {
   return (
     <div className="flex min-h-[38vh] items-center justify-center px-1 sm:min-h-[46vh]">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-[24px] border border-sky-400/12 bg-slate-950/55 px-4 py-6 shadow-[0_20px_70px_rgba(2,8,23,0.45)] ring-1 ring-inset ring-slate-800/80 backdrop-blur-xl sm:rounded-[28px] sm:px-8 sm:py-10">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-[24px] border border-sky-400/12 bg-slate-950/55 px-4 py-6 shadow-[0_20px_70px_rgba(8,6,4,0.45)] ring-1 ring-inset ring-slate-800/80 backdrop-blur-xl sm:rounded-[28px] sm:px-8 sm:py-10">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-400/10 blur-3xl sm:h-40 sm:w-40" />
         </div>

@@ -45,7 +45,7 @@ export function AccountSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
-        className="app-sheet rounded-t-3xl border-t border-slate-800 bg-slate-950 shadow-[0_-20px_60px_rgba(2,8,23,0.7)]"
+        className="app-sheet rounded-t-3xl border-t border-slate-800 bg-slate-950 shadow-[0_-20px_60px_rgba(8,6,4,0.7)]"
       >
         {/* Grab handle - the affordance people expect at the top of a sheet. */}
         <div className="flex justify-center pb-1 pt-2.5">

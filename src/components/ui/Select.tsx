@@ -295,7 +295,7 @@ export function Select({
                 maxHeight: placement.maxHeight,
                 transform: placement.openUp ? 'translateY(-100%)' : undefined,
               }}
-              className="z-[70] overflow-y-auto rounded-xl border border-slate-700/80 bg-slate-950/95 p-1 shadow-[0_22px_60px_rgba(2,8,23,0.65)] ring-1 ring-inset ring-white/5 backdrop-blur-xl"
+              className="z-[70] overflow-y-auto rounded-xl border border-slate-700/80 bg-slate-950/95 p-1 shadow-[0_22px_60px_rgba(8,6,4,0.65)] ring-1 ring-inset ring-white/5 backdrop-blur-xl"
             >
               {options.map((option, index) => {
                 const isSelected = option.value === currentValue;

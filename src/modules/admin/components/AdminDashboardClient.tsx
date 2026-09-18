@@ -788,7 +788,7 @@ export function AdminDashboardClient({
 
       {isEmployeePickerOpen ? (
         <div className="app-overlay-scroll bg-slate-950/75 backdrop-blur-sm lg:hidden">
-          <div className="app-overlay-panel max-w-2xl rounded-2xl border border-slate-800/80 bg-slate-950/95 p-4 shadow-[0_22px_60px_rgba(2,8,23,0.55)] ring-1 ring-inset ring-white/5 sm:p-5">
+          <div className="app-overlay-panel max-w-2xl rounded-2xl border border-slate-800/80 bg-slate-950/95 p-4 shadow-[0_22px_60px_rgba(8,6,4,0.55)] ring-1 ring-inset ring-white/5 sm:p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <div className="text-lg font-semibold text-slate-100">Choose Employee</div>

@@ -6,6 +6,10 @@ import { AnimatePresence, m, useAnimationControls } from 'framer-motion';
 import { arrive, depart, panelGroup, panelItem } from '@/components/motion/motion-tokens';
 import { SegmentedProgress } from '@/components/motion/SegmentedProgress';
 import { ButtonSpinner } from '@/components/motion/ButtonSpinner';
+import {
+  AUTH_HANDOFF_HOLD_MS,
+  triggerGlobalNavigationLoader,
+} from '@/components/layout/navigation-loader';
 import { useRouter } from 'next/navigation';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -53,9 +57,14 @@ export function LoginForm() {
     try {
       const user = await login(email, password);
       setAuthFlash({ type: 'login-success' });
-      // Navigation starts immediately. The signed-in state fills the wait the router
-      // already costs; it never adds one.
       setStatus('signed-in');
+      // The handoff covers the screen for the rest of the way in, held for a set beat at
+      // the owner's request rather than flashing past.
+      triggerGlobalNavigationLoader({
+        title: 'Signing you in',
+        description: 'Getting your workspace ready.',
+        minDurationMs: AUTH_HANDOFF_HOLD_MS,
+      });
       router.push(user.isAdmin ? '/admin/dashboard' : '/employee/dashboard');
       return;
     } catch (err) {

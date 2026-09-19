@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { triggerGlobalNavigationLoader } from '@/components/layout/navigation-loader';
+import {
+  AUTH_HANDOFF_HOLD_MS,
+  GLOBAL_NAVIGATION_END_EVENT,
+  isNavigationLoaderActive,
+  triggerGlobalNavigationLoader,
+} from '@/components/layout/navigation-loader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { ButtonSpinner } from '@/components/motion/ButtonSpinner';
@@ -79,21 +84,32 @@ export function TopNav({
       return;
     }
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only data, read post-render
-    setSignedInMessage(
-      user.isAdmin
-        ? 'Admin controls are ready.'
-        : 'Your employee workspace is ready.'
-    );
+    const message = user.isAdmin
+      ? 'Admin controls are ready.'
+      : 'Your employee workspace is ready.';
+    let dismissId: number | undefined;
 
-    // It still clears itself. A confirmation that waits to be dismissed puts a click
-    // between someone and the work they signed in to do.
-    const timeoutId = window.setTimeout(() => {
-      setSignedInMessage(null);
-    }, 4000);
+    const show = () => {
+      setSignedInMessage(message);
+      // It still clears itself. A confirmation that waits to be dismissed puts a click
+      // between someone and the work they signed in to do.
+      dismissId = window.setTimeout(() => setSignedInMessage(null), 4000);
+    };
+
+    // The sign-in handoff covers the whole screen, so this waits for it to lift instead
+    // of opening underneath it and spending its life unseen.
+    if (!isNavigationLoaderActive()) {
+      show();
+      return () => {
+        if (dismissId) window.clearTimeout(dismissId);
+      };
+    }
+
+    window.addEventListener(GLOBAL_NAVIGATION_END_EVENT, show, { once: true });
 
     return () => {
-      window.clearTimeout(timeoutId);
+      window.removeEventListener(GLOBAL_NAVIGATION_END_EVENT, show);
+      if (dismissId) window.clearTimeout(dismissId);
     };
   }, [user.isAdmin]);
 
@@ -128,6 +144,7 @@ export function TopNav({
       triggerGlobalNavigationLoader({
         title: 'Signing you out',
         description: 'Closing your session and returning to sign in.',
+        minDurationMs: AUTH_HANDOFF_HOLD_MS,
       });
       router.push('/login');
     } catch {
@@ -369,10 +386,11 @@ export function TopNav({
         isOpen={signedInMessage !== null}
         onClose={() => setSignedInMessage(null)}
         tone="success"
-        title="You're signed in"
+        align="center"
+        title={`Welcome back, ${displayUser.name.split(' ')[0]}`}
         description={signedInMessage ?? undefined}
         footer={
-          <Button className="h-12 w-full sm:h-10 sm:w-auto" onClick={() => setSignedInMessage(null)}>
+          <Button className="h-12 w-full" onClick={() => setSignedInMessage(null)}>
             Continue
           </Button>
         }

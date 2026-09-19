@@ -72,6 +72,7 @@ export function Modal({
   description,
   tone = 'default',
   size = 'md',
+  align = 'start',
   children,
   footer,
 }: {
@@ -81,6 +82,12 @@ export function Modal({
   description?: string;
   tone?: ModalTone;
   size?: 'md' | 'lg' | 'xl';
+  /**
+   * `start` is the working shape: icon beside the title, so a dialog that carries a form
+   * or a list keeps its content flush left. `center` is for a dialog that is only an
+   * outcome, where the mark belongs above the words and the eye should land in one place.
+   */
+  align?: 'start' | 'center';
   children?: ReactNode;
   footer?: ReactNode;
 }) {
@@ -143,24 +150,41 @@ export function Modal({
           <span aria-hidden="true" className="h-1 w-9 rounded-full bg-slate-700" />
         </div>
 
-        <div className="flex shrink-0 items-start gap-3 px-5 pb-3 pt-3 sm:px-6 sm:pt-6">
-          <span
-            className={[
-              'app-result-pop grid h-11 w-11 shrink-0 place-items-center rounded-2xl ring-1 ring-inset',
-              toneRing[tone],
-            ].join(' ')}
-          >
-            <ToneIcon tone={tone} />
-          </span>
-          <div className="min-w-0 flex-1 pt-0.5">
-            <h2 className="text-base font-semibold leading-snug text-slate-50 sm:text-lg">
-              {title}
-            </h2>
+        {align === 'center' ? (
+          <div className="flex shrink-0 flex-col items-center px-6 pb-2 pt-5 text-center sm:pt-8">
+            <span
+              className={[
+                'app-result-pop grid h-16 w-16 place-items-center rounded-full ring-1 ring-inset [&_svg]:h-8 [&_svg]:w-8',
+                toneRing[tone],
+              ].join(' ')}
+            >
+              <ToneIcon tone={tone} />
+            </span>
+            <h2 className="mt-5 text-xl font-semibold tracking-tight text-slate-50">{title}</h2>
             {description ? (
-              <p className="mt-1 text-sm leading-6 text-slate-400">{description}</p>
+              <p className="mt-2 max-w-xs text-sm leading-6 text-slate-400">{description}</p>
             ) : null}
           </div>
-        </div>
+        ) : (
+          <div className="flex shrink-0 items-start gap-3 px-5 pb-3 pt-3 sm:px-6 sm:pt-6">
+            <span
+              className={[
+                'app-result-pop grid h-11 w-11 shrink-0 place-items-center rounded-2xl ring-1 ring-inset',
+                toneRing[tone],
+              ].join(' ')}
+            >
+              <ToneIcon tone={tone} />
+            </span>
+            <div className="min-w-0 flex-1 pt-0.5">
+              <h2 className="text-base font-semibold leading-snug text-slate-50 sm:text-lg">
+                {title}
+              </h2>
+              {description ? (
+                <p className="mt-1 text-sm leading-6 text-slate-400">{description}</p>
+              ) : null}
+            </div>
+          </div>
+        )}
 
         {children ? (
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-2 sm:px-6">
@@ -168,7 +192,12 @@ export function Modal({
           </div>
         ) : null}
 
-        <div className="shrink-0 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pb-6">
+        <div
+          className={[
+            'shrink-0 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 sm:pb-6',
+            align === 'center' ? 'px-6 pt-5' : 'px-5 sm:px-6',
+          ].join(' ')}
+        >
           {footer ?? (
             <Button className="h-12 w-full sm:h-10 sm:w-auto" onClick={onClose}>
               Close

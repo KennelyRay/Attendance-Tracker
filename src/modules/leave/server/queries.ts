@@ -1,3 +1,4 @@
+import { assertNotDemoSession } from '@/lib/demo/server';
 import { getPool } from '@/lib/db';
 import { recordAuditEvent } from '@/lib/audit-log';
 import { notifyAdmins, notifyUser } from '@/lib/push';
@@ -255,6 +256,7 @@ export async function getPaidLeaveUsedDaysForYear(userId: number, year: number) 
 }
 
 export async function getLeaveBalanceForUser(userId: number): Promise<LeaveBalance> {
+  await assertNotDemoSession();
   await releaseExpiredPaidLeaveDeductions(userId);
   const startDate = await getUserStartDate(userId);
 
@@ -276,6 +278,7 @@ export async function getLeaveBalanceForUser(userId: number): Promise<LeaveBalan
 }
 
 export async function listLeaveRequestsForUser(userId: number): Promise<LeaveRequest[]> {
+  await assertNotDemoSession();
   await rejectOverdueLeaveRequests();
   await releaseExpiredPaidLeaveDeductions(userId);
   const pool = getPool();

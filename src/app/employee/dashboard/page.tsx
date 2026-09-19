@@ -1,5 +1,6 @@
 import { EmployeeDashboardClient } from '@/modules/employee/components/EmployeeDashboardClient';
 import { getSessionData } from '@/lib/session';
+import { demoEmployeeDashboardProps } from '@/lib/demo/server';
 import { getMyAttendanceForMonth, getMyViolations } from '@/modules/employee/server/queries';
 import {
   getLeaveBalanceForUser,
@@ -19,6 +20,23 @@ export default async function EmployeeDashboardPage() {
 
   const month = String(monthNumber).padStart(2, '0');
   const year = String(yearNumber);
+
+  // Same reason as the admin dashboard: this first screen is server-rendered, so the
+  // sample data has to be chosen here rather than at the API boundary.
+  if (session.user.isDemo) {
+    const demo = demoEmployeeDashboardProps(monthNumber, yearNumber);
+    return (
+      <EmployeeDashboardClient
+        initialMonth={demo.month}
+        initialYear={demo.year}
+        initialRecords={demo.records as never}
+        initialStats={demo.stats as never}
+        initialLeaveBalance={demo.leaveBalance as never}
+        initialLeaveRequests={demo.leaveRequests as never}
+        initialViolations={demo.violations as never}
+      />
+    );
+  }
 
   const [data, leaveBalance, leaveRequests, violations] = await Promise.all([
     getMyAttendanceForMonth(session.user.id, monthNumber, yearNumber),

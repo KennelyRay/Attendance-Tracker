@@ -174,6 +174,12 @@ export function TopNav({
 
   return (
     <header className="app-safe-top sticky top-0 z-10 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl">
+      {user.isDemo ? (
+        <div className="border-b border-amber-400/15 bg-amber-500/10 px-3 py-1.5 text-center text-[11px] font-medium leading-5 text-amber-200 sm:px-4 sm:text-xs">
+          Test mode. Every name, record and case here is sample data, and changes are kept
+          to your visit only.
+        </div>
+      ) : null}
       {/* Phone: one compact row. Everything secondary moves into the account sheet. */}
       <div className="flex h-14 items-center gap-3 px-3 sm:hidden">
         <Image

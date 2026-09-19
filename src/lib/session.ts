@@ -1,11 +1,20 @@
 import { SessionOptions, sealData, unsealData } from 'iron-session';
 import { cookies } from 'next/headers';
+import {
+  MAX_SESSION_TTL_SECONDS,
+  SESSION_COOKIE_NAME,
+  SESSION_TTL_SECONDS,
+} from '@/lib/session-constants';
+
+export { MAX_SESSION_TTL_SECONDS, SESSION_TTL_SECONDS };
 
 export type SessionUser = {
   id: number;
   name: string;
   email: string;
   isAdmin: boolean;
+  /** True for the portfolio test-mode account, which only ever sees sample data. */
+  isDemo?: boolean;
 };
 
 export type SessionData = {
@@ -29,17 +38,9 @@ if (!sessionSecret || sessionSecret.length < 32) {
  * read every employee's records and ban accounts, while an employee session can only
  * reach that employee's own data.
  */
-export const SESSION_TTL_SECONDS = {
-  admin: 12 * 60 * 60, // 12 hours - roughly one working day
-  employee: 30 * 24 * 60 * 60, // 30 days
-} as const;
-
 export function sessionTtlSeconds(isAdmin: boolean) {
   return isAdmin ? SESSION_TTL_SECONDS.admin : SESSION_TTL_SECONDS.employee;
 }
-
-/** Longest TTL we ever issue; used when unsealing, before the role is known. */
-export const MAX_SESSION_TTL_SECONDS = SESSION_TTL_SECONDS.employee;
 
 /** Matches iron-session's own rule: the cookie expires a minute before the seal does. */
 export function sessionCookieMaxAge(isAdmin: boolean) {
@@ -48,7 +49,7 @@ export function sessionCookieMaxAge(isAdmin: boolean) {
 
 export const sessionOptions: SessionOptions = {
   password: sessionSecret,
-  cookieName: 'employee-attendance-session',
+  cookieName: SESSION_COOKIE_NAME,
   ttl: MAX_SESSION_TTL_SECONDS,
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',

@@ -1,3 +1,4 @@
+import { assertNotDemoSession } from '@/lib/demo/server';
 import { getPool } from '@/lib/db';
 import { ensureViolationSystemSchema } from '@/lib/violation-system';
 import type { AttendanceStatus } from '@/modules/attendance/types';
@@ -27,6 +28,7 @@ export async function getMyAttendanceForMonth(
   month: number,
   year: number
 ): Promise<{ records: EmployeeAttendanceRecord[]; stats: EmployeeAttendanceStats }> {
+  await assertNotDemoSession();
   const pool = getPool();
 
   const recordsResult = await pool.query(
@@ -66,6 +68,7 @@ export async function getMyAttendanceForMonth(
 }
 
 export async function getMyViolations(userId: number): Promise<EmployeeViolationRecord[]> {
+  await assertNotDemoSession();
   const pool = getPool();
   await ensureViolationSystemSchema(pool);
 

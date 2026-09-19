@@ -1,3 +1,4 @@
+import { assertNotDemoSession } from '@/lib/demo/server';
 import { getPool } from '@/lib/db';
 import { recordAuditEvent } from '@/lib/audit-log';
 import { ensureUserAccessColumns } from '@/lib/user-access';
@@ -15,6 +16,7 @@ import type {
 import { normalizeDateOnly } from '@/modules/leave/utils';
 
 export async function listEmployees(): Promise<Employee[]> {
+  await assertNotDemoSession();
   const pool = getPool();
   await ensureViolationSystemSchema(pool);
   const result = await pool.query(
@@ -55,6 +57,7 @@ export async function listEmployees(): Promise<Employee[]> {
 export async function getAttendanceHistoryForEmployee(
   userId: number
 ): Promise<AdminAttendanceRecord[]> {
+  await assertNotDemoSession();
   const pool = getPool();
   await ensureUserAccessColumns(pool);
   const result = await pool.query(

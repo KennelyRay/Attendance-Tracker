@@ -23,6 +23,7 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'submitting' | 'signed-in'>('idle');
+  const [demoRole, setDemoRole] = useState<'admin' | 'employee' | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   // Imperative, so a second failed attempt replays the shake. Driving it from state and
@@ -73,6 +74,37 @@ export function LoginForm() {
       // A rejected sign-in is the one moment the card itself should react. Framer drops
       // this transform entirely under prefers-reduced-motion; the message carries it then.
       void cardControls.start({ x: [0, -9, 7, -4, 0], transition: { duration: 0.34 } });
+    }
+  };
+
+  const openDemo = async (role: 'admin' | 'employee') => {
+    if (isBusy || demoRole) {
+      return;
+    }
+
+    setDemoRole(role);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/demo/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Could not open the demo');
+      }
+
+      triggerGlobalNavigationLoader({
+        title: 'Opening the demo',
+        description: 'Loading sample records. Nothing here is real data.',
+        minDurationMs: AUTH_HANDOFF_HOLD_MS,
+      });
+      router.push(role === 'admin' ? '/admin/dashboard' : '/employee/dashboard');
+    } catch {
+      setDemoRole(null);
+      setError('Could not open the demo. Try again in a moment.');
     }
   };
 
@@ -296,6 +328,39 @@ export function LoginForm() {
                     Only authorized personnel can access this system.
                   </div>
                 </form>
+
+                {/* Portfolio visitors get in without an account. It sits below the form and
+                    visibly apart, so nobody working here mistakes it for the way in, and it
+                    says up front that the records inside are invented. */}
+                <div className="mt-5 border-t border-slate-800/80 pt-4">
+                  <div className="text-center text-sm font-medium text-slate-300">
+                    Just looking around?
+                  </div>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <Button
+                      variant="secondary"
+                      className="w-full gap-2"
+                      disabled={isBusy || demoRole !== null}
+                      onClick={() => void openDemo('admin')}
+                    >
+                      {demoRole === 'admin' ? <ButtonSpinner /> : null}
+                      View as HR admin
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      className="w-full gap-2"
+                      disabled={isBusy || demoRole !== null}
+                      onClick={() => void openDemo('employee')}
+                    >
+                      {demoRole === 'employee' ? <ButtonSpinner /> : null}
+                      View as employee
+                    </Button>
+                  </div>
+                  <p className="mt-3 text-center text-[11px] leading-5 text-slate-500 sm:text-xs">
+                    Test mode runs on sample records. No real employee data is shown, and
+                    anything you change is kept to your visit.
+                  </p>
+                </div>
               </CardBody>
             </Card>
           </m.div>

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { AnimatePresence, m, useAnimationControls } from 'framer-motion';
 import { arrive, depart, panelGroup, panelItem } from '@/components/motion/motion-tokens';
 import { SegmentedProgress } from '@/components/motion/SegmentedProgress';
+import { ButtonSpinner } from '@/components/motion/ButtonSpinner';
 import { useRouter } from 'next/navigation';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -249,12 +250,7 @@ export function LoginForm() {
                       'Sign in'
                     ) : status === 'submitting' ? (
                       <span className="inline-flex items-center gap-2">
-                        <m.span
-                          aria-hidden="true"
-                          className="h-3.5 w-3.5 rounded-full border-2 border-slate-950/30 border-t-slate-950"
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 0.8, ease: 'linear', repeat: Infinity }}
-                        />
+                        <ButtonSpinner onDark />
                         Signing in…
                       </span>
                     ) : (

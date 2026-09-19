@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { triggerGlobalNavigationLoader } from '@/components/layout/navigation-loader';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { ButtonSpinner } from '@/components/motion/ButtonSpinner';
 import { InstallAppButton } from '@/components/pwa/InstallAppButton';
 import { AccountSheet } from '@/components/layout/AccountSheet';
 import type { SessionUser } from '@/lib/session';
@@ -26,8 +28,10 @@ export function TopNav({
   const isEmployee = !user.isAdmin;
   const isLeavePolicyPage = pathname === '/employee/leave-policy';
   const [employeeProfile, setEmployeeProfile] = useState<EmployeePortalProfile | null>(null);
-  const [authNotice, setAuthNotice] = useState<string | null>(null);
+  const [signedInMessage, setSignedInMessage] = useState<string | null>(null);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isEmployee) {
@@ -76,14 +80,16 @@ export function TopNav({
     }
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only data, read post-render
-    setAuthNotice(
+    setSignedInMessage(
       user.isAdmin
-        ? 'Login successful. Admin controls are ready.'
-        : 'Login successful. Your employee workspace is ready.'
+        ? 'Admin controls are ready.'
+        : 'Your employee workspace is ready.'
     );
 
+    // It still clears itself. A confirmation that waits to be dismissed puts a click
+    // between someone and the work they signed in to do.
     const timeoutId = window.setTimeout(() => {
-      setAuthNotice(null);
+      setSignedInMessage(null);
     }, 4000);
 
     return () => {
@@ -103,9 +109,32 @@ export function TopNav({
   );
 
   const onLogout = async () => {
-    await fetch('/api/logout', { method: 'POST' });
-    setAuthFlash({ type: 'logout-success' });
-    router.push('/login');
+    if (isSigningOut) {
+      return;
+    }
+
+    setIsSigningOut(true);
+    setSignOutError(null);
+
+    try {
+      const response = await fetch('/api/logout', { method: 'POST' });
+      if (!response.ok) {
+        throw new Error('Sign out failed');
+      }
+
+      setAuthFlash({ type: 'logout-success' });
+      // The same full-screen handoff signing in uses, so leaving and arriving are one
+      // piece of movement rather than two unrelated effects.
+      triggerGlobalNavigationLoader({
+        title: 'Signing you out',
+        description: 'Closing your session and returning to sign in.',
+      });
+      router.push('/login');
+    } catch {
+      // The session is still open, so say so instead of leaving a dead button.
+      setIsSigningOut(false);
+      setSignOutError('We could not sign you out. Check your connection and try again.');
+    }
   };
 
   const onPolicyNavigate = () => {
@@ -216,8 +245,15 @@ export function TopNav({
             </Button>
           ) : null}
           <InstallAppButton className="px-2.5 sm:px-3" />
-          <Button className="shrink-0 px-2.5 sm:px-3" variant="danger" size="sm" onClick={onLogout}>
-            Logout
+          <Button
+            className="shrink-0 gap-2 px-2.5 sm:px-3"
+            variant="danger"
+            size="sm"
+            disabled={isSigningOut}
+            onClick={() => void onLogout()}
+          >
+            {isSigningOut ? <ButtonSpinner /> : null}
+            {isSigningOut ? 'Signing out…' : 'Logout'}
           </Button>
         </div>
       </div>
@@ -277,35 +313,70 @@ export function TopNav({
           <Button
             variant="danger"
             className="h-12 w-full justify-start px-4"
+            disabled={isSigningOut}
             onClick={() => {
               setIsAccountOpen(false);
               void onLogout();
             }}
           >
-            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-              <path
-                d="M12.5 13.5V15a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 15V5A1.5 1.5 0 0 1 5 3.5h6A1.5 1.5 0 0 1 12.5 5v1.5M9 10h7.5m0 0-2.5-2.5M16.5 10 14 12.5"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            Log out
+            {isSigningOut ? (
+              <ButtonSpinner />
+            ) : (
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
+                <path
+                  d="M12.5 13.5V15a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 15V5A1.5 1.5 0 0 1 5 3.5h6A1.5 1.5 0 0 1 12.5 5v1.5M9 10h7.5m0 0-2.5-2.5M16.5 10 14 12.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+            {isSigningOut ? 'Signing out…' : 'Log out'}
           </Button>
         </div>
       </AccountSheet>
 
-      {authNotice ? (
-        <div
-          className={[
-            'border-t border-emerald-400/10 bg-emerald-500/8 px-3 py-2.5 text-sm text-emerald-300',
-            fullWidth ? 'sm:px-4 lg:px-6 xl:px-8' : 'sm:px-6 lg:px-8',
-          ].join(' ')}
-        >
-          <div className={fullWidth ? 'w-full' : 'mx-auto max-w-7xl'}>{authNotice}</div>
-        </div>
-      ) : null}
+      <Modal
+        isOpen={signOutError !== null}
+        onClose={() => setSignOutError(null)}
+        tone="error"
+        title="Still signed in"
+        description={signOutError ?? undefined}
+        footer={
+          <div className="flex flex-col gap-2 sm:flex-row-reverse">
+            <Button
+              className="h-12 w-full sm:h-10 sm:w-auto"
+              onClick={() => {
+                setSignOutError(null);
+                void onLogout();
+              }}
+            >
+              Try again
+            </Button>
+            <Button
+              variant="secondary"
+              className="h-12 w-full sm:h-10 sm:w-auto"
+              onClick={() => setSignOutError(null)}
+            >
+              Stay signed in
+            </Button>
+          </div>
+        }
+      />
+
+      <Modal
+        isOpen={signedInMessage !== null}
+        onClose={() => setSignedInMessage(null)}
+        tone="success"
+        title="You're signed in"
+        description={signedInMessage ?? undefined}
+        footer={
+          <Button className="h-12 w-full sm:h-10 sm:w-auto" onClick={() => setSignedInMessage(null)}>
+            Continue
+          </Button>
+        }
+      />
     </header>
   );
 }

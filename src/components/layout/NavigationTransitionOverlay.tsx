@@ -12,8 +12,8 @@ const MIN_OVERLAY_MS = 220;
 const MAX_OVERLAY_MS = 10_000;
 
 const defaultDetail: Required<NavigationLoaderDetail> = {
-  title: 'Loading page',
-  description: 'Bringing the next view into focus.',
+  title: 'Loading',
+  description: 'Opening the next page.',
 };
 
 export function NavigationTransitionOverlay() {
@@ -107,11 +107,5 @@ export function NavigationTransitionOverlay() {
     return null;
   }
 
-  return (
-    <div className="app-overlay-scroll z-[80] bg-slate-950/72 px-3 py-5 backdrop-blur-sm sm:px-4 sm:py-8">
-      <div className="app-overlay-panel max-w-xl">
-        <AmbientPageLoader title={detail.title} description={detail.description} />
-      </div>
-    </div>
-  );
+  return <AmbientPageLoader title={detail.title} description={detail.description} />;
 }

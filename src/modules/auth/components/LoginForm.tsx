@@ -3,48 +3,14 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { AnimatePresence, m, useAnimationControls } from 'framer-motion';
-import { arrive, depart, panelGroup, panelItem, STAGGER_STEP } from '@/components/motion/motion-tokens';
+import { arrive, depart, panelGroup, panelItem } from '@/components/motion/motion-tokens';
+import { SegmentedProgress } from '@/components/motion/SegmentedProgress';
 import { useRouter } from 'next/navigation';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { login } from '@/modules/auth/api';
 import { consumeAuthFlash, setAuthFlash } from '@/modules/auth/flash';
-
-/**
- * The segmented blocks from DESIGN.md's identity motif: time and records as discrete,
- * countable units, the same idea as the broken stem in the logo mark. It is the one
- * decorative element on the page and it is here to make the page belong to this product
- * rather than to any sign-in template, so it is deliberately quiet: no colour of its own
- * beyond the accent, no loop, and it settles once on arrival.
- */
-function MotifStrip() {
-  // Equal blocks, not varied heights: varied heights would read as a chart, and a chart
-  // here would imply data this page does not have.
-  const accented = new Set([0, 4, 5, 9]);
-
-  return (
-    <m.div
-      aria-hidden="true"
-      variants={{ hidden: {}, shown: { transition: { staggerChildren: STAGGER_STEP / 2 } } }}
-      className="flex items-center gap-1.5"
-    >
-      {Array.from({ length: 14 }, (_, index) => (
-        <m.span
-          key={index}
-          variants={{
-            hidden: { opacity: 0, scaleX: 0.2 },
-            shown: { opacity: 1, scaleX: 1, transition: arrive },
-          }}
-          className={[
-            'h-2.5 w-4 rounded-[3px]',
-            accented.has(index) ? 'bg-sky-400/80' : 'bg-slate-700/80',
-          ].join(' ')}
-        />
-      ))}
-    </m.div>
-  );
-}
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
@@ -143,7 +109,7 @@ export function LoginForm() {
             </m.p>
 
             <m.div variants={panelItem} className="mt-10">
-              <MotifStrip />
+              <SegmentedProgress />
             </m.div>
           </div>
         </div>

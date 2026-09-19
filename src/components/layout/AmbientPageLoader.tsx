@@ -1,45 +1,64 @@
+'use client';
+
+import Image from 'next/image';
+import { m } from 'framer-motion';
+import { SegmentedProgress } from '@/components/motion/SegmentedProgress';
+
 type AmbientPageLoaderProps = {
   title?: string;
   description?: string;
 };
 
+/**
+ * The handoff between one view and the next: the whole screen, not a panel floating on a
+ * dimmed page.
+ *
+ * It was a centred card with backdrop blur, a glowing ring, a spinner and three pulsing
+ * dots, which is four treatments telling you the same single fact. Full screen says it
+ * once, and carrying the same ground, logo and segmented motif as the sign-in page makes
+ * the wait read as the app continuing rather than as a dialog interrupting it.
+ */
 export function AmbientPageLoader({
-  title = 'Loading page',
-  description = 'Bringing the next view into focus.',
+  title = 'Loading',
+  description = 'Opening the next page.',
 }: AmbientPageLoaderProps) {
   return (
-    <div className="flex min-h-[38vh] items-center justify-center px-1 sm:min-h-[46vh]">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-[24px] border border-sky-400/12 bg-slate-950/55 px-4 py-6 shadow-[0_20px_70px_rgba(8,6,4,0.45)] ring-1 ring-inset ring-slate-800/80 backdrop-blur-xl sm:rounded-[28px] sm:px-8 sm:py-10">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-400/10 blur-3xl sm:h-40 sm:w-40" />
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed inset-0 z-[70] flex flex-col items-center justify-center gap-7 overflow-hidden bg-[#15120f] px-6 text-center"
+    >
+      {/* The same warm lift the sign-in page uses, so the two screens read as one place. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(90rem_50rem_at_50%_42%,rgba(229,138,98,0.10),transparent_62%)]"
+      />
+
+      <m.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.24, ease: 'easeOut' }}
+        className="relative flex flex-col items-center gap-7"
+      >
+        <Image
+          src="/hris-logo.svg"
+          alt=""
+          width={48}
+          height={48}
+          priority
+          unoptimized
+          className="h-12 w-12 rounded-2xl"
+        />
+
+        <div>
+          <div className="text-lg font-semibold tracking-tight text-slate-50 sm:text-xl">
+            {title}
+          </div>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-400">{description}</p>
         </div>
 
-        <div className="relative flex flex-col items-center text-center">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-[18px] bg-slate-900/85 ring-1 ring-inset ring-sky-400/15 sm:mb-5 sm:h-16 sm:w-16 sm:rounded-full">
-            <div className="relative h-8 w-8 sm:h-10 sm:w-10">
-              <span className="absolute inset-0 animate-spin rounded-full border-[3px] border-sky-400/25 border-t-sky-300 shadow-[0_0_20px_rgba(229,138,98,0.2)]" />
-              <span className="animate-ambient-loader-pulse absolute inset-[9px] rounded-full bg-sky-300/85 shadow-[0_0_14px_rgba(229,138,98,0.4)] sm:inset-[12px]" />
-            </div>
-          </div>
-
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-sky-300/80 sm:text-sm sm:tracking-wide">
-            Syncing View
-          </div>
-          <div className="mt-2.5 text-lg font-semibold text-slate-100 sm:mt-3 sm:text-2xl">{title}</div>
-          <div className="mt-2 max-w-md text-sm leading-6 text-slate-400">{description}</div>
-          <div className="mt-4 flex items-center gap-2 sm:mt-5">
-            <span className="animate-ambient-loader-pulse h-2 w-2 rounded-full bg-sky-300/90" />
-            <span
-              className="animate-ambient-loader-pulse h-2 w-2 rounded-full bg-sky-300/70"
-              style={{ animationDelay: '0.18s' }}
-            />
-            <span
-              className="animate-ambient-loader-pulse h-2 w-2 rounded-full bg-sky-300/50"
-              style={{ animationDelay: '0.36s' }}
-            />
-          </div>
-        </div>
-      </div>
+        <SegmentedProgress mode="loading" />
+      </m.div>
     </div>
   );
 }

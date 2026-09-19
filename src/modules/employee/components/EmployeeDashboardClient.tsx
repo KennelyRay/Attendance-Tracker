@@ -695,7 +695,7 @@ export function EmployeeDashboardClient({
           </div>
         </div>
 
-        <div className="mx-auto w-full min-w-0 max-w-[1680px] xl:px-6 xl:py-6">
+        <div className="mx-auto w-full min-w-0 max-w-[1680px] pt-4 sm:pt-5 xl:px-6 xl:py-6">
           <div className="space-y-6">
             {isFirstTimeEmployee ? (
               <div className="xl:hidden">

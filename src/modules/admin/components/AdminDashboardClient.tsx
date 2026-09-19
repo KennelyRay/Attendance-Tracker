@@ -681,7 +681,7 @@ export function AdminDashboardClient({
         />
         </div>
 
-        <div className="mx-auto w-full max-w-[1680px] space-y-6 xl:px-8">
+        <div className="mx-auto w-full max-w-[1680px] space-y-6 pt-4 sm:pt-5 xl:px-8 xl:py-6">
           <PanelTransition viewKey={activeView}>
             <PanelItem>
           {activeView === 'dashboard' ? (

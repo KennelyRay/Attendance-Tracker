@@ -165,35 +165,29 @@ export function LeavePolicyContent() {
       </Card>
       </ParallaxHeader>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card>
-          <CardBody>
-            <div className="text-sm font-semibold text-slate-100">Paid Leave Pool</div>
-            <div className="mt-2 text-sm leading-6 text-slate-400">
-              Paid Leave is one flexible pool. You can use it for illness, rest, appointments,
-              errands, or personal matters without separating &quot;sick&quot; and
-              &quot;vacation&quot; leave.
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <div className="text-sm font-semibold text-slate-100">Protected Leave</div>
-            <div className="mt-2 text-sm leading-6 text-slate-400">
-              Statutory and protected leaves do not reduce your Paid Leave balance and should not
-              be treated as an unexcused absence or used against your attendance incentives.
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <div className="text-sm font-semibold text-slate-100">Documents Matter</div>
-            <div className="mt-2 text-sm leading-6 text-slate-400">
-              Many unplanned or emergency leaves require supporting documents, often within 72
-              hours. If you are unsure, contact HR immediately.
-            </div>
-          </CardBody>
-        </Card>
+      <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,17rem),1fr))]">
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 ring-1 ring-inset ring-white/5">
+          <div className="text-sm font-semibold text-slate-100">Paid Leave Pool</div>
+          <div className="mt-2 text-sm leading-6 text-slate-400">
+            Paid Leave is one flexible pool. You can use it for illness, rest, appointments,
+            errands, or personal matters without separating &quot;sick&quot; and
+            &quot;vacation&quot; leave.
+          </div>
+        </div>
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 ring-1 ring-inset ring-white/5">
+          <div className="text-sm font-semibold text-slate-100">Protected Leave</div>
+          <div className="mt-2 text-sm leading-6 text-slate-400">
+            Statutory and protected leaves do not reduce your Paid Leave balance and should not
+            be treated as an unexcused absence or used against your attendance incentives.
+          </div>
+        </div>
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 ring-1 ring-inset ring-white/5">
+          <div className="text-sm font-semibold text-slate-100">Documents Matter</div>
+          <div className="mt-2 text-sm leading-6 text-slate-400">
+            Many unplanned or emergency leaves require supporting documents, often within 72
+            hours. If you are unsure, contact HR immediately.
+          </div>
+        </div>
       </div>
 
       <ScrollReveal>
@@ -276,7 +270,7 @@ export function LeavePolicyContent() {
       </ScrollReveal>
 
       <ScrollReveal>
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="grid gap-y-8 gap-x-10 [grid-template-columns:repeat(auto-fit,minmax(min(100%,30rem),1fr))]">
         <Card>
           <CardHeader
             title="3. Special And Emergency Leaves"
@@ -356,7 +350,7 @@ export function LeavePolicyContent() {
       </ScrollReveal>
 
       <ScrollReveal>
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="grid gap-y-8 gap-x-10 [grid-template-columns:repeat(auto-fit,minmax(min(100%,30rem),1fr))]">
         <Card>
           <CardHeader
             title="6. Important Reminders"

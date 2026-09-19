@@ -1,21 +1,20 @@
 import { ReactNode } from 'react';
 
 /**
- * The default surface: a flat panel separated by tint and a border.
+ * A section of a page.
  *
- * It previously carried backdrop-blur, an inset ring and a 60px shadow on every
- * instance. When every panel is lifted and frosted, elevation stops meaning anything
- * and the page reads as floating glass. Elevation is now spent only where something
- * genuinely sits above the page, which is dialogs and the sheet.
+ * A `section` has no box at any width. The panel border, tint and radius used to frame
+ * every section, and because the data inside is itself made of tiles and tables with
+ * their own edges, a screen ended up three frames deep with the content shrinking inside
+ * them. What separates sections now is the rule under each title and the space between
+ * them, which is also what lets a section hold a full-width table without fighting it.
  *
- * On phones a `section` drops its box entirely. The page gutter already frames it, and
- * a border inside that gutter spent width on a second frame while the tiles inside
- * added a third. The rule under each heading is what separates sections there.
- * A `surface` keeps its box at every width, for a card that stands alone on the page,
- * like the sign-in form.
+ * A `surface` keeps the box, for something that stands alone on an otherwise empty page,
+ * like the sign-in form. Elevation stays reserved for what genuinely sits above the page:
+ * dialogs and the sheet.
  *
  * `--card-px` carries the inset to CardHeader and CardBody, so they line up with
- * whichever variant they sit in.
+ * whichever variant they sit in. A section takes its gutter from the page.
  */
 export function Card({
   children,
@@ -28,8 +27,8 @@ export function Card({
     <div
       className={
         variant === 'surface'
-          ? 'rounded-2xl border border-slate-800 bg-slate-900/60 [--card-px:1.25rem] sm:[--card-px:1.5rem]'
-          : '[--card-px:0.25rem] sm:rounded-2xl sm:border sm:border-slate-800 sm:bg-slate-900/60 sm:[--card-px:1.5rem]'
+          ? 'rounded-2xl border border-slate-800 bg-slate-900/60 [--card-px:1.25rem] [--card-pt:1.25rem] sm:[--card-px:1.5rem] sm:[--card-pt:1.5rem]'
+          : '[--card-px:0px] [--card-pt:0px] py-1 sm:py-3'
       }
     >
       {children}
@@ -55,9 +54,11 @@ export function CardHeader({
 }) {
   if (action) {
     return (
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-4 border-b border-slate-800/80 px-[var(--card-px)] py-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:py-5">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 border-b border-slate-800/80 px-[var(--card-px)] pb-3 pt-[var(--card-pt)] sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center sm:gap-y-4 sm:pb-4">
         <div className="min-w-0">
-          <div className="text-base font-semibold text-slate-100">{title}</div>
+          <h2 className="text-base font-semibold tracking-tight text-slate-50 sm:text-lg">
+            {title}
+          </h2>
           {subtitle ? <div className="mt-1 text-sm text-slate-400">{subtitle}</div> : null}
         </div>
         {right ? (
@@ -71,12 +72,10 @@ export function CardHeader({
   }
 
   return (
-    <div className="flex flex-col items-start gap-4 border-b border-slate-800/80 px-[var(--card-px)] py-4 sm:flex-row sm:justify-between sm:py-5">
+    <div className="flex flex-col items-start gap-3 border-b border-slate-800/80 px-[var(--card-px)] pb-3 pt-[var(--card-pt)] sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:pb-4">
       <div className="min-w-0">
-        <div className="text-base font-semibold text-slate-100">{title}</div>
-        {subtitle ? (
-          <div className="mt-1 text-sm text-slate-400">{subtitle}</div>
-        ) : null}
+        <h2 className="text-base font-semibold tracking-tight text-slate-50 sm:text-lg">{title}</h2>
+        {subtitle ? <div className="mt-1 text-sm text-slate-400">{subtitle}</div> : null}
       </div>
       {right ? <div className="w-full sm:w-auto sm:shrink-0">{right}</div> : null}
     </div>
@@ -84,5 +83,5 @@ export function CardHeader({
 }
 
 export function CardBody({ children }: { children: ReactNode }) {
-  return <div className="px-[var(--card-px)] py-4 sm:py-5">{children}</div>;
+  return <div className="px-[var(--card-px)] pb-[var(--card-pt)] pt-4 sm:pt-5">{children}</div>;
 }

@@ -264,34 +264,30 @@ export function LeaveRequestsPanel({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card>
-          <CardBody>
-            <div className="text-xs font-semibold uppercase tracking-wide text-amber-300">Pending</div>
-            <div className="mt-2 text-2xl font-semibold text-slate-50">{grouped.pending.length}</div>
-            {urgentPending.length > 0 ? (
-              <div className="mt-1 text-[11px] font-medium text-rose-300">
-                {urgentPending.length} nearing auto-rejection
-              </div>
-            ) : null}
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <div className="text-xs font-semibold uppercase tracking-wide text-emerald-300">Approved</div>
-            <div className="mt-2 text-2xl font-semibold text-slate-50">
-              {requests.filter((request) => request.status === 'approved').length}
+      {/* Counts, not sections: they keep a tile so three numbers do not read as loose
+          text once the section frames are gone. */}
+      <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr))]">
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 ring-1 ring-inset ring-white/5">
+          <div className="text-xs font-semibold uppercase tracking-wide text-amber-300">Pending</div>
+          <div className="mt-2 text-2xl font-semibold tabular-nums text-slate-50">{grouped.pending.length}</div>
+          {urgentPending.length > 0 ? (
+            <div className="mt-1 text-[11px] font-medium text-rose-300">
+              {urgentPending.length} nearing auto-rejection
             </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <div className="text-xs font-semibold uppercase tracking-wide text-rose-300">Rejected</div>
-            <div className="mt-2 text-2xl font-semibold text-slate-50">
-              {requests.filter((request) => request.status === 'rejected').length}
-            </div>
-          </CardBody>
-        </Card>
+          ) : null}
+        </div>
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 ring-1 ring-inset ring-white/5">
+          <div className="text-xs font-semibold uppercase tracking-wide text-emerald-300">Approved</div>
+          <div className="mt-2 text-2xl font-semibold tabular-nums text-slate-50">
+            {requests.filter((request) => request.status === 'approved').length}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/55 px-4 py-4 ring-1 ring-inset ring-white/5">
+          <div className="text-xs font-semibold uppercase tracking-wide text-rose-300">Rejected</div>
+          <div className="mt-2 text-2xl font-semibold tabular-nums text-slate-50">
+            {requests.filter((request) => request.status === 'rejected').length}
+          </div>
+        </div>
       </div>
 
       <NotificationToggle />
@@ -353,7 +349,6 @@ export function LeaveRequestsPanel({
       <Card>
         <CardHeader
           title="Leave Requests"
-          subtitle="Approve or reject leave filings and keep attendance aligned with approved dates."
           right={
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
               <div className="w-full sm:w-[22rem]">

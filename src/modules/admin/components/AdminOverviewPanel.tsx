@@ -62,7 +62,7 @@ function MetricStat({
 }: {
   label: string;
   value: string;
-  tone: 'sky' | 'emerald' | 'amber' | 'violet';
+  tone: 'sky' | 'emerald' | 'amber' | 'rose';
   description: string;
   isLoading?: boolean;
 }) {
@@ -73,7 +73,7 @@ function MetricStat({
         ? 'border-emerald-400/12 bg-emerald-500/8 ring-emerald-400/10 text-emerald-300'
         : tone === 'amber'
           ? 'border-amber-400/12 bg-amber-500/8 ring-amber-400/10 text-amber-300'
-          : 'border-violet-400/12 bg-violet-500/8 ring-violet-400/10 text-violet-300';
+          : 'border-rose-400/12 bg-rose-500/8 ring-rose-400/10 text-rose-300';
 
   return (
     <div className={`rounded-2xl border px-4 py-4 ring-1 ring-inset ${toneClass}`}>
@@ -94,11 +94,9 @@ function MetricStat({
 
 function PieChartCard({
   title,
-  subtitle,
   items,
 }: {
   title: string;
-  subtitle: string;
   items: Array<{ label: string; value: number; color: string; chipClass: string }>;
 }) {
   const total = items.reduce((sum, item) => sum + item.value, 0);
@@ -118,7 +116,7 @@ function PieChartCard({
 
   return (
     <Card>
-      <CardHeader title={title} subtitle={subtitle} />
+      <CardHeader title={title} />
       <CardBody>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-center">
           <div className="mx-auto">
@@ -164,20 +162,29 @@ function PieChartCard({
 
 function VerticalBarChart({
   title,
-  subtitle,
   items,
+  isLoading = false,
 }: {
   title: string;
-  subtitle: string;
   items: Array<{ label: string; value: number; colorClass: string; detail: string }>;
+  isLoading?: boolean;
 }) {
   const max = Math.max(1, ...items.map((item) => item.value));
 
   return (
     <Card>
-      <CardHeader title={title} subtitle={subtitle} />
+      <CardHeader
+        title={title}
+        action={
+          isLoading ? (
+            <span className="text-xs font-medium text-slate-400" role="status">
+              Updating…
+            </span>
+          ) : null
+        }
+      />
       <CardBody>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(50%-0.5rem,8.5rem),1fr))]">
           {items.map((item) => (
             <div
               key={item.label}
@@ -210,18 +217,16 @@ function VerticalBarChart({
 
 function RankedBars({
   title,
-  subtitle,
   items,
 }: {
   title: string;
-  subtitle: string;
   items: Array<{ label: string; value: number; toneClass: string; detail?: string }>;
 }) {
   const max = Math.max(1, ...items.map((item) => item.value));
 
   return (
     <Card>
-      <CardHeader title={title} subtitle={subtitle} />
+      <CardHeader title={title} />
       <CardBody>
         {items.length === 0 ? (
           <div className="rounded-xl bg-slate-900/80 px-4 py-5 text-sm text-slate-400 ring-1 ring-inset ring-slate-800">
@@ -585,7 +590,7 @@ export function AdminOverviewPanel({
     .map((company) => ({
       label: company.company,
       value: company.total,
-      toneClass: 'bg-fuchsia-400/90',
+      toneClass: 'bg-rose-400/90',
       detail: `${company.open} active · ${company.high} high severity · ${company.employees} staff`,
     }));
 
@@ -639,19 +644,10 @@ export function AdminOverviewPanel({
       detail: `${counts.open} active · ${counts.high} high severity`,
     }));
 
-  const staffingDistribution = positionCounts.slice(0, 5).map((position, index) => ({
+  const staffingDistribution = positionCounts.slice(0, 5).map((position) => ({
     label: position.label,
     value: position.value,
-    colorClass:
-      index % 5 === 0
-        ? 'bg-sky-400/90'
-        : index % 5 === 1
-          ? 'bg-cyan-400/90'
-          : index % 5 === 2
-            ? 'bg-violet-400/90'
-            : index % 5 === 3
-              ? 'bg-emerald-400/90'
-              : 'bg-amber-400/90',
+    colorClass: 'bg-sky-400/90',
     detail: position.detail || `${position.value} staff member(s)`,
   }));
 
@@ -678,19 +674,19 @@ export function AdminOverviewPanel({
     {
       label: 'Open Cases',
       value: violationStatusCounts.open,
-      colorClass: 'bg-fuchsia-400/90',
+      colorClass: 'bg-sky-400/90',
       detail: formatPercent(violationStatusCounts.open, violations.length),
     },
     {
       label: 'Under Review',
       value: violationStatusCounts['under-review'],
-      colorClass: 'bg-violet-400/90',
+      colorClass: 'bg-sky-400/70',
       detail: formatPercent(violationStatusCounts['under-review'], violations.length),
     },
     {
       label: 'Resolved',
       value: violationStatusCounts.resolved,
-      colorClass: 'bg-sky-400/90',
+      colorClass: 'bg-emerald-400/90',
       detail: formatPercent(violationStatusCounts.resolved, violations.length),
     },
   ];
@@ -702,7 +698,6 @@ export function AdminOverviewPanel({
         <Card>
           <CardHeader
             title="Reports & Charts"
-            subtitle="Operational reporting for discipline risk, company exposure, and staffing pressure."
             right={
               onOpenView ? (
                 <div className="flex flex-col gap-2 sm:flex-row">
@@ -717,12 +712,12 @@ export function AdminOverviewPanel({
             }
           />
           <CardBody>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))]">
               <MetricStat
                 label="Violation Cases"
                 isLoading={isViolationDataLoading}
               value={String(violations.length)}
-                tone="violet"
+                tone="rose"
                 description="All recorded employee violation cases currently available for reporting."
               />
               <MetricStat
@@ -754,17 +749,15 @@ export function AdminOverviewPanel({
           </CardBody>
         </Card>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="grid gap-y-8 gap-x-10 [grid-template-columns:repeat(auto-fit,minmax(min(100%,30rem),1fr))]">
           <RankedBars
             title="Employees With Most Violations"
-            subtitle="Top employees ranked by case volume, active exposure, and high-severity weight."
             items={topViolationEmployees}
           />
 
           <Card>
             <CardHeader
               title="Termination Review Candidates"
-              subtitle="Operational watchlist only: 4+ total cases, 2+ high severity, or 3+ total with 2+ active."
             />
             <CardBody>
               {terminationReviewCandidates.length === 0 ? (
@@ -817,17 +810,15 @@ export function AdminOverviewPanel({
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="grid gap-y-8 gap-x-10 [grid-template-columns:repeat(auto-fit,minmax(min(100%,30rem),1fr))]">
           <RankedBars
             title="Company Violation Load"
-            subtitle="Compare which companies carry the highest discipline pressure."
             items={companyViolationRanking}
           />
 
           <Card>
             <CardHeader
               title="Company Violation Extremes"
-              subtitle="Quick comparison between the most exposed and cleanest company groups."
             />
             <CardBody>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -880,16 +871,14 @@ export function AdminOverviewPanel({
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="grid gap-y-8 gap-x-10 [grid-template-columns:repeat(auto-fit,minmax(min(100%,30rem),1fr))]">
           <RankedBars
             title="Positions Under Pressure"
-            subtitle="Roles accumulating the most discipline cases across the workforce."
             items={rolePressure}
           />
 
           <VerticalBarChart
             title="Staffing Distribution"
-            subtitle="Top staffed roles by employee headcount for workforce planning."
             items={staffingDistribution}
           />
         </div>
@@ -903,11 +892,6 @@ export function AdminOverviewPanel({
         <CardHeader
           title={mode === 'dashboard' ? 'Operations Dashboard' : 'Reports & Charts'}
           action={headerAction}
-          subtitle={
-            mode === 'dashboard'
-              ? 'Live workforce health, leave flow, and staffing coverage in one place.'
-              : 'Detailed charts for account status, leave throughput, and team composition.'
-          }
           right={
             showQuickActions && onOpenView ? (
               <div className="flex flex-col gap-2 sm:flex-row">
@@ -922,7 +906,7 @@ export function AdminOverviewPanel({
           }
         />
         <CardBody>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))]">
             <MetricStat
               label="Total Employees"
               value={String(employees.length)}
@@ -940,7 +924,7 @@ export function AdminOverviewPanel({
               label="Open Violations"
               isLoading={isViolationDataLoading}
               value={String(openViolationCount)}
-              tone="violet"
+              tone="rose"
               description="Violation cases that are still open or under active review."
             />
             <MetricStat
@@ -954,10 +938,15 @@ export function AdminOverviewPanel({
         </CardBody>
       </Card>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <VerticalBarChart
+        title="Operations Pipeline"
+        isLoading={isLeaveDataLoading || isViolationDataLoading}
+        items={operationsBars}
+      />
+
+      <div className="grid gap-y-8 gap-x-10 [grid-template-columns:repeat(auto-fit,minmax(min(100%,30rem),1fr))]">
         <PieChartCard
           title="Employee Access Mix"
-          subtitle="A quick pie view of healthy, restricted, and banned accounts."
           items={[
             {
               label: `Active (${formatPercent(employeeStatusCounts.active, employees.length)})`,
@@ -979,29 +968,17 @@ export function AdminOverviewPanel({
             },
           ]}
         />
-
-        <VerticalBarChart
-          title="Operations Pipeline"
-          subtitle={
-            isLeaveDataLoading || isViolationDataLoading
-              ? 'Loading leave and violation analytics...'
-              : 'Side-by-side bar graph for leave decisions and violation case movement.'
-          }
-          items={operationsBars}
-        />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="grid gap-y-8 gap-x-10 [grid-template-columns:repeat(auto-fit,minmax(min(100%,30rem),1fr))]">
         <RankedBars
           title="Company Coverage"
-          subtitle="Top companies by employee headcount across the tracked workforce."
           items={companyCounts}
         />
 
         <Card>
           <CardHeader
             title="Company Operations Snapshot"
-            subtitle="Per-company pressure from pending leaves and active violation cases."
           />
           <CardBody>
             {topCompanyOperations.length === 0 ? (
@@ -1035,7 +1012,7 @@ export function AdminOverviewPanel({
                         </div>
                       </div>
                       <div className="rounded-xl bg-slate-950/70 px-3 py-3 text-center ring-1 ring-inset ring-slate-800">
-                        <div className="text-lg font-semibold text-violet-300">{company.openViolations}</div>
+                        <div className="text-lg font-semibold text-rose-300">{company.openViolations}</div>
                         <div className="mt-1 text-[11px] uppercase tracking-wide text-slate-500">
                           Open Cases
                         </div>
@@ -1049,16 +1026,14 @@ export function AdminOverviewPanel({
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="grid gap-y-8 gap-x-10 [grid-template-columns:repeat(auto-fit,minmax(min(100%,30rem),1fr))]">
         <RankedBars
           title="Top Leave Demand"
-          subtitle="Most requested leave types across the current filing history."
           items={leaveTypeDemand}
         />
 
         <PieChartCard
           title="Violation Severity Spread"
-          subtitle="Pie graph showing how discipline risk is distributed by severity."
           items={[
             {
               label: `Low (${formatPercent(violationSeverityCounts.low, violations.length)})`,
@@ -1085,18 +1060,12 @@ export function AdminOverviewPanel({
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <RankedBars
           title="Role Coverage"
-          subtitle="Most common positions currently represented in the employee roster."
           items={positionCounts}
         />
 
         <Card>
           <CardHeader
             title={mode === 'dashboard' ? 'Quick Signals' : 'Reporting Highlights'}
-            subtitle={
-              mode === 'dashboard'
-                ? 'Fast operational cues for where admin attention is needed next.'
-                : 'Top-level analytics summaries that are useful for reviews and planning.'
-            }
           />
           <CardBody>
             <div className="space-y-4">

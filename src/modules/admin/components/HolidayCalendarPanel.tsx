@@ -134,7 +134,6 @@ export function HolidayCalendarPanel() {
       <Card>
         <CardHeader
           title="Holiday Calendar"
-          subtitle="Days on this list are never counted against an employee's leave balance."
           action={
             <RefreshButton
               onClick={() => setRefreshToken((token) => token + 1)}

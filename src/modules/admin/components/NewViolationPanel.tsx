@@ -124,7 +124,6 @@ export function NewViolationPanel({
       <Card>
         <CardHeader
           title="Add Violation"
-          subtitle="Log a new employee violation case and record the latest action taken."
           action={
             <RefreshButton onClick={onRefresh} isLoading={isLoading} />
           }

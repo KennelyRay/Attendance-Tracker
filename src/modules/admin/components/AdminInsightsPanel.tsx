@@ -331,7 +331,6 @@ export function AdminInsightsPanel({
         <CardHeader
           title="Smart Insights"
           action={headerAction}
-          subtitle="Actionable priorities generated from the current leave queue, account status, and discipline data."
         />
         <CardBody>
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.15fr_0.85fr]">
@@ -415,11 +414,10 @@ export function AdminInsightsPanel({
         </CardBody>
       </Card>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="grid gap-y-8 gap-x-10 [grid-template-columns:repeat(auto-fit,minmax(min(100%,30rem),1fr))]">
         <Card>
           <CardHeader
             title="Priority Board"
-            subtitle="What needs attention first, based on current admin workload and risk."
           />
           <CardBody>
             <div className="space-y-4">
@@ -466,7 +464,6 @@ export function AdminInsightsPanel({
         <Card>
           <CardHeader
             title="Hotspots"
-            subtitle="Which companies and employees are driving the most operational pressure."
           />
           <CardBody>
             <div className="space-y-5">
@@ -571,11 +568,10 @@ export function AdminInsightsPanel({
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="grid gap-y-8 gap-x-10 [grid-template-columns:repeat(auto-fit,minmax(min(100%,30rem),1fr))]">
         <Card>
           <CardHeader
             title="Leave Decision Guidance"
-            subtitle="Quick interpretation of how the leave workflow is behaving right now."
           />
           <CardBody>
             <div className="space-y-4">
@@ -614,7 +610,6 @@ export function AdminInsightsPanel({
         <Card>
           <CardHeader
             title="Account Follow-Up"
-            subtitle="People or access states that likely need manual admin attention."
           />
           <CardBody>
             {restrictedEmployees.length === 0 ? (

@@ -369,7 +369,6 @@ export function AccountManagementPanel({
         <Card>
           <CardHeader
             title="Create Employee Account"
-            subtitle="Add a new employee account and make it available immediately in the dashboard."
           />
           <CardBody>
             <form onSubmit={submitCreate} className="space-y-3.5 sm:space-y-4">
@@ -463,7 +462,6 @@ export function AccountManagementPanel({
         <Card>
           <CardHeader
             title="Access Rules"
-            subtitle="Quick reference for how account controls work."
           />
           <CardBody>
             <div className="space-y-3 sm:space-y-4">
